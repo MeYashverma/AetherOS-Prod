@@ -4261,7 +4261,14 @@
                 const encoded = encodeURIComponent(target.toString());
                 const originEncoded = encodeURIComponent(target.origin);
                 const targetNoScheme = target.toString().replace(/^https?:\/\//i, '');
+                const buildRammerheadDirect = () => {
+                    const sid = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}${Math.random().toString(16).slice(2)}`).replace(/-/g, '').slice(0, 32);
+                    // Rammerhead direct-encoded form for https://map.opensky-network.org/
+                    const encodedTarget = '_rhs9OE0B://OgW.p202FnZH3WtC6Zk.ZHk/';
+                    return `https://browser.rammerhead.org/${sid}/${encodedTarget}`;
+                };
                 const relay = [
+                    () => buildRammerheadDirect(),
                     (u) => `https://browser.rammerhead.org/?url=${encodeURIComponent(u)}`,
                     (u) => `https://browser.rammerhead.org/${targetNoScheme}`,
                     (u) => `https://browser.rammerhead.org/newsession?url=${encodeURIComponent(u)}`,
