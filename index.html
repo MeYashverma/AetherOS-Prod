@@ -4261,9 +4261,6 @@
                 const encoded = encodeURIComponent(target.toString());
                 const originEncoded = encodeURIComponent(target.origin);
                 const relay = [
-                    (u) => `https://browser.rammerhead.org/?url=${encodeURIComponent(u)}`,
-                    (u) => `https://browser.rammerhead.org/${u}`,
-                    () => `https://browser.rammerhead.org/?origin=${originEncoded}&path=${encodeURIComponent(q)}`,
                     (u) => `https://r.jina.ai/http://${u.replace(/^https?:\/\//i, '')}`,
                     (u) => `https://cors.isomorphic-git.org/${u}`,
                     (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
