@@ -996,6 +996,9 @@
 
                         <!-- Selected flight detail panel (shown when a flight is clicked) -->
                         <div id="radar-detail-panel" class="border-b border-white/5 bg-black/30 hidden">
+                            <div id="radar-detail-embed-note" class="hidden px-2 py-1 text-[9px] text-yellow-300 bg-yellow-500/10 border-b border-yellow-500/20">
+                                EMBED VIEW active: selected-flight telemetry is paused; switch to LIVE FEED to re-enable.
+                            </div>
 
                             <!-- Aircraft image strip -->
                             <div class="relative h-20 bg-black overflow-hidden">
@@ -1078,8 +1081,25 @@
 
                     <!-- MAIN MAP AREA -->
                     <div class="flex-1 relative" id="radar-map-wrapper">
+                        <!-- Radar header controls -->
+                        <div class="absolute top-2 left-2 z-10 flex items-center gap-1">
+                            <button id="radar-mode-leaflet-btn" onclick="os.switchRadarView('leaflet')"
+                                class="bg-black/70 border border-white/20 rounded px-2 py-1 text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target">LIVE FEED</button>
+                            <button id="radar-mode-embed-btn" onclick="os.switchRadarView('embed')"
+                                class="bg-black/70 border border-white/10 rounded px-2 py-1 text-[9px] text-gray-400 hover:text-white hover:bg-white/10 transition cursor-none hover-target">EMBED VIEW</button>
+                        </div>
+
                         <!-- Leaflet map fills this -->
                         <div id="radar-leaflet-map" class="absolute inset-0" style="z-index:1; cursor:crosshair;"></div>
+                        <div id="radar-embed-shell" class="absolute inset-0 hidden bg-black" style="z-index:1;">
+                            <iframe id="radar-embed-frame"
+                                class="w-full h-full border-0"
+                                referrerpolicy="no-referrer"
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+                        </div>
+                        <div id="radar-embed-warning" class="hidden absolute top-12 left-2 z-10 bg-yellow-500/15 border border-yellow-500/40 text-yellow-300 rounded px-2 py-1 text-[9px]">
+                            proxied view; availability depends on relay
+                        </div>
 
                         <!-- Top-right HUD overlay -->
                         <div class="absolute top-2 right-2 z-10 pointer-events-none space-y-1">
@@ -1091,7 +1111,7 @@
                         </div>
 
                         <!-- Map controls overlay (pointer-events: auto) -->
-                        <div class="absolute top-2 left-2 z-10 flex flex-col gap-1">
+                        <div class="absolute top-16 left-2 z-10 flex flex-col gap-1">
                             <button onclick="os.radarMap && os.radarMap.setView([20, 0], 2)"
                                 class="bg-black/70 border border-white/10 rounded px-2 py-1 text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target">⊕ RESET</button>
                         </div>
@@ -4118,6 +4138,10 @@
             activeFlights: [],
             selectedFlight: null,
             _leafletLoaded: false,
+            radarViewMode: 'leaflet',
+            radarEmbedReady: false,
+            radarEmbedLastUrl: '',
+            radarProxyEndpoints: [],
 
             // altitude ft -> hex color matching OpenSky's gradient
             altToColor: (altM) => {
@@ -4224,9 +4248,134 @@
 
                     os.fetchGlobeData();
                     os.globeDataTimer = setInterval(os.fetchGlobeData, 30000);
+                    os.radarProxyEndpoints = os.buildRadarProxyChain('https://map.opensky-network.org/');
+                    os.switchRadarView('leaflet');
                     lucide.createIcons({ root: document.getElementById('globe-root') });
                     os.logTerminal('Radar: Leaflet ADS-B map engaged. Fetching OpenSky feed...');
                 });
+            },
+
+            buildRadarProxyChain: (targetUrl) => {
+                const target = new URL(targetUrl);
+                const q = `${target.pathname}${target.search}${target.hash}`;
+                const encoded = encodeURIComponent(target.toString());
+                const originEncoded = encodeURIComponent(target.origin);
+                const relay = [
+                    (u) => `https://browser.rammerhead.org/?url=${encodeURIComponent(u)}`,
+                    (u) => `https://browser.rammerhead.org/${u}`,
+                    () => `https://browser.rammerhead.org/?origin=${originEncoded}&path=${encodeURIComponent(q)}`,
+                    (u) => `https://r.jina.ai/http://${u.replace(/^https?:\/\//i, '')}`,
+                    (u) => `https://cors.isomorphic-git.org/${u}`,
+                    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                    (u) => `https://r.jina.ai/http://${target.host}${q}`,
+                    () => `https://r.jina.ai/http://${target.host}/`,
+                    () => `https://thingproxy.freeboard.io/fetch/${target.toString()}`,
+                    () => `https://r.jina.ai/http://${target.host}/?target=${encoded}`,
+                    () => `https://r.jina.ai/http://${target.host}/?origin=${originEncoded}&path=${encodeURIComponent(q)}`
+                ];
+                return relay;
+            },
+
+            resolveRadarEmbedUrl: () => {
+                const targetUrl = 'https://map.opensky-network.org/';
+                const builders = Array.isArray(os.radarProxyEndpoints) && os.radarProxyEndpoints.length
+                    ? os.radarProxyEndpoints
+                    : os.buildRadarProxyChain(targetUrl);
+                return builders
+                    .map(fn => {
+                        try { return fn(targetUrl); } catch { return null; }
+                    })
+                    .filter(Boolean);
+            },
+
+            initRadarEmbed: async () => {
+                const frame = document.getElementById('radar-embed-frame');
+                if (!frame) return false;
+                if (os.radarEmbedReady && os.radarEmbedLastUrl) {
+                    frame.src = os.radarEmbedLastUrl;
+                    return true;
+                }
+                const candidates = os.resolveRadarEmbedUrl();
+                for (const candidate of candidates) {
+                    const loaded = await new Promise((resolve) => {
+                        const onLoad = () => { cleanup(); resolve(true); };
+                        const onError = () => { cleanup(); resolve(false); };
+                        const cleanup = () => {
+                            clearTimeout(timer);
+                            frame.removeEventListener('load', onLoad);
+                            frame.removeEventListener('error', onError);
+                        };
+                        frame.addEventListener('load', onLoad, { once: true });
+                        frame.addEventListener('error', onError, { once: true });
+                        const timer = setTimeout(() => { cleanup(); resolve(false); }, 7000);
+                        frame.src = candidate;
+                    });
+                    if (loaded) {
+                        os.radarEmbedReady = true;
+                        os.radarEmbedLastUrl = candidate;
+                        os.logTerminal(`Radar: Embed relay locked -> ${new URL(candidate).host}`);
+                        return true;
+                    }
+                }
+                os.radarEmbedReady = false;
+                os.radarEmbedLastUrl = '';
+                os.logTerminal('Radar Warning: embed relays unavailable; reverting to vector mode.');
+                return false;
+            },
+
+            switchRadarView: async (mode) => {
+                const nextMode = mode === 'embed' ? 'embed' : 'leaflet';
+                const leafletEl = document.getElementById('radar-leaflet-map');
+                const embedShell = document.getElementById('radar-embed-shell');
+                const warnStrip = document.getElementById('radar-embed-warning');
+                const detailPanel = document.getElementById('radar-detail-panel');
+                const manifest = document.getElementById('flight-manifest-list');
+                const btnLeaflet = document.getElementById('radar-mode-leaflet-btn');
+                const btnEmbed = document.getElementById('radar-mode-embed-btn');
+
+                if (!leafletEl || !embedShell) return;
+
+                if (btnLeaflet && btnEmbed) {
+                    btnLeaflet.className = `bg-black/70 border rounded px-2 py-1 text-[9px] transition cursor-none hover-target ${nextMode === 'leaflet' ? 'border-white/20 text-white' : 'border-white/10 text-gray-400 hover:text-white hover:bg-white/10'}`;
+                    btnEmbed.className = `bg-black/70 border rounded px-2 py-1 text-[9px] transition cursor-none hover-target ${nextMode === 'embed' ? 'border-white/20 text-white' : 'border-white/10 text-gray-400 hover:text-white hover:bg-white/10'}`;
+                }
+
+                if (nextMode === 'embed') {
+                    const ok = await os.initRadarEmbed();
+                    if (!ok) {
+                        os.switchRadarView('leaflet');
+                        if (manifest) {
+                            manifest.insertAdjacentHTML('afterbegin', '<div class="text-[9px] text-yellow-400 px-2 py-1 border border-yellow-500/30 rounded mb-1">Embed unavailable; continued in LIVE FEED mode.</div>');
+                        }
+                        return;
+                    }
+                    leafletEl.classList.add('hidden');
+                    embedShell.classList.remove('hidden');
+                    if (warnStrip) warnStrip.classList.remove('hidden');
+                    if (os.globeDataTimer) { clearInterval(os.globeDataTimer); os.globeDataTimer = null; }
+                    const embedNote = document.getElementById('radar-detail-embed-note');
+                    if (detailPanel) detailPanel.classList.remove('hidden');
+                    if (embedNote) embedNote.classList.remove('hidden');
+                    if (detailPanel) detailPanel.classList.add('opacity-60');
+                    os.radarViewMode = 'embed';
+                    os.logTerminal('Radar: switched to EMBED VIEW (proxied client).');
+                    return;
+                }
+
+                leafletEl.classList.remove('hidden');
+                embedShell.classList.add('hidden');
+                if (warnStrip) warnStrip.classList.add('hidden');
+                if (!os.globeDataTimer) {
+                    os.fetchGlobeData();
+                    os.globeDataTimer = setInterval(os.fetchGlobeData, 30000);
+                }
+                const embedNote = document.getElementById('radar-detail-embed-note');
+                if (embedNote) embedNote.classList.add('hidden');
+                if (detailPanel) detailPanel.classList.remove('opacity-60');
+                os.radarViewMode = 'leaflet';
+                os.renderFlightManifest();
+                os.deselectFlight();
+                os.logTerminal('Radar: switched to LIVE FEED vector mode.');
             },
 
             fetchGlobeData: async () => {
@@ -4549,12 +4698,18 @@
             killGlobe: () => {
                 if (os.globeDataTimer) clearInterval(os.globeDataTimer);
                 if (os.radarMap) { os.radarMap.remove(); os.radarMap = null; }
+                const frame = document.getElementById('radar-embed-frame');
+                if (frame) frame.src = 'about:blank';
                 os.radarMarkersLayer = null;
                 os.radarTrailLayer   = null;
                 os.radarMarkerMap    = {};
                 os.activeFlights     = [];
                 os.selectedFlight    = null;
                 os._leafletLoaded    = false;
+                os.radarViewMode     = 'leaflet';
+                os.radarEmbedReady   = false;
+                os.radarEmbedLastUrl = '';
+                os.radarProxyEndpoints = [];
             },
 
             // ==========================================
