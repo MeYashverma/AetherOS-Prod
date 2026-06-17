@@ -2915,6 +2915,11 @@ input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.28) !impor
                     <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400" id="top-wifi-icon"></i>
                     <span class="text-[10px] hidden md:inline" style="color:rgba(52,211,153,0.8)" id="top-wifi-ssid">WiFi</span>
                 </div>
+                <!-- Aether Fabric -->
+                <div class="topbar-item gap-1.5 hover-target cursor-none" id="top-aether-fabric" title="Aether Fabric" onclick="os.openWindow('aetherlink')">
+                    <i data-lucide="workflow" class="w-3.5 h-3.5" style="color:rgba(34,211,238,0.75)"></i>
+                    <span class="text-[10px] hidden md:inline" style="color:rgba(34,211,238,0.78)" id="top-aether-status">FABRIC 0</span>
+                </div>
                 <!-- Bluetooth -->
                 <div class="topbar-item gap-1.5" id="top-bluetooth" title="Bluetooth">
                     <i data-lucide="bluetooth" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.3)" id="top-bt-icon"></i>
@@ -3384,7 +3389,9 @@ RenderScheduler.start();
                 storage: { id: 'storage', title: 'Storage Inspector', icon: 'database', width: 820, height: 560, x: 130, y: 70, isOpen: false, isMinimized: false, zIndex: 28, content: 'storage' },
                 errorconsole: { id: 'errorconsole', title: 'Error Console', icon: 'bug', width: 820, height: 520, x: 150, y: 80, isOpen: false, isMinimized: false, zIndex: 29, content: 'errorconsole' },
                 apistatus: { id: 'apistatus', title: 'API Status Board', icon: 'activity', width: 920, height: 600, x: 110, y: 55, isOpen: false, isMinimized: false, zIndex: 30, content: 'apistatus' },
-                packetviz: { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' }
+                packetviz: { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' },
+                aetherbridge: { id: 'aetherbridge', title: 'Aether Bridge', icon: 'hard-drive', width: 1160, height: 720, x: 70, y: 35, isOpen: false, isMinimized: false, zIndex: 36, content: 'aetherbridge' },
+                aetherlink: { id: 'aetherlink', title: 'Aether Link', icon: 'workflow', width: 1180, height: 740, x: 85, y: 40, isOpen: false, isMinimized: false, zIndex: 37, content: 'aetherlink' }
             },
             settings: {
                 api_lastfm: '',
@@ -3474,6 +3481,8 @@ RenderScheduler.start();
                 if(!this.windows.errorconsole) this.windows.errorconsole = { id: 'errorconsole', title: 'Error Console', icon: 'bug', width: 820, height: 520, x: 150, y: 80, isOpen: false, isMinimized: false, zIndex: 29, content: 'errorconsole' };
                 if(!this.windows.apistatus) this.windows.apistatus = { id: 'apistatus', title: 'API Status Board', icon: 'activity', width: 920, height: 600, x: 110, y: 55, isOpen: false, isMinimized: false, zIndex: 30, content: 'apistatus' };
                 if(!this.windows.packetviz) this.windows.packetviz = { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' };
+                if(!this.windows.aetherbridge) this.windows.aetherbridge = { id: 'aetherbridge', title: 'Aether Bridge', icon: 'hard-drive', width: 1160, height: 720, x: 70, y: 35, isOpen: false, isMinimized: false, zIndex: 36, content: 'aetherbridge' };
+                if(!this.windows.aetherlink) this.windows.aetherlink = { id: 'aetherlink', title: 'Aether Link', icon: 'workflow', width: 1180, height: 740, x: 85, y: 40, isOpen: false, isMinimized: false, zIndex: 37, content: 'aetherlink' };
                 if(!this.windows.about) this.windows.about = { id: 'about', title: 'System Encyclopedia', icon: 'info', width: 940, height: 640, x: 120, y: 60, isOpen: false, isMinimized: false, zIndex: 35, content: 'about' };
             },
             load() {
@@ -3923,6 +3932,13 @@ RenderScheduler.start();
         };
 
         const WindowContents = {
+
+            aetherbridge: `
+                <div id="aether-bridge-root" class="h-full overflow-hidden bg-[#05070b] text-[11px] text-gray-300 font-mono"></div>
+            `,
+            aetherlink: `
+                <div id="aether-link-root" class="h-full overflow-hidden bg-[#04050a] text-[11px] text-gray-300 font-mono"></div>
+            `,
             about: `
                 <div class="flex h-full text-gray-300 font-mono text-xs select-none">
                     <!-- Navigation Sidebar -->
@@ -6600,6 +6616,10 @@ RenderScheduler.start();
                     os.apiStatusRun();
                 } else if (winData.id === 'packetviz') {
                     os.packetVizRender();
+                } else if (winData.id === 'aetherbridge') {
+                    os.renderAetherBridge();
+                } else if (winData.id === 'aetherlink') {
+                    os.renderAetherLink();
                 }
             }
 
@@ -11877,6 +11897,315 @@ RenderScheduler.start();
                 if (menu && !menu.contains(e.target)) os.hideDockContextMenu();
             },
 
+
+            aetherFabric: {
+                deviceId: null,
+                deviceName: null,
+                pairCode: null,
+                pairExpires: 0,
+                sessions: [],
+                devices: [],
+                transfers: [],
+                messages: [],
+                activities: [],
+                clipboard: '',
+                channel: null,
+                pendingChunks: {},
+                init() {
+                    this.deviceId = localStorage.getItem('AetherOS_Fabric_DeviceId') || ('aos-' + Math.random().toString(36).slice(2, 8) + '-' + Date.now().toString(36));
+                    localStorage.setItem('AetherOS_Fabric_DeviceId', this.deviceId);
+                    this.deviceName = localStorage.getItem('AetherOS_Fabric_DeviceName') || ((navigator.platform || 'Aether Workstation') + ' Node');
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('AetherOS_Fabric_State') || '{}');
+                        this.devices = (saved.devices || []).filter(d => !['phone-yash','studio-laptop'].includes(d.id));
+                        this.sessions = (saved.sessions || []).filter(sess => !['phone-yash','studio-laptop'].includes(sess.deviceId));
+                        this.transfers = saved.transfers || [];
+                        this.messages = saved.messages || [];
+                        this.activities = saved.activities || [];
+                        this.clipboard = saved.clipboard || '';
+                    } catch(e) {}
+                    if ('BroadcastChannel' in window) {
+                        this.channel = new BroadcastChannel('AetherOS_Fabric_v1');
+                        this.channel.onmessage = (event) => this.receive(event.data || {});
+                    }
+                    this.log('Fabric initialized', this.channel ? 'BroadcastChannel transport ready for same-origin Aether OS peers.' : 'BroadcastChannel unavailable; manual local state only.', 'fabric');
+                    this.broadcast('hello', { name:this.deviceName, capabilities:os.aetherCapabilities() });
+                    this.save();
+                },
+                save() {
+                    localStorage.setItem('AetherOS_Fabric_State', JSON.stringify({ devices:this.devices, sessions:this.sessions, transfers:this.transfers, messages:this.messages, activities:this.activities, clipboard:this.clipboard }));
+                    os.updateAetherTopbar();
+                },
+                broadcast(type, payload={}) {
+                    if (!this.channel) return false;
+                    this.channel.postMessage({ type, from:this.deviceId, fromName:this.deviceName, at:Date.now(), ...payload });
+                    return true;
+                },
+                receive(msg) {
+                    if (!msg || msg.from === this.deviceId) return;
+                    if (msg.type === 'hello') this.upsertDevice({ id:msg.from, name:msg.fromName || 'Aether Workstation', type:'workstation', ip:'same-origin://broadcast', status:'nearby', storage:'Permission required', battery:'--', permissions:['discover'], lastSeen:Date.now(), capabilities:msg.capabilities || {} });
+                    if (msg.type === 'pair-request' && msg.code && msg.code === this.pairCode && Date.now() < this.pairExpires) {
+                        this.createSession(msg.from, msg.fromName || 'Aether Workstation', 'link');
+                        this.broadcast('pair-accepted', { to:msg.from, sessionId:'sess-'+msg.from });
+                        Notifications.push('AETHER LINK', `${msg.fromName || 'Aether Workstation'} paired`);
+                    }
+                    if (msg.type === 'pair-accepted' && msg.to === this.deviceId) this.createSession(msg.from, msg.fromName || 'Aether Workstation', 'link');
+                    if (msg.type === 'chat-message') this.receiveChat(msg);
+                    if (msg.type === 'clipboard-sync') this.receiveClipboard(msg);
+                    if (msg.type === 'file-offer') this.receiveFileOffer(msg);
+                    if (msg.type === 'file-chunk') this.receiveFileChunk(msg);
+                    if (msg.type === 'file-complete') this.receiveFileComplete(msg);
+                    if (msg.type === 'presence-update') this.receivePresence(msg);
+                    if (msg.type === 'bridge-online') this.receiveBridgeIndex(msg);
+                    if (msg.type === 'bridge-offline') os.aetherBridge.remoteFiles = os.aetherBridge.remoteFiles.filter(f => f.fromDevice !== msg.from);
+                    this.save(); os.renderAetherBridge(); os.renderAetherLink();
+                },
+                upsertDevice(device) {
+                    const idx = this.devices.findIndex(d => d.id === device.id);
+                    if (idx >= 0) this.devices[idx] = { ...this.devices[idx], ...device };
+                    else this.devices.unshift(device);
+                },
+                createSession(deviceId, name, mode='link') {
+                    this.upsertDevice({ id:deviceId, name, type:'workstation', ip:'same-origin://broadcast', status:'paired', storage:'Permission required', battery:'--', permissions:['chat','files','presence','clipboard'], lastSeen:Date.now() });
+                    if (!this.sessions.some(s => s.deviceId === deviceId)) this.sessions.unshift({ id:'sess-'+deviceId, deviceId, name, status:'connected', since:Date.now(), mode });
+                    this.log('Session connected', `${name} is now part of the live fabric`, 'security');
+                    this.save();
+                },
+                log(title, detail, kind='fabric') {
+                    this.activities.unshift({ id:'evt-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), title, detail, kind, at:Date.now() });
+                    this.activities = this.activities.slice(0, 120);
+                    this.save();
+                },
+                generateCode() {
+                    const bytes = new Uint8Array(6);
+                    if (window.crypto?.getRandomValues) crypto.getRandomValues(bytes); else bytes.forEach((_, i) => bytes[i] = Math.floor(Math.random()*255));
+                    this.pairCode = Array.from(bytes).map(b => (b % 36).toString(36).toUpperCase()).join('').replace(/(.{3})/g,'$1-').replace(/-$/,'');
+                    this.pairExpires = Date.now() + 5*60*1000;
+                    this.log('Pair code generated', 'Waiting for a peer to enter this one-time code.', 'security');
+                    Notifications.push('AETHER LINK', 'One-time connection code generated');
+                    os.renderAetherLink(); os.renderAetherBridge();
+                },
+                pairByCode(code) {
+                    const normalized = String(code || '').trim().toUpperCase();
+                    if (!normalized) return;
+                    const sent = this.broadcast('pair-request', { code:normalized, capabilities:os.aetherCapabilities() });
+                    this.log('Pair request sent', sent ? 'Waiting for the host Aether OS instance to approve the code.' : 'No BroadcastChannel transport available in this browser.', sent ? 'security' : 'warning');
+                    Notifications.push('AETHER LINK', sent ? 'Pair request sent' : 'No local fabric transport available');
+                    os.renderAetherLink();
+                },
+                revoke(id) {
+                    this.sessions = this.sessions.filter(s => s.id !== id && s.deviceId !== id);
+                    this.devices = this.devices.map(d => d.id === id ? {...d, status:'revoked'} : d);
+                    this.broadcast('session-revoked', { to:id });
+                    this.log('Session revoked', id, 'security');
+                    Notifications.push('AETHER FABRIC', 'Session revoked');
+                    this.save(); os.renderAetherLink(); os.renderAetherBridge();
+                },
+                receiveChat(msg) {
+                    if (this.messages.some(m => m.id === msg.messageId)) return;
+                    this.messages.push({ id:msg.messageId, from:msg.fromName || msg.from, to:this.deviceId, body:msg.body || '', at:msg.at || Date.now(), status:'received' });
+                    Notifications.push('AETHER CHAT', `Message from ${msg.fromName || 'peer'}`);
+                },
+                receiveClipboard(msg) {
+                    this.clipboard = msg.text || '';
+                    this.log('Clipboard received', `From ${msg.fromName || 'peer'}`, 'clipboard');
+                    Notifications.push('AETHER CLIPBOARD', 'Clipboard payload received');
+                },
+                receivePresence(msg) {
+                    this.upsertDevice({ id:msg.from, name:msg.fromName || 'Aether Workstation', status:'paired', lastSeen:Date.now(), presence:msg.presence || {} });
+                },
+                receiveBridgeIndex(msg) {
+                    const files = (msg.files || []).map(file => ({ ...file, type:'file', source:'remote-index', fromDevice:msg.from, fromName:msg.fromName || 'Aether peer', modified:file.modified || 'Remote', size:file.size || 0, mime:file.mime || 'application/octet-stream' }));
+                    os.aetherBridge.remoteFiles = os.aetherBridge.remoteFiles.filter(f => f.fromDevice !== msg.from || f.objectUrl);
+                    os.aetherBridge.remoteFiles.unshift(...files);
+                    this.log('Remote Bridge index received', `${files.length} file(s) exposed by ${msg.fromName || 'peer'}`, 'bridge');
+                },
+                receiveFileOffer(msg) {
+                    const transfer = { id:msg.transferId, name:msg.name, direction:'receive', progress:0, status:'receiving', size:msg.size, mime:msg.mime, from:msg.fromName || msg.from, at:Date.now() };
+                    if (!this.transfers.some(t => t.id === transfer.id)) this.transfers.unshift(transfer);
+                    this.pendingChunks[msg.transferId] = { chunks:[], received:0, meta:transfer };
+                    Notifications.push('AETHER TRANSFER', `Incoming file: ${msg.name}`);
+                },
+                receiveFileChunk(msg) {
+                    const bucket = this.pendingChunks[msg.transferId];
+                    if (!bucket) return;
+                    bucket.chunks[msg.index] = msg.chunk;
+                    bucket.received += msg.chunk?.byteLength || 0;
+                    const t = this.transfers.find(x => x.id === msg.transferId);
+                    if (t) t.progress = Math.min(99, Math.round(bucket.received / Math.max(1, t.size) * 100));
+                },
+                receiveFileComplete(msg) {
+                    const bucket = this.pendingChunks[msg.transferId];
+                    const t = this.transfers.find(x => x.id === msg.transferId);
+                    if (bucket && t) {
+                        const blob = new Blob(bucket.chunks, { type:t.mime || 'application/octet-stream' });
+                        t.progress = 100; t.status = 'complete'; t.objectUrl = URL.createObjectURL(blob);
+                        os.aetherBridge.remoteFiles.unshift({ name:t.name, type:'file', size:os.formatBytes(t.size), modified:'Received', mime:t.mime || 'application/octet-stream', objectUrl:t.objectUrl, stream:true });
+                        delete this.pendingChunks[msg.transferId];
+                        Notifications.push('AETHER TRANSFER', `${t.name} received`);
+                    }
+                }
+            },
+            aetherBridge: {
+                hostEnabled: false,
+                path: '/',
+                query: '',
+                sort: 'name',
+                localFiles: [],
+                remoteFiles: [],
+                directoryHandle: null,
+                startHost() {
+                    this.hostEnabled = !this.hostEnabled;
+                    os.aetherFabric.broadcast(this.hostEnabled ? 'bridge-online' : 'bridge-offline', { files:this.localFiles.map(f => ({ name:f.name, size:f.size, mime:f.mime, modified:f.modified })) });
+                    os.aetherFabric.log(this.hostEnabled ? 'Bridge host online' : 'Bridge host stopped', this.hostEnabled ? 'Peer file index is available to paired same-origin Aether OS instances.' : 'Peer file index disabled.', 'bridge');
+                    Notifications.push('AETHER BRIDGE', this.hostEnabled ? 'Peer host online' : 'Peer host stopped');
+                    os.renderAetherBridge();
+                },
+                setQuery(v){ this.query=v; os.renderAetherBridge(); },
+                setSort(v){ this.sort=v; os.renderAetherBridge(); },
+                openPath(p){ this.path=p; os.aetherFabric.log('Remote folder opened', p, 'bridge'); os.renderAetherBridge(); },
+                async pickFiles() {
+                    const input = document.createElement('input');
+                    input.type = 'file'; input.multiple = true;
+                    input.onchange = () => {
+                        [...input.files].forEach(file => this.addLocalFile(file));
+                        os.aetherFabric.log('Files added to Bridge host', `${input.files.length} file(s) ready for peer transfer`, 'bridge');
+                        os.renderAetherBridge();
+                    };
+                    input.click();
+                },
+                async pickDirectory() {
+                    if (!window.showDirectoryPicker) { Notifications.push('AETHER BRIDGE', 'Directory picker is unavailable in this browser'); return; }
+                    try {
+                        this.directoryHandle = await window.showDirectoryPicker({ mode:'read' });
+                        this.localFiles = [];
+                        for await (const [name, handle] of this.directoryHandle.entries()) {
+                            if (handle.kind === 'file') {
+                                const file = await handle.getFile();
+                                this.addLocalFile(file);
+                            } else {
+                                this.localFiles.push({ name, type:'folder', size:0, modified:'Folder', mime:'folder', handle });
+                            }
+                        }
+                        os.aetherFabric.log('Directory mounted', this.directoryHandle.name || 'Shared folder', 'bridge');
+                        os.renderAetherBridge();
+                    } catch(e) { os.aetherFabric.log('Directory mount cancelled', e.message || 'Permission denied', 'warning'); }
+                },
+                addLocalFile(file) {
+                    const objectUrl = URL.createObjectURL(file);
+                    this.localFiles.unshift({ name:file.name, type:'file', size:file.size, modified:new Date(file.lastModified || Date.now()).toLocaleString(), mime:file.type || 'application/octet-stream', file, objectUrl, stream:true });
+                },
+                async sendFile(fileIndex=0) {
+                    const item = this.localFiles[fileIndex];
+                    if (!item || !item.file) { Notifications.push('AETHER TRANSFER', 'Select a real file first'); return; }
+                    await os.aetherFabricSendFile(item.file);
+                }
+            },
+            aetherLink: {
+                activeTab: 'chat',
+                draft: '',
+                whiteboardColor: '#22d3ee',
+                sendMessage(text) {
+                    const body = String(text || document.getElementById('aether-link-chat-input')?.value || '').trim();
+                    if (!body) return;
+                    const messageId = 'msg-'+Date.now();
+                    const msg={ id:messageId, from:'me', to:'session', body, at:Date.now(), status:os.aetherFabric.broadcast('chat-message', { messageId, body }) ? 'delivered' : 'local' };
+                    os.aetherFabric.messages.push(msg);
+                    os.aetherFabric.log('Message sent', body.slice(0,72), 'chat');
+                    os.aetherFabric.save(); os.renderAetherLink();
+                },
+                setTab(tab){ this.activeTab=tab; os.renderAetherLink(); },
+                pushActivity(label){ os.aetherFabric.broadcast('presence-update', { presence:os.aetherPresenceSnapshot() }); os.aetherFabric.log(label, 'Shared workstation event broadcast', 'presence'); os.renderAetherLink(); },
+                async syncClipboard() {
+                    let v=document.getElementById('aether-clipboard-box')?.value || '';
+                    if (!v && navigator.clipboard?.readText) { try { v = await navigator.clipboard.readText(); } catch(e) {} }
+                    os.aetherFabric.clipboard=v;
+                    os.aetherFabric.broadcast('clipboard-sync', { text:v });
+                    os.aetherFabric.log('Clipboard synchronized', v.slice(0,80) || 'Empty clipboard payload', 'clipboard');
+                    Notifications.push('AETHER CLIPBOARD', 'Clipboard payload sent to paired peers');
+                    os.aetherFabric.save(); os.renderAetherLink();
+                }
+            },
+            formatBytes: (bytes=0) => {
+                const n=Number(bytes)||0; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n/1024).toFixed(1)} KB`; if (n < 1073741824) return `${(n/1048576).toFixed(1)} MB`; return `${(n/1073741824).toFixed(1)} GB`;
+            },
+            aetherCapabilities: () => ({ webRTC:!!window.RTCPeerConnection, broadcast:!!window.BroadcastChannel, fileSystemAccess:!!window.showDirectoryPicker, clipboard:!!navigator.clipboard, camera:!!navigator.mediaDevices?.getUserMedia, serviceWorker:!!navigator.serviceWorker, indexedDB:!!window.indexedDB }),
+            aetherCapabilityRows: () => Object.entries(os.aetherCapabilities()).map(([k,v]) => `<div class="flex justify-between rounded-lg bg-white/[0.035] border border-white/10 px-3 py-2"><span>${k.replace(/([A-Z])/g,' $1')}</span><b class="${v?'text-emerald-300':'text-yellow-300'}">${v?'READY':'LIMITED'}</b></div>`).join(''),
+            aetherPresenceSnapshot: () => ({ focused:Object.values(SystemState.windows).sort((a,b)=>b.zIndex-a.zIndex).find(w=>w.isOpen&&!w.isMinimized)?.title || 'Desktop', theme:SystemState.settings.active_theme || 'Midnight', performance:SystemState.settings.performance_mode || 'eco', workspace:'Workspace 01' }),
+            aetherFabricSendFile: async (file) => {
+                const transferId='tx-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+                const t={ id:transferId, name:file.name, direction:'send', progress:0, status:'sending', size:file.size, mime:file.type || 'application/octet-stream', at:Date.now() };
+                os.aetherFabric.transfers.unshift(t); os.aetherFabric.broadcast('file-offer', { transferId, name:file.name, size:file.size, mime:file.type || 'application/octet-stream' }); os.aetherFabric.save();
+                const chunkSize = 256 * 1024; let sent = 0; let index = 0;
+                while (sent < file.size) {
+                    const chunk = await file.slice(sent, sent + chunkSize).arrayBuffer();
+                    os.aetherFabric.broadcast('file-chunk', { transferId, index:index++, chunk });
+                    sent += chunk.byteLength; t.progress = Math.min(99, Math.round(sent / Math.max(1,file.size) * 100)); os.aetherFabric.save(); os.renderAetherBridge(); os.renderAetherLink();
+                    await new Promise(r => setTimeout(r, 0));
+                }
+                t.progress=100; t.status='complete'; os.aetherFabric.broadcast('file-complete', { transferId }); os.aetherFabric.log('File transfer complete', file.name, 'transfer'); os.aetherFabric.save(); os.renderAetherBridge(); os.renderAetherLink();
+            },
+            updateAetherTopbar: () => {
+                const el=document.getElementById('top-aether-status');
+                if(el) el.textContent = `FABRIC ${(os.aetherFabric?.sessions||[]).length}`;
+            },
+            initAetherFabric: () => { os.aetherFabric.init(); os.updateAetherTopbar(); },
+            renderAetherBridge: () => {
+                const root=document.getElementById('aether-bridge-root'); if(!root || !os.aetherFabric) return;
+                const bridge=os.aetherBridge, fabric=os.aetherFabric;
+                const allFiles=[...bridge.localFiles.map((f,i)=>({...f, source:'local', index:i})), ...bridge.remoteFiles.map((f,i)=>({...f, source:'remote', index:i}))];
+                const q=(bridge.query||'').toLowerCase();
+                const files=allFiles.filter(f=>!q || f.name.toLowerCase().includes(q)).sort((a,b)=> bridge.sort==='size' ? Number(a.size||0)-Number(b.size||0) : a.name.localeCompare(b.name));
+                root.innerHTML = `<div class="h-full grid grid-cols-[280px_1fr_320px] overflow-hidden">
+                    <aside class="border-r border-white/10 bg-black/30 p-4 space-y-4 overflow-y-auto no-scrollbar">
+                        <div><div class="text-cyan-300 text-[10px] tracking-[0.25em] uppercase">Aether Bridge</div><div class="text-white text-xl font-display font-bold mt-1">Distributed Device Storage</div></div>
+                        <button onclick="os.aetherBridge.startHost()" class="w-full py-2 rounded-xl ${bridge.hostEnabled?'bg-emerald-400 text-black':'bg-white text-black'} font-bold hover-target cursor-none">${bridge.hostEnabled?'Stop Peer Host':'Start Peer Host'}</button>
+                        <div class="grid grid-cols-2 gap-2"><button onclick="os.aetherBridge.pickFiles()" class="py-2 rounded-xl bg-cyan-400/20 border border-cyan-300/30 text-cyan-100 hover-target cursor-none">Add Files</button><button onclick="os.aetherBridge.pickDirectory()" class="py-2 rounded-xl bg-white/10 border border-white/10 text-white hover-target cursor-none">Mount Folder</button></div>
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div class="text-gray-500 uppercase text-[9px]">Peer Endpoint</div><div class="text-white font-bold mt-1">${bridge.hostEnabled?'broadcast://'+fabric.deviceId:'Host offline'}</div><p class="text-[9px] text-yellow-300 mt-2 leading-relaxed">Browser security prevents opening a raw 192.168.x.x:8443 server from static HTML. This implementation uses real browser transports: BroadcastChannel, File/Directory picker, Blob streaming, and chunked peer messages.</p></div>
+                        <div><div class="text-gray-500 uppercase tracking-wider mb-2">Discovered Devices</div>${fabric.devices.map(d=>`<button onclick="os.aetherBridge.openPath('/Devices/${d.name.replace(/'/g,'')}')" class="w-full text-left rounded-xl border border-white/10 bg-white/[0.035] p-3 mb-2 hover:bg-white/[0.07] hover-target cursor-none"><div class="flex justify-between"><b class="text-white">${d.name}</b><span class="${d.status==='paired'?'text-emerald-300':'text-yellow-300'}">${d.status}</span></div><div class="text-gray-500 mt-1">${d.ip} · ${d.storage}</div></button>`).join('') || '<div class="text-gray-600 text-[10px]">Open another Aether OS tab/window and pair it to discover a real peer.</div>'}</div>
+                    </aside>
+                    <main class="p-4 overflow-hidden flex flex-col gap-3">
+                        <div class="flex gap-2"><input oninput="os.aetherBridge.setQuery(this.value)" value="${bridge.query}" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white" placeholder="Search hosted or received files..."><select onchange="os.aetherBridge.setSort(this.value)" class="bg-black/50 border border-white/10 rounded-xl px-3 text-white"><option value="name">Sort: Name</option><option value="size">Sort: Size</option></select></div>
+                        <div class="text-gray-400">Path: <span class="text-white">${bridge.path}</span></div>
+                        <div class="flex-1 overflow-y-auto no-scrollbar rounded-2xl border border-white/10 bg-black/25">${files.map(f=>`<div class="grid grid-cols-[32px_1fr_90px_100px_250px] items-center gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/[0.04]"><i data-lucide="${f.type==='folder'?'folder':'file'}" class="w-4 h-4 text-cyan-300"></i><div><b class="text-white">${f.name}</b><div class="text-gray-500">${f.mime}${f.source==='remote'?' · received from peer':' · local share'}</div></div><span>${typeof f.size==='number'?os.formatBytes(f.size):f.size}</span><span>${f.modified}</span><div class="flex gap-2"><button onclick="${f.source==='local'?`os.aetherBridge.sendFile(${f.index})`:`window.open('${f.objectUrl}','_blank')`}" class="px-2 py-1 rounded bg-white/10 hover-target cursor-none">${f.source==='local'?'Send':'Open'}</button>${f.objectUrl?`<a href="${f.objectUrl}" download="${f.name}" class="px-2 py-1 rounded bg-cyan-400/10 text-cyan-200 hover-target cursor-none">Download</a>`:''}</div></div>`).join('') || '<div class="text-gray-600 text-center mt-24">No files selected or received yet. Add files or mount a folder to host real browser files.</div>'}</div>
+                    </main>
+                    <aside class="border-l border-white/10 bg-black/30 p-4 overflow-y-auto no-scrollbar space-y-4"><div class="text-gray-500 uppercase">Security + Capabilities</div>${os.aetherCapabilityRows()}<div class="text-gray-500 uppercase pt-2">Transfers</div>${fabric.transfers.slice(0,8).map(t=>`<div class="rounded-xl bg-white/[0.04] border border-white/10 p-3"><div class="flex justify-between gap-2"><b class="text-white truncate">${t.name}</b><span>${t.progress||0}%</span></div><div class="h-1.5 bg-black/50 rounded mt-2"><div class="h-full bg-cyan-300 rounded" style="width:${t.progress||0}%"></div></div><div class="text-gray-500 mt-1">${t.direction} · ${t.status} · ${os.formatBytes(t.size)}</div>${t.objectUrl?`<a href="${t.objectUrl}" download="${t.name}" class="text-cyan-300 mt-2 inline-block">Save received file</a>`:''}</div>`).join('') || '<div class="text-gray-600">No transfers yet.</div>'}</aside>
+                </div>`;
+                lucide.createIcons({root});
+            },
+            renderAetherLink: () => {
+                const root=document.getElementById('aether-link-root'); if(!root || !os.aetherFabric) return;
+                const fabric=os.aetherFabric, link=os.aetherLink, tab=link.activeTab;
+                const tabs=['chat','presence','whiteboard','files','security'];
+                root.innerHTML = `<div class="h-full grid grid-cols-[260px_1fr_300px] overflow-hidden">
+                    <aside class="border-r border-white/10 bg-black/35 p-4 space-y-4"><div><div class="text-fuchsia-300 text-[10px] tracking-[0.25em] uppercase">Aether Link</div><div class="text-white text-xl font-display font-bold">Live Workstation Fabric</div></div><button onclick="os.aetherFabric.generateCode()" class="w-full py-2 rounded-xl bg-white text-black font-bold hover-target cursor-none">Generate One-Time Code</button><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div class="text-gray-500 uppercase text-[9px]">Current Code</div><div class="text-2xl text-white font-bold tracking-widest mt-1">${fabric.pairCode || '----'}</div><div class="text-gray-500 mt-1">${fabric.pairCode?'Expires in 5 minutes':'Generate to pair'}</div><div class="flex mt-3 gap-2"><input id="aether-pair-input" class="min-w-0 flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white" placeholder="Enter code"><button onclick="os.aetherFabric.pairByCode(document.getElementById('aether-pair-input').value)" class="px-2 rounded bg-fuchsia-400/20 text-fuchsia-100">Pair</button></div></div><div class="space-y-2"><div class="text-gray-500 uppercase">Connected</div>${fabric.sessions.map(s=>`<div class="rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3"><b class="text-white">${s.name}</b><div class="text-emerald-300">${s.status} · ${s.mode}</div><button onclick="os.aetherFabric.revoke('${s.deviceId}')" class="text-red-300 mt-2">Revoke</button></div>`).join('') || '<div class="text-gray-600">No live sessions. Open another Aether OS instance on this origin and pair with a code.</div>'}</div></aside>
+                    <main class="p-4 overflow-hidden flex flex-col"><div class="flex gap-2 mb-3">${tabs.map(t=>`<button onclick="os.aetherLink.setTab('${t}')" class="px-3 py-1.5 rounded-xl border ${tab===t?'border-fuchsia-300 bg-fuchsia-300/20 text-white':'border-white/10 bg-white/[0.04] text-gray-400'} hover-target cursor-none">${t.toUpperCase()}</button>`).join('')}</div><div class="flex-1 overflow-hidden">${os.renderAetherLinkPanel(tab)}</div></main>
+                    <aside class="border-l border-white/10 bg-black/30 p-4 overflow-y-auto no-scrollbar"><div class="text-gray-500 uppercase mb-2">Live Activity Feed</div>${fabric.activities.slice(0,16).map(a=>`<div class="rounded-xl border border-white/10 bg-white/[0.035] p-3 mb-2"><div class="text-white font-bold">${a.title}</div><div class="text-gray-500">${a.detail}</div><div class="text-gray-600 text-[9px] mt-1">${new Date(a.at).toLocaleTimeString()} · ${a.kind}</div></div>`).join('') || '<div class="text-gray-600">Activity will appear here.</div>'}</aside>
+                </div>`;
+                lucide.createIcons({root}); os.drawAetherWhiteboard();
+            },
+            renderAetherLinkPanel: (tab) => {
+                const fabric=os.aetherFabric;
+                if(tab==='chat') return `<div class="h-full flex flex-col rounded-2xl border border-white/10 bg-black/25 overflow-hidden"><div class="flex-1 overflow-y-auto p-4 space-y-2">${fabric.messages.map(m=>`<div class="max-w-[70%] ${m.from==='me'?'ml-auto bg-fuchsia-400/20':'bg-white/10'} rounded-2xl px-3 py-2"><div class="text-white">${m.body}</div><div class="text-gray-500 text-[9px] mt-1">${m.status} · ${new Date(m.at).toLocaleTimeString()}</div></div>`).join('') || '<div class="text-gray-600 text-center mt-20">No messages yet. Pair another live Aether OS instance, then send a message.</div>'}</div><div class="p-3 border-t border-white/10 flex gap-2"><input id="aether-link-chat-input" onkeydown="if(event.key==='Enter')os.aetherLink.sendMessage(this.value)" class="flex-1 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-white" placeholder="Message connected workstation..."><button onclick="os.aetherLink.sendMessage()" class="px-4 rounded-xl bg-fuchsia-400 text-black font-bold">Send</button></div></div>`;
+                if(tab==='presence') { const local=os.aetherPresenceSnapshot(); const remotes=fabric.devices.filter(d=>d.presence).map(d=>`<div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">${d.name}</div><div class="text-white text-lg mt-2">Using ${d.presence.focused || 'Desktop'}</div><div class="text-fuchsia-300">Theme: ${d.presence.theme || '--'} · Perf: ${d.presence.performance || '--'}</div></div>`).join(''); return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Local Presence</div><div class="text-white text-lg mt-2">Using ${local.focused}</div><div class="text-cyan-300 mt-1">Theme: ${local.theme} · Perf: ${local.performance}</div><button onclick="os.aetherLink.pushActivity('Presence snapshot broadcast')" class="mt-3 px-3 py-2 rounded bg-white/10">Broadcast Now</button></div>${remotes || '<div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-gray-600">No remote presence received yet.</div>'}<div class="col-span-2 rounded-2xl border border-white/10 bg-black/25 p-4"><textarea id="aether-clipboard-box" class="w-full h-28 bg-black/50 border border-white/10 rounded-xl p-3 text-white" placeholder="Remote clipboard payload...">${fabric.clipboard||''}</textarea><button onclick="os.aetherLink.syncClipboard()" class="mt-2 px-3 py-2 rounded-xl bg-cyan-400 text-black font-bold">Sync Clipboard</button></div></div>`; }
+                if(tab==='whiteboard') return `<div class="h-full rounded-2xl border border-white/10 bg-black/30 overflow-hidden flex flex-col"><div class="p-3 border-b border-white/10 flex gap-2 items-center"><input type="color" value="${os.aetherLink.whiteboardColor}" onchange="os.aetherLink.whiteboardColor=this.value" class="bg-transparent"><button onclick="os.drawAetherWhiteboard(true)" class="px-3 py-1 rounded bg-white/10">Export PNG</button><span class="text-gray-500">Draw locally; future peer strokes can share through the same fabric transport.</span></div><canvas id="aether-whiteboard-canvas" class="flex-1 w-full h-full"></canvas></div>`;
+                if(tab==='files') return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><button onclick="os.aetherBridge.pickFiles()" class="rounded-2xl border border-dashed border-cyan-300/40 bg-cyan-300/5 p-10 text-cyan-100 text-center">Pick real files for transfer</button><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Transfer History</div>${fabric.transfers.map(t=>`<div class="mt-2 text-white">${t.name} — ${t.status} (${t.progress||0}%)</div>`).join('') || '<div class="text-gray-600 mt-4">No transfers.</div>'}</div></div>`;
+                return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Trusted Devices</div>${fabric.devices.map(d=>`<div class="flex justify-between border-b border-white/5 py-2"><span class="text-white">${d.name}</span><button onclick="os.aetherFabric.revoke('${d.id}')" class="text-red-300">Revoke</button></div>`).join('') || '<div class="text-gray-600 mt-4">No trusted devices yet.</div>'}</div><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase mb-2">Permission Matrix</div>${['File browse','File send/receive','Clipboard','Presence','Camera request','Remote interaction request'].map(x=>`<label class="flex justify-between py-2 border-b border-white/5"><span>${x}</span><input type="checkbox" class="accent-cyan-300"></label>`).join('')}</div></div>`;
+            },
+            drawAetherWhiteboard: (exportOnly=false) => {
+                const c=document.getElementById('aether-whiteboard-canvas'); if(!c) return;
+                const ctx=c.getContext('2d'); const r=c.getBoundingClientRect(); c.width=Math.max(1,r.width); c.height=Math.max(1,r.height);
+                const paintGrid=()=>{ ctx.fillStyle='#05070b'; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle='rgba(34,211,238,.22)'; for(let x=0;x<c.width;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke();} for(let y=0;y<c.height;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke();} };
+                paintGrid();
+                if (!c.dataset.bound) {
+                    c.dataset.bound='1'; let drawing=false;
+                    const pos=e=>{const b=c.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top};};
+                    c.addEventListener('pointerdown', e=>{drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);});
+                    c.addEventListener('pointermove', e=>{if(!drawing)return; const p=pos(e); ctx.strokeStyle=os.aetherLink.whiteboardColor; ctx.lineWidth=4; ctx.lineCap='round'; ctx.lineTo(p.x,p.y); ctx.stroke();});
+                    window.addEventListener('pointerup',()=>{drawing=false;});
+                }
+                if(exportOnly){ c.toBlob(b=>{const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='aether-whiteboard.png'; a.click(); URL.revokeObjectURL(a.href);}); }
+            },
             finderOpen: false,
             finderModules: [
                 { id: 'settings',       label: 'System Config',         icon: 'sliders',      category: 'System' },
@@ -11911,6 +12240,8 @@ RenderScheduler.start();
                 { id: 'storage',        label: 'Storage Inspector',     icon: 'database',     category: 'System' },
                 { id: 'errorconsole',   label: 'Error Console',         icon: 'bug',          category: 'System' },
                 { id: 'packetviz',      label: 'Packet Visualizer',     icon: 'network',      category: 'Network' },
+                { id: 'aetherbridge',  label: 'Aether Bridge',        icon: 'hard-drive',   category: 'Network' },
+                { id: 'aetherlink',    label: 'Aether Link',          icon: 'workflow',     category: 'Network' },
             ],
             finderExtraActions: [],
 
@@ -24205,6 +24536,7 @@ RenderScheduler.start();
 
         window.onload = () => {
             SystemState.init();
+        setTimeout(() => { if (window.os?.initAetherFabric) window.os.initAetherFabric(); }, 0);
             os.syncSystemPerformanceEngine();
             os.initSpeechSynthesis && os.initSpeechSynthesis();
             os.initCompanion && os.initCompanion();
