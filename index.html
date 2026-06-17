@@ -2915,6 +2915,11 @@ input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.28) !impor
                     <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400" id="top-wifi-icon"></i>
                     <span class="text-[10px] hidden md:inline" style="color:rgba(52,211,153,0.8)" id="top-wifi-ssid">WiFi</span>
                 </div>
+                <!-- Aether Fabric -->
+                <div class="topbar-item gap-1.5 hover-target cursor-none" id="top-aether-fabric" title="Aether Fabric" onclick="os.openWindow('aetherlink')">
+                    <i data-lucide="workflow" class="w-3.5 h-3.5" style="color:rgba(34,211,238,0.75)"></i>
+                    <span class="text-[10px] hidden md:inline" style="color:rgba(34,211,238,0.78)" id="top-aether-status">FABRIC 0</span>
+                </div>
                 <!-- Bluetooth -->
                 <div class="topbar-item gap-1.5" id="top-bluetooth" title="Bluetooth">
                     <i data-lucide="bluetooth" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.3)" id="top-bt-icon"></i>
@@ -3384,7 +3389,9 @@ RenderScheduler.start();
                 storage: { id: 'storage', title: 'Storage Inspector', icon: 'database', width: 820, height: 560, x: 130, y: 70, isOpen: false, isMinimized: false, zIndex: 28, content: 'storage' },
                 errorconsole: { id: 'errorconsole', title: 'Error Console', icon: 'bug', width: 820, height: 520, x: 150, y: 80, isOpen: false, isMinimized: false, zIndex: 29, content: 'errorconsole' },
                 apistatus: { id: 'apistatus', title: 'API Status Board', icon: 'activity', width: 920, height: 600, x: 110, y: 55, isOpen: false, isMinimized: false, zIndex: 30, content: 'apistatus' },
-                packetviz: { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' }
+                packetviz: { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' },
+                aetherbridge: { id: 'aetherbridge', title: 'Aether Bridge', icon: 'hard-drive', width: 1160, height: 720, x: 70, y: 35, isOpen: false, isMinimized: false, zIndex: 36, content: 'aetherbridge' },
+                aetherlink: { id: 'aetherlink', title: 'Aether Link', icon: 'workflow', width: 1180, height: 740, x: 85, y: 40, isOpen: false, isMinimized: false, zIndex: 37, content: 'aetherlink' }
             },
             settings: {
                 api_lastfm: '',
@@ -3474,6 +3481,8 @@ RenderScheduler.start();
                 if(!this.windows.errorconsole) this.windows.errorconsole = { id: 'errorconsole', title: 'Error Console', icon: 'bug', width: 820, height: 520, x: 150, y: 80, isOpen: false, isMinimized: false, zIndex: 29, content: 'errorconsole' };
                 if(!this.windows.apistatus) this.windows.apistatus = { id: 'apistatus', title: 'API Status Board', icon: 'activity', width: 920, height: 600, x: 110, y: 55, isOpen: false, isMinimized: false, zIndex: 30, content: 'apistatus' };
                 if(!this.windows.packetviz) this.windows.packetviz = { id: 'packetviz', title: 'Packet Visualizer', icon: 'network', width: 980, height: 640, x: 90, y: 45, isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' };
+                if(!this.windows.aetherbridge) this.windows.aetherbridge = { id: 'aetherbridge', title: 'Aether Bridge', icon: 'hard-drive', width: 1160, height: 720, x: 70, y: 35, isOpen: false, isMinimized: false, zIndex: 36, content: 'aetherbridge' };
+                if(!this.windows.aetherlink) this.windows.aetherlink = { id: 'aetherlink', title: 'Aether Link', icon: 'workflow', width: 1180, height: 740, x: 85, y: 40, isOpen: false, isMinimized: false, zIndex: 37, content: 'aetherlink' };
                 if(!this.windows.about) this.windows.about = { id: 'about', title: 'System Encyclopedia', icon: 'info', width: 940, height: 640, x: 120, y: 60, isOpen: false, isMinimized: false, zIndex: 35, content: 'about' };
             },
             load() {
@@ -3923,6 +3932,13 @@ RenderScheduler.start();
         };
 
         const WindowContents = {
+
+            aetherbridge: `
+                <div id="aether-bridge-root" class="h-full overflow-hidden bg-[#05070b] text-[11px] text-gray-300 font-mono"></div>
+            `,
+            aetherlink: `
+                <div id="aether-link-root" class="h-full overflow-hidden bg-[#04050a] text-[11px] text-gray-300 font-mono"></div>
+            `,
             about: `
                 <div class="flex h-full text-gray-300 font-mono text-xs select-none">
                     <!-- Navigation Sidebar -->
@@ -6600,6 +6616,10 @@ RenderScheduler.start();
                     os.apiStatusRun();
                 } else if (winData.id === 'packetviz') {
                     os.packetVizRender();
+                } else if (winData.id === 'aetherbridge') {
+                    os.renderAetherBridge();
+                } else if (winData.id === 'aetherlink') {
+                    os.renderAetherLink();
                 }
             }
 
@@ -11877,6 +11897,188 @@ RenderScheduler.start();
                 if (menu && !menu.contains(e.target)) os.hideDockContextMenu();
             },
 
+
+            aetherFabric: {
+                deviceId: null,
+                deviceName: null,
+                pairCode: null,
+                pairExpires: 0,
+                sessions: [],
+                devices: [],
+                transfers: [],
+                messages: [],
+                activities: [],
+                clipboard: '',
+                init() {
+                    this.deviceId = localStorage.getItem('AetherOS_Fabric_DeviceId') || ('aos-' + Math.random().toString(36).slice(2, 8) + '-' + Date.now().toString(36));
+                    localStorage.setItem('AetherOS_Fabric_DeviceId', this.deviceId);
+                    this.deviceName = localStorage.getItem('AetherOS_Fabric_DeviceName') || ((navigator.platform || 'Aether Workstation') + ' Node');
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('AetherOS_Fabric_State') || '{}');
+                        this.devices = saved.devices || [];
+                        this.sessions = saved.sessions || [];
+                        this.transfers = saved.transfers || [];
+                        this.messages = saved.messages || [];
+                        this.activities = saved.activities || [];
+                        this.clipboard = saved.clipboard || '';
+                    } catch(e) {}
+                    if (!this.devices.length) this.seedDevices();
+                },
+                save() {
+                    localStorage.setItem('AetherOS_Fabric_State', JSON.stringify({ devices:this.devices, sessions:this.sessions, transfers:this.transfers, messages:this.messages, activities:this.activities, clipboard:this.clipboard }));
+                    os.updateAetherTopbar();
+                },
+                seedDevices() {
+                    const now = Date.now();
+                    this.devices = [
+                        { id:'phone-yash', name:'Yash Phone', type:'phone', ip:'192.168.29.94:8443', status:'paired', storage:'118.4 GB', battery:'82%', permissions:['browse','stream','clipboard','camera'], lastSeen:now-22000 },
+                        { id:'studio-laptop', name:'Studio Laptop', type:'laptop', ip:'192.168.29.31:8443', status:'nearby', storage:'512 GB', battery:'AC', permissions:['discover'], lastSeen:now-87000 }
+                    ];
+                    this.sessions = [{ id:'sess-phone-yash', deviceId:'phone-yash', name:'Yash Phone', status:'connected', since:now-600000, mode:'bridge+link' }];
+                    this.save();
+                },
+                log(title, detail, kind='fabric') {
+                    this.activities.unshift({ id:'evt-'+Date.now()+'-'+Math.random().toString(36).slice(2,6), title, detail, kind, at:Date.now() });
+                    this.activities = this.activities.slice(0, 80);
+                    this.save();
+                },
+                generateCode() {
+                    const bytes = new Uint8Array(4);
+                    if (window.crypto?.getRandomValues) crypto.getRandomValues(bytes); else bytes.set([Math.random()*255,Math.random()*255,Math.random()*255,Math.random()*255]);
+                    this.pairCode = Array.from(bytes).map(b => (b % 36).toString(36).toUpperCase()).join('').replace(/(.{4})/g,'$1-').replace(/-$/,'');
+                    this.pairExpires = Date.now() + 5*60*1000;
+                    this.log('Pair code generated', this.pairCode, 'security');
+                    Notifications.push('AETHER LINK', 'One-time connection code generated');
+                    os.renderAetherLink(); os.renderAetherBridge();
+                },
+                pairByCode(code) {
+                    const normalized = String(code || '').trim().toUpperCase();
+                    if (!normalized) return;
+                    const id = 'peer-' + normalized.replace(/[^A-Z0-9]/g,'').toLowerCase();
+                    const name = 'Aether Workstation ' + normalized.slice(-4);
+                    if (!this.devices.some(d => d.id === id)) this.devices.unshift({ id, name, type:'workstation', ip:'webrtc://'+normalized, status:'paired', storage:'Remote FS', battery:'--', permissions:['chat','files','presence'], lastSeen:Date.now() });
+                    if (!this.sessions.some(s => s.deviceId === id)) this.sessions.unshift({ id:'sess-'+id, deviceId:id, name, status:'connected', since:Date.now(), mode:'link' });
+                    this.log('Pair request accepted', name + ' joined the live session', 'security');
+                    Notifications.push('AETHER LINK', name + ' connected');
+                    this.save(); os.renderAetherLink(); os.renderAetherBridge();
+                },
+                revoke(id) {
+                    this.sessions = this.sessions.filter(s => s.id !== id && s.deviceId !== id);
+                    this.devices = this.devices.map(d => d.id === id ? {...d, status:'revoked'} : d);
+                    this.log('Session revoked', id, 'security');
+                    Notifications.push('AETHER FABRIC', 'Session revoked');
+                    this.save(); os.renderAetherLink(); os.renderAetherBridge();
+                }
+            },
+            aetherBridge: {
+                hostEnabled: false,
+                path: '/',
+                query: '',
+                sort: 'name',
+                files: [
+                    { name:'Photos', type:'folder', size:'--', modified:'Today', mime:'folder' },
+                    { name:'Documents', type:'folder', size:'--', modified:'Yesterday', mime:'folder' },
+                    { name:'Downloads', type:'folder', size:'--', modified:'Mon', mime:'folder' },
+                    { name:'VID_2026_0617_Studio.mp4', type:'file', size:'842 MB', modified:'10:32', mime:'video/mp4', stream:true },
+                    { name:'Interstellar Theme.flac', type:'file', size:'38 MB', modified:'09:12', mime:'audio/flac', stream:true },
+                    { name:'Research Notes.pdf', type:'file', size:'12 MB', modified:'Yesterday', mime:'application/pdf', stream:true },
+                    { name:'clipboard-drop.txt', type:'file', size:'4 KB', modified:'Now', mime:'text/plain', stream:true }
+                ],
+                startHost() {
+                    this.hostEnabled = !this.hostEnabled;
+                    os.aetherFabric.log(this.hostEnabled ? 'Bridge host online' : 'Bridge host stopped', this.hostEnabled ? 'Local browser peer endpoint ready; native :8443 companion required for raw LAN URL.' : 'Peer endpoint disabled', 'bridge');
+                    Notifications.push('AETHER BRIDGE', this.hostEnabled ? 'Peer host online' : 'Peer host stopped');
+                    os.renderAetherBridge();
+                },
+                setQuery(v){ this.query=v; os.renderAetherBridge(); },
+                setSort(v){ this.sort=v; os.renderAetherBridge(); },
+                openPath(p){ this.path=p; os.aetherFabric.log('Remote folder opened', p, 'bridge'); os.renderAetherBridge(); },
+                simulateTransfer(name, direction='download') {
+                    const t={ id:'tx-'+Date.now(), name, direction, progress:0, status:'running', size:'chunked', at:Date.now() };
+                    os.aetherFabric.transfers.unshift(t); os.aetherFabric.save(); os.renderAetherBridge();
+                    const timer=setInterval(()=>{ t.progress=Math.min(100,t.progress+Math.ceil(Math.random()*18)); if(t.progress>=100){t.status='complete'; clearInterval(timer); Notifications.push('AETHER TRANSFER', name+' complete'); os.aetherFabric.log('Transfer complete', name, 'transfer');} os.aetherFabric.save(); os.renderAetherBridge(); os.renderAetherLink(); },450);
+                }
+            },
+            aetherLink: {
+                activeTab: 'chat',
+                draft: '',
+                whiteboardColor: '#22d3ee',
+                sendMessage(text) {
+                    const body = String(text || document.getElementById('aether-link-chat-input')?.value || '').trim();
+                    if (!body) return;
+                    const msg={ id:'msg-'+Date.now(), from:'me', to:'session', body, at:Date.now(), status:'delivered' };
+                    os.aetherFabric.messages.push(msg);
+                    os.aetherFabric.log('Message delivered', body.slice(0,72), 'chat');
+                    os.aetherFabric.save(); os.renderAetherLink();
+                },
+                setTab(tab){ this.activeTab=tab; os.renderAetherLink(); },
+                pushActivity(label){ os.aetherFabric.log(label, 'Shared workstation event', 'presence'); os.renderAetherLink(); },
+                syncClipboard() {
+                    const v=document.getElementById('aether-clipboard-box')?.value || '';
+                    os.aetherFabric.clipboard=v;
+                    os.aetherFabric.log('Clipboard synchronized', v.slice(0,80) || 'Empty clipboard payload', 'clipboard');
+                    Notifications.push('AETHER CLIPBOARD', 'Clipboard payload staged for paired devices');
+                    os.aetherFabric.save(); os.renderAetherLink();
+                }
+            },
+            aetherCapabilityRows: () => {
+                const caps = [
+                    ['WebRTC data channels', !!window.RTCPeerConnection], ['File System Access', !!window.showDirectoryPicker], ['Clipboard API', !!navigator.clipboard], ['Camera / media devices', !!navigator.mediaDevices?.getUserMedia], ['Service workers', !!navigator.serviceWorker], ['IndexedDB cache', !!window.indexedDB]
+                ];
+                return caps.map(c => `<div class="flex justify-between rounded-lg bg-white/[0.035] border border-white/10 px-3 py-2"><span>${c[0]}</span><b class="${c[1]?'text-emerald-300':'text-yellow-300'}">${c[1]?'READY':'LIMITED'}</b></div>`).join('');
+            },
+            updateAetherTopbar: () => {
+                const el=document.getElementById('top-aether-status');
+                if(el) el.textContent = `FABRIC ${(os.aetherFabric?.sessions||[]).length}`;
+            },
+            initAetherFabric: () => { os.aetherFabric.init(); os.updateAetherTopbar(); },
+            renderAetherBridge: () => {
+                const root=document.getElementById('aether-bridge-root'); if(!root || !os.aetherFabric) return;
+                const bridge=os.aetherBridge, fabric=os.aetherFabric;
+                const q=(bridge.query||'').toLowerCase();
+                const files=bridge.files.filter(f=>!q || f.name.toLowerCase().includes(q)).sort((a,b)=> bridge.sort==='size' ? String(a.size).localeCompare(String(b.size)) : a.name.localeCompare(b.name));
+                root.innerHTML = `<div class="h-full grid grid-cols-[280px_1fr_320px] overflow-hidden">
+                    <aside class="border-r border-white/10 bg-black/30 p-4 space-y-4 overflow-y-auto no-scrollbar">
+                        <div><div class="text-cyan-300 text-[10px] tracking-[0.25em] uppercase">Aether Bridge</div><div class="text-white text-xl font-display font-bold mt-1">Distributed Device Storage</div></div>
+                        <button onclick="os.aetherBridge.startHost()" class="w-full py-2 rounded-xl ${bridge.hostEnabled?'bg-emerald-400 text-black':'bg-white text-black'} font-bold hover-target cursor-none">${bridge.hostEnabled?'Stop Peer Host':'Start Peer Host'}</button>
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div class="text-gray-500 uppercase text-[9px]">Access URL</div><div class="text-white font-bold mt-1">${bridge.hostEnabled?'webrtc://'+fabric.deviceId:'Host offline'}</div><div class="mt-3 h-28 rounded-xl bg-[repeating-linear-gradient(45deg,#fff_0_5px,#000_5px_10px)] opacity-80 flex items-center justify-center"><span class="bg-black/80 text-white px-2 py-1 rounded">QR PAIR</span></div><p class="text-[9px] text-yellow-300 mt-2 leading-relaxed">Raw 192.168.x.x:8443 hosting needs the Aether Bridge native companion; this browser build exposes secure peer sessions.</p></div>
+                        <div><div class="text-gray-500 uppercase tracking-wider mb-2">Mounted Devices</div>${fabric.devices.map(d=>`<button onclick="os.aetherBridge.openPath('/Devices/${d.name.replace(/'/g,'')}')" class="w-full text-left rounded-xl border border-white/10 bg-white/[0.035] p-3 mb-2 hover:bg-white/[0.07] hover-target cursor-none"><div class="flex justify-between"><b class="text-white">${d.name}</b><span class="${d.status==='paired'?'text-emerald-300':'text-yellow-300'}">${d.status}</span></div><div class="text-gray-500 mt-1">${d.ip} · ${d.storage}</div></button>`).join('')}</div>
+                    </aside>
+                    <main class="p-4 overflow-hidden flex flex-col gap-3">
+                        <div class="flex gap-2"><input oninput="os.aetherBridge.setQuery(this.value)" value="${bridge.query}" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white" placeholder="Search remote files..."><select onchange="os.aetherBridge.setSort(this.value)" class="bg-black/50 border border-white/10 rounded-xl px-3 text-white"><option value="name">Sort: Name</option><option value="size">Sort: Size</option></select><button onclick="os.aetherBridge.simulateTransfer('Upload bundle','upload')" class="px-3 rounded-xl bg-cyan-400/20 border border-cyan-300/30 text-cyan-100 hover-target cursor-none">Upload</button></div>
+                        <div class="text-gray-400">Path: <span class="text-white">${bridge.path}</span></div>
+                        <div class="flex-1 overflow-y-auto no-scrollbar rounded-2xl border border-white/10 bg-black/25">${files.map(f=>`<div class="grid grid-cols-[32px_1fr_90px_100px_220px] items-center gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/[0.04]"><i data-lucide="${f.type==='folder'?'folder':'file'}" class="w-4 h-4 text-cyan-300"></i><div><b class="text-white">${f.name}</b><div class="text-gray-500">${f.mime}${f.stream?' · progressive stream':''}</div></div><span>${f.size}</span><span>${f.modified}</span><div class="flex gap-2"><button onclick="os.aetherBridge.simulateTransfer('${f.name.replace(/'/g,'\\\'')}','download')" class="px-2 py-1 rounded bg-white/10 hover-target cursor-none">Download</button><button onclick="Notifications.push('AETHER PREVIEW','Streaming ${f.name.replace(/'/g,'')}')" class="px-2 py-1 rounded bg-cyan-400/10 text-cyan-200 hover-target cursor-none">Preview</button><button onclick="Notifications.push('AETHER BRIDGE','Remote action queued')" class="px-2 py-1 rounded bg-red-400/10 text-red-200 hover-target cursor-none">Ops</button></div></div>`).join('')}</div>
+                    </main>
+                    <aside class="border-l border-white/10 bg-black/30 p-4 overflow-y-auto no-scrollbar space-y-4"><div class="text-gray-500 uppercase">Security + Capabilities</div>${os.aetherCapabilityRows()}<div class="text-gray-500 uppercase pt-2">Transfers</div>${fabric.transfers.slice(0,8).map(t=>`<div class="rounded-xl bg-white/[0.04] border border-white/10 p-3"><div class="flex justify-between"><b class="text-white truncate">${t.name}</b><span>${t.progress||0}%</span></div><div class="h-1.5 bg-black/50 rounded mt-2"><div class="h-full bg-cyan-300 rounded" style="width:${t.progress||0}%"></div></div><div class="text-gray-500 mt-1">${t.direction} · ${t.status}</div></div>`).join('') || '<div class="text-gray-600">No transfers yet.</div>'}</aside>
+                </div>`;
+                lucide.createIcons({root});
+            },
+            renderAetherLink: () => {
+                const root=document.getElementById('aether-link-root'); if(!root || !os.aetherFabric) return;
+                const fabric=os.aetherFabric, link=os.aetherLink, tab=link.activeTab;
+                const tabs=['chat','presence','whiteboard','files','security'];
+                root.innerHTML = `<div class="h-full grid grid-cols-[260px_1fr_300px] overflow-hidden">
+                    <aside class="border-r border-white/10 bg-black/35 p-4 space-y-4"><div><div class="text-fuchsia-300 text-[10px] tracking-[0.25em] uppercase">Aether Link</div><div class="text-white text-xl font-display font-bold">Live Workstation Fabric</div></div><button onclick="os.aetherFabric.generateCode()" class="w-full py-2 rounded-xl bg-white text-black font-bold hover-target cursor-none">Generate One-Time Code</button><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div class="text-gray-500 uppercase text-[9px]">Current Code</div><div class="text-2xl text-white font-bold tracking-widest mt-1">${fabric.pairCode || '----'}</div><div class="text-gray-500 mt-1">${fabric.pairCode?'Expires in 5 minutes':'Generate to pair'}</div><div class="flex mt-3 gap-2"><input id="aether-pair-input" class="min-w-0 flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-white" placeholder="Enter code"><button onclick="os.aetherFabric.pairByCode(document.getElementById('aether-pair-input').value)" class="px-2 rounded bg-fuchsia-400/20 text-fuchsia-100">Pair</button></div></div><div class="space-y-2"><div class="text-gray-500 uppercase">Connected</div>${fabric.sessions.map(s=>`<div class="rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3"><b class="text-white">${s.name}</b><div class="text-emerald-300">${s.status} · ${s.mode}</div><button onclick="os.aetherFabric.revoke('${s.deviceId}')" class="text-red-300 mt-2">Revoke</button></div>`).join('') || '<div class="text-gray-600">No live sessions.</div>'}</div></aside>
+                    <main class="p-4 overflow-hidden flex flex-col"><div class="flex gap-2 mb-3">${tabs.map(t=>`<button onclick="os.aetherLink.setTab('${t}')" class="px-3 py-1.5 rounded-xl border ${tab===t?'border-fuchsia-300 bg-fuchsia-300/20 text-white':'border-white/10 bg-white/[0.04] text-gray-400'} hover-target cursor-none">${t.toUpperCase()}</button>`).join('')}</div><div class="flex-1 overflow-hidden">${os.renderAetherLinkPanel(tab)}</div></main>
+                    <aside class="border-l border-white/10 bg-black/30 p-4 overflow-y-auto no-scrollbar"><div class="text-gray-500 uppercase mb-2">Live Activity Feed</div>${fabric.activities.slice(0,16).map(a=>`<div class="rounded-xl border border-white/10 bg-white/[0.035] p-3 mb-2"><div class="text-white font-bold">${a.title}</div><div class="text-gray-500">${a.detail}</div><div class="text-gray-600 text-[9px] mt-1">${new Date(a.at).toLocaleTimeString()} · ${a.kind}</div></div>`).join('') || '<div class="text-gray-600">Activity will appear here.</div>'}</aside>
+                </div>`;
+                lucide.createIcons({root}); os.drawAetherWhiteboard();
+            },
+            renderAetherLinkPanel: (tab) => {
+                const fabric=os.aetherFabric;
+                if(tab==='chat') return `<div class="h-full flex flex-col rounded-2xl border border-white/10 bg-black/25 overflow-hidden"><div class="flex-1 overflow-y-auto p-4 space-y-2">${fabric.messages.map(m=>`<div class="max-w-[70%] ${m.from==='me'?'ml-auto bg-fuchsia-400/20':'bg-white/10'} rounded-2xl px-3 py-2"><div class="text-white">${m.body}</div><div class="text-gray-500 text-[9px] mt-1">${m.status} · ${new Date(m.at).toLocaleTimeString()}</div></div>`).join('') || '<div class="text-gray-600 text-center mt-20">No messages yet. Drag files or send a note.</div>'}</div><div class="p-3 border-t border-white/10 flex gap-2"><input id="aether-link-chat-input" onkeydown="if(event.key==='Enter')os.aetherLink.sendMessage(this.value)" class="flex-1 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-white" placeholder="Message connected workstation..."><button onclick="os.aetherLink.sendMessage()" class="px-4 rounded-xl bg-fuchsia-400 text-black font-bold">Send</button></div></div>`;
+                if(tab==='presence') return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Local Presence</div><div class="text-white text-lg mt-2">Using ${Object.values(SystemState.windows).sort((a,b)=>b.zIndex-a.zIndex).find(w=>w.isOpen&&!w.isMinimized)?.title || 'Desktop'}</div><div class="text-cyan-300 mt-1">Theme: ${SystemState.settings.active_theme || 'Midnight'} · Perf: ${SystemState.settings.performance_mode}</div><button onclick="os.aetherLink.pushActivity('Presence snapshot broadcast')" class="mt-3 px-3 py-2 rounded bg-white/10">Broadcast Now</button></div><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Remote Presence</div><div class="text-white text-lg mt-2">Yash is listening to Interstellar Theme</div><div class="text-fuchsia-300">Yash is using Browser App · Workspace 2</div></div><div class="col-span-2 rounded-2xl border border-white/10 bg-black/25 p-4"><textarea id="aether-clipboard-box" class="w-full h-28 bg-black/50 border border-white/10 rounded-xl p-3 text-white" placeholder="Remote clipboard payload...">${fabric.clipboard||''}</textarea><button onclick="os.aetherLink.syncClipboard()" class="mt-2 px-3 py-2 rounded-xl bg-cyan-400 text-black font-bold">Sync Clipboard</button></div></div>`;
+                if(tab==='whiteboard') return `<div class="h-full rounded-2xl border border-white/10 bg-black/30 overflow-hidden flex flex-col"><div class="p-3 border-b border-white/10 flex gap-2 items-center"><input type="color" value="${os.aetherLink.whiteboardColor}" onchange="os.aetherLink.whiteboardColor=this.value" class="bg-transparent"><button onclick="os.drawAetherWhiteboard(true)" class="px-3 py-1 rounded bg-white/10">Export PNG</button><span class="text-gray-500">Infinite shared canvas mock surface · synchronized strokes architecture ready</span></div><canvas id="aether-whiteboard-canvas" class="flex-1 w-full h-full"></canvas></div>`;
+                if(tab==='files') return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><button onclick="os.aetherBridge.simulateTransfer('Dragged design package.zip','upload')" class="rounded-2xl border border-dashed border-cyan-300/40 bg-cyan-300/5 p-10 text-cyan-100 text-center">Drop files here for AirDrop-style transfer</button><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Transfer History</div>${fabric.transfers.map(t=>`<div class="mt-2 text-white">${t.name} — ${t.status} (${t.progress||0}%)</div>`).join('') || '<div class="text-gray-600 mt-4">No transfers.</div>'}</div></div>`;
+                return `<div class="grid grid-cols-2 gap-3 h-full overflow-y-auto no-scrollbar"><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase">Trusted Devices</div>${fabric.devices.map(d=>`<div class="flex justify-between border-b border-white/5 py-2"><span class="text-white">${d.name}</span><button onclick="os.aetherFabric.revoke('${d.id}')" class="text-red-300">Revoke</button></div>`).join('')}</div><div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div class="text-gray-500 uppercase mb-2">Permission Matrix</div>${['File browse','File write/delete','Clipboard','Notifications','Camera','Remote interaction'].map(x=>`<label class="flex justify-between py-2 border-b border-white/5"><span>${x}</span><input type="checkbox" checked class="accent-cyan-300"></label>`).join('')}</div></div>`;
+            },
+            drawAetherWhiteboard: (exportOnly=false) => {
+                const c=document.getElementById('aether-whiteboard-canvas'); if(!c) return;
+                const ctx=c.getContext('2d'); const r=c.getBoundingClientRect(); c.width=Math.max(1,r.width); c.height=Math.max(1,r.height);
+                ctx.fillStyle='#05070b'; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle='rgba(34,211,238,.22)'; for(let x=0;x<c.width;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke();} for(let y=0;y<c.height;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke();}
+                ctx.strokeStyle=os.aetherLink.whiteboardColor; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(80,120); ctx.bezierCurveTo(180,40,260,220,420,110); ctx.stroke(); ctx.fillStyle='rgba(255,255,255,.85)'; ctx.font='14px Inter'; ctx.fillText('Shared board: live stroke/event protocol',80,160);
+                if(exportOnly){ c.toBlob(b=>{const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='aether-whiteboard.png'; a.click(); URL.revokeObjectURL(a.href);}); }
+            },
             finderOpen: false,
             finderModules: [
                 { id: 'settings',       label: 'System Config',         icon: 'sliders',      category: 'System' },
@@ -11911,6 +12113,8 @@ RenderScheduler.start();
                 { id: 'storage',        label: 'Storage Inspector',     icon: 'database',     category: 'System' },
                 { id: 'errorconsole',   label: 'Error Console',         icon: 'bug',          category: 'System' },
                 { id: 'packetviz',      label: 'Packet Visualizer',     icon: 'network',      category: 'Network' },
+                { id: 'aetherbridge',  label: 'Aether Bridge',        icon: 'hard-drive',   category: 'Network' },
+                { id: 'aetherlink',    label: 'Aether Link',          icon: 'workflow',     category: 'Network' },
             ],
             finderExtraActions: [],
 
@@ -24205,6 +24409,7 @@ RenderScheduler.start();
 
         window.onload = () => {
             SystemState.init();
+        setTimeout(() => { if (window.os?.initAetherFabric) window.os.initAetherFabric(); }, 0);
             os.syncSystemPerformanceEngine();
             os.initSpeechSynthesis && os.initSpeechSynthesis();
             os.initCompanion && os.initCompanion();
