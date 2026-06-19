@@ -27,7 +27,7 @@ The UI leans hard into a dark, premium desktop style:
 
 ## Main window inventory
 
-These are the actual window modules present in the source:
+These are the actual window modules present in the project:
 
 - **System Config** (`settings`)
 - **Data Stream** (`terminal`)
@@ -65,7 +65,7 @@ These are the actual window modules present in the source:
 
 ## Feature wiki / docs sections inside the app
 
-The source includes internal documentation and a hidden “wiki” area. The main sections are:
+The project includes internal documentation and a hidden “wiki” area. The main sections are:
 
 - Desktop Environment
 - Media Workstation
@@ -83,7 +83,7 @@ The source includes internal documentation and a hidden “wiki” area. The mai
 
 ## Settings and personalization
 
-These are the top-level persisted settings keys visible in the source:
+These are the top-level persisted settings keys visible in the project:
 
 - `api_lastfm` — Last.fm API key
 - `api_lastfm_user` — Last.fm username
@@ -153,9 +153,9 @@ These are the top-level persisted settings keys visible in the source:
 
 The cursor system supports several modes, including Aether Ring, Minimal, Neon Trail, Comet Dust, Cursorly Bubbles, Click Ripple, Sparkle, Binary Rain, Crosshair, Gold Pulse, Void Lens, and Nyan Rainbow Cat.
 
-The Oneko system is much bigger than a simple toggle. The source ships a large embedded variant catalog that includes classic pets, web colorways, bom-prefixed character variants, and a long tail of specialty skins. The catalog is bundled locally so the project stays single-file.
+The Oneko system is much bigger than a simple toggle. The project ships a large embedded variant catalog that includes classic pets, web colorways, bom-prefixed character variants, and a long tail of specialty skins. The catalog is bundled locally so the project stays single-file.
 
-The companion voice layer uses browser speech synthesis, and the UI notes that it tries to prioritize natural voices when the browser provides them. The source mentions voices such as Microsoft Aria / Jenny / Guy, Google English, Samantha, Karen, Serena, and Daniel where available.
+The companion voice layer uses browser speech synthesis, and the UI notes that it tries to prioritize natural voices when the browser provides them. The project mentions voices such as Microsoft Aria / Jenny / Guy, Google English, Samantha, Karen, Serena, and Daniel where available.
 
 ## Internal architecture
 
@@ -288,7 +288,7 @@ This repo references a lot of services. The important ones are below, grouped by
 
 ## Fallback chains
 
-The source is full of fallback paths because browser apps break in odd ways.
+The project is full of fallback paths because browser apps break in odd ways.
 
 ### Presence
 1. Lanyard WebSocket
@@ -335,7 +335,7 @@ The source is full of fallback paths because browser apps break in odd ways.
 
 ## Hidden details, commands, and small power-user tricks
 
-These are directly present in the source:
+These are directly present in the project:
 
 ```text
 wiki <topic>    → spawns a WikiBoard card for the topic
@@ -355,15 +355,6 @@ Other tiny things worth knowing:
 - The notes module is meant to feel private and local.
 - The error console captures runtime errors and rejected promises.
 - The system diagnostics panel includes a hard format action that wipes saved keys, APIs, and layouts.
-
-## Roadmap / evolution notes from the source
-
-The built-in timeline panel describes the project like this:
-
-- **v1.0** — core workspace, multi-window compositor, dock launchers, terminal shell
-- **v2.0** — tracking modules, weather, audio visualizers, lyric decks, living archives
-- **v3.0** — Jarvis-style companion, gaze cursor effects, reaction overlays, offline speech heartbeats, Nyan trail systems
-- **v4.0** — planned automation, client-side custom shader compilation, decentralized signal nodes
 
 ## System statistics shown in the app
 
@@ -386,7 +377,7 @@ Those counters are part of the UI, so they are part of the project story too.
 
 ## Theme catalog
 
-The source contains these themes:
+The project contains these themes:
 
 - `midnight`
 - `aurora`
@@ -434,7 +425,7 @@ Typical persisted pieces include:
 
 ## Credits
 
-The source’s credit panel calls out:
+The project’s credit panel calls out:
 
 - GSAP
 - Three.js
