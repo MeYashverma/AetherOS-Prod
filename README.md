@@ -1,362 +1,452 @@
 # AetherOS-Prod
 
 > A browser-native operating environment built as a side project with Claude.  
-> Single-file, client-side, and intentionally overbuilt.
+> Single-file, client-side, overbuilt on purpose.
 
 Live demo: <https://meyashverma.github.io/AetherOS-Prod/>  
 Repository: <https://github.com/MeYashverma/AetherOS-Prod>
 
 AetherOS is not trying to behave like a normal website. It is closer to a desktop shell that happens to live inside the browser: multi-window, themeable, noisy in the right places, and packed with realtime modules, local memory, and a lot of visual polish.
 
-## What it is
+## What this is
 
-AetherOS runs as a full UI shell inside a single HTML file. The app includes its own window manager, dock, command palette, settings system, local persistence layer, media tools, tracking dashboards, research tools, and a bunch of experimental modules that sit somewhere between useful and completely unnecessary.
+The app runs as a full UI shell inside a single HTML file. It includes its own window manager, dock, command palette, settings system, local persistence layer, media tools, tracking dashboards, research tools, and a pile of experimental modules.
 
-It is built to feel like a workstation rather than a page.
+This is not a landing page. It is not a dashboard either. It is a browser-native workstation.
 
-## Visual feel
+## Visual language
 
-The UI leans hard into a dark, premium, glass-heavy desktop language:
+The UI leans hard into a dark, premium desktop style:
 
-- macOS-style dock with magnification and active indicators
-- draggable desktop windows with custom minimize / restore animations
-- liquid-glass inspired surfaces and layered shadows
-- cinematic wallpapers, particle overlays, scanlines, and cursor effects
-- custom cursor modes, Oneko-style companions, sakura petals, and motion-heavy accents
-- separate eco and cinematic performance modes
+- macOS-style dock with magnification and running indicators
+- draggable windows with custom minimize / restore motion
+- liquid-glass surfaces, layered shadows, and subtle chromatic effects
+- custom cursors, Oneko-style companions, sakura petals, and animated trail modes
+- cinematic wallpaper, scanlines, particle overlays, and other ambient noise
+- eco and cinematic performance modes for weaker or stronger machines
 
-There is a lot of motion in the interface, but it is still meant to stay readable and usable.
+## Main window inventory
 
-## Core shell
+These are the actual window modules present in the source:
 
-### Desktop and window system
-- Multi-window desktop environment
-- Custom window manager
-- Open / close / minimize / restore flow
-- Window focus and z-index handling
-- Genie-style minimize / restore animation
-- Resizable windows
-- Dock tooltips and live previews
-- Command palette
-- Task manager / force-kill support
-- Local state persistence in `localStorage`
-- Session restore after reload
+- **System Config** (`settings`)
+- **Data Stream** (`terminal`)
+- **Media Console** (`media`)
+- **Global Radio Network** (`radiobrowser`)
+- **System Diagnostics** (`sysmon`)
+- **NoSleep Screen Lock** (`nosleep`)
+- **Uplink Presence** (`presence`)
+- **Global Signal Feed** (`feed`)
+- **Web Proxy Interface** (`browser`)
+- **Wplace Live Canvas** (`wplace`)
+- **Floor796 Explorer** (`floor796`)
+- **Tactical Airspace Radar** (`globe`)
+- **Market Matrix** (`market`)
+- **Optics Node** (`surveillance`)
+- **Memory Scratchpad** (`notes`)
+- **Memetic Intelligence** (`memes`)
+- **Retro TV (YTCH.TV)** (`ytchtv`)
+- **Universal Entity Scanner** (`entityscanner`)
+- **Living Archive** (`filemanager`)
+- **WikiBoard Research** (`wikiboard`)
+- **Weather Station** (`weather`)
+- **NASA Deep Space** (`nasa`)
+- **Task Manager** (`taskmanager`)
+- **Game Vault** (`games`)
+- **ISS Tracker** (`iss`)
+- **YouTube Ambient** (`youtubeambient`)
+- **Anime Discovery** (`anime`)
+- **Manga Launcher** (`manga`)
+- **Storage Inspector** (`storage`)
+- **Error Console** (`errorconsole`)
+- **API Status Board** (`apistatus`)
+- **Packet Visualizer** (`packetviz`)
+- **System Encyclopedia** (`about`)
 
-### Control and system utilities
-- Terminal / data stream window
-- System monitor with live telemetry
-- API status board
-- Packet visualizer
-- Error console for runtime errors and rejected promises
-- Memory scratchpad / encrypted notes
-- NoSleep / keep-awake panel
-- System encyclopedia / about panel with searchable documentation
-- Searchable wiki-style module docs
-- Local planner that maps user requests to built-in actions
+## Feature wiki / docs sections inside the app
 
-## Main modules
+The source includes internal documentation and a hidden “wiki” area. The main sections are:
 
-This is the full module family that shows up in the source and the internal module map.
+- Desktop Environment
+- Media Workstation
+- Knowledge & Research Canvas
+- Space & Tracking Radar
+- Companion System
 
-### Media and audio
-- Media Console
-- Global Radio Browser
-- YouTube Ambient
-- Lyrics engine
-- Audio visualizer
-- Vinyl / tonearm radio view
-- Station favorites
-- Music history / scrobble-style history
-- GIF mood layers for media and radio
+### What those sections say
 
-### Communication and presence
-- Uplink Presence
-- Discord / Lanyard telemetry
-- Aether Bridge
-- Aether Link
-- Webhook transmitter
-- Local clipboard and file sync flow between paired devices
-
-### Research and knowledge
-- WikiBoard
-- Living Archive / file manager
-- Searchable knowledge planner
-- Wikipedia-backed content cards
-- Notes / scratchpad
-- Feed / signal feed tools
-
-### Space, weather, and maps
-- Weather Station
-- ISS tracker
-- Tactical airspace / globe radar module
-- Flight and airspace tracking style tools
-- NASA / APOD style integrations
-
-### Creative and entertainment modules
-- Games
-- Meme / memetic intelligence
-- Anime discovery
-- Manga launcher
-- Retro TV / YTCH.TV
-- Wplace / live canvas style modules
-- Floor796 exploration
-- Entity scanner / pokédex-style lookup tools
-
-### System and diagnostics
-- System Config
-- System Diagnostics
-- Storage inspector
-- Performance / FPS / latency / memory reporting
-- Screen awake controls
-- Theme and appearance controls
+**Desktop Environment** — Window manager, drag boundaries, focus z-indexing, minimization scaling.; GSAP Draggable inertia and snap behavior.; Dock interactions with process indicators, context menus, and Genie minimize targets.
+**Media Workstation** — Vapor Plaza tuner / radio streams with cover art and retro metadata.; Procedural canvas visualizer.; Scrollable lyric scroller with spotlight, minimal, and karaoke styles.
+**Knowledge & Research Canvas** — WikiBoard infinite grid with pan / zoom / double-click card creation.; Connected node graphs for article relationships.; Live web and PDF previews inside cards.
+**Space & Tracking Radar** — 3D ISS orbital tracking in a WebGL Earth globe.; Live telemetry for coordinates, altitude, velocity, visibility.; Open-Meteo weather-based visibility checks.
+**Companion System** — JARVIS-style passive background intelligence.; Cursor eye-tracking in the header avatar.; Emotion GIF reactions or built-in OLED face.; Offline voice watchdog to avoid Chrome speech cutoffs.
 
 ## Settings and personalization
 
-The settings panel is split into four main tabs: API Keys, Appearance, Themes, and System.
+These are the top-level persisted settings keys visible in the source:
 
-### API keys and account fields
-These are stored locally in the browser and are not meant to be shipped to third parties by the app itself.
+- `api_lastfm` — Last.fm API key
+- `api_lastfm_user` — Last.fm username
+- `api_discord` — Discord / Lanyard user ID
+- `api_github` — GitHub username
+- `api_rss` — Custom RSS feed URL
+- `api_custom_subreddits` — Custom subreddit list
+- `theme_accent` — Accent color
+- `cursor_theme` — Cursor theme
+- `cursor_nyan_standard` — Nyan standard cursor overlay
+- `lyrics_theme` — Lyrics theme
+- `cursor_oneko` — Oneko cat toggle
+- `cursor_oneko_variant` — Oneko variant
+- `cursor_oneko_kuro` — Kuro variant toggle
+- `cursor_oneko_ball` — Ball toggle
+- `sakura_petals` — Sakura petals toggle
+- `sakura_intensity` — Sakura intensity
+- `motion_intensity` — Motion intensity
+- `performance_mode` — Performance mode
+- `media_tuner_station` — Default media station
+- `media_tuner_volume` — Media tuner volume
+- `media_player_mode` — Media player mode
+- `media_gif_provider` — Media GIF provider
+- `radio_gif_enabled` — Radio GIF overlay toggle
+- `radio_gif_provider` — Radio GIF provider
+- `radio_tonearm_x` — Radio tonearm X
+- `radio_tonearm_y` — Radio tonearm Y
+- `radio_tonearm_rot` — Radio tonearm rotation
+- `radio_tonearm_edit` — Radio tonearm edit toggle
+- `wallpaper_mode` — Wallpaper mode
+- `anime_quotes` — Anime quotes toggle
+- `quote_bg_mode` — Quote background mode
+- `quote_position` — Quote position
+- `quote_bg_gif_provider` — Quote GIF provider
+- `speech_synthesis` — Speech synthesis toggle
+- `speech_voice` — Speech voice
+- `speech_rate` — Speech rate
+- `speech_pitch` — Speech pitch
+- `speech_volume` — Speech volume
+- `speech_companion` — Companion chatter toggle
+- `speech_afk_timeout` — Companion AFK timeout
+- `companion_emotion_mode` — Companion emotion mode
+- `screen_awake_enabled` — Screen wake toggle
+- `discord_webhook_url` — Discord webhook URL
+- `discord_webhook_username` — Discord webhook username
+- `discord_webhook_avatar` — Discord webhook avatar
 
-- `api_lastfm`
-- `api_lastfm_user`
-- `api_discord`
-- `api_github`
-- `api_rss`
-- `api_custom_subreddits`
+### Appearance controls exposed in the UI
 
-### Appearance and motion
-- `theme_accent`
-- `active_theme`
-- `cursor_theme`
-- `cursor_nyan_standard`
-- `cursor_oneko`
-- `cursor_oneko_variant`
-- `cursor_oneko_kuro`
-- `cursor_oneko_ball`
-- `sakura_petals`
-- `sakura_intensity`
-- `motion_intensity`
-- `performance_mode`
-- `wallpaper_mode`
-- `anime_quotes`
-- `quote_bg_mode`
-- `quote_position`
-- `quote_bg_gif_provider`
+- Wallpaper: `default` / `gif`
+- Anime quotes: `on` / `off`
+- Quote background: `none` / `static` / `gif`
+- Quote position: `top-left` / `top-right` / `bottom-left` / `bottom-right` / `center`
+- Speech alerts: `on` / `off`
+- Companion chatter: `on` / `off`
+- Companion emotion mode: `gif` / `emo`
+- Performance mode: `eco` / `cinematic`
+- Motion intensity: `high` / `low`
+- Cursor themes: `aether, minimal, neon, comet, cursorly, ripple, sparkle, binary, crosshair, gold, void, nyan
+- Nyan standard overlay: `on` / `off`
+- Oneko cat: `on` / `off`
+- Oneko ball: `on` / `off`
+- Sakura overlay: `on` / `off`
+- Sakura intensity: `light` / `normal` / `storm`
 
-### Media and radio
-- `media_tuner_station`
-- `media_tuner_volume`
-- `media_player_mode`
-- `media_gif_provider`
-- `radio_gif_enabled`
-- `radio_gif_provider`
-- `radio_tonearm_x`
-- `radio_tonearm_y`
-- `radio_tonearm_rot`
-- `radio_tonearm_edit`
+### Cursor and companion details
 
-### Speech and companion
-- `speech_synthesis`
-- `speech_voice`
-- `speech_rate`
-- `speech_pitch`
-- `speech_volume`
-- `speech_companion`
-- `speech_afk_timeout`
-- `companion_emotion_mode`
+The cursor system supports several modes, including Aether Ring, Minimal, Neon Trail, Comet Dust, Cursorly Bubbles, Click Ripple, Sparkle, Binary Rain, Crosshair, Gold Pulse, Void Lens, and Nyan Rainbow Cat.
 
-### Screen and transport
-- `screen_awake_enabled`
-- `discord_webhook_url`
-- `discord_webhook_username`
-- `discord_webhook_avatar`
+The Oneko system is much bigger than a simple toggle. The source ships a large embedded variant catalog that includes classic pets, web colorways, bom-prefixed character variants, and a long tail of specialty skins. The catalog is bundled locally so the project stays single-file.
 
-## APIs and services used
+The companion voice layer uses browser speech synthesis, and the UI notes that it tries to prioritize natural voices when the browser provides them. The source mentions voices such as Microsoft Aria / Jenny / Guy, Google English, Samantha, Karen, Serena, and Daniel where available.
 
-This is the actual integration stack that appears in the source.
+## Internal architecture
+
+The app has an internal architecture view. The main nodes are:
+
+- **WINDOW_MGR** — Window compositor and focus routing.
+- **JARVIS_SOUL** — Companion / background director.
+- **DOCK_SYS** — Launcher, previews, and running indicators.
+- **CLI_STREAM** — Terminal and command stream.
+- **THEMES_FX** — Theme / wallpaper / motion engine.
+- **WIKIBOARD** — Spatial research canvas.
+- **SPATIAL_SAT** — ISS / airspace / tracking layer.
+- **DIAG_MON** — Diagnostics and telemetry.
+
+The architecture panel connects those nodes to the rest of the shell, including the window manager, command stream, theming engine, research canvas, tracking modules, and diagnostics monitor.
+
+## Core systems
+
+### Desktop / shell
+- Absolute-positioned multi-window workspace
+- Dragging, resizing, snapping, focusing, minimizing
+- Dock previews and running-state dots
+- Command palette with module launch shortcuts
+- Error console and runtime capture
+- Task manager
+- Storage inspector
+- System encyclopedia / about area
+- Local state restore and session persistence
+
+### Research / knowledge
+- WikiBoard infinite canvas
+- Card spawning from search / terminal commands
+- Connected article graphs
+- Live preview cards for web / PDF content
+- Searchable built-in documentation
+- Notes / scratchpad with encrypted storage
+
+### Media
+- Last.fm-driven media console
+- Global radio browser
+- Lyrics lookup with fallback chain
+- Animated cover art / GIF overlay system
+- Vinyl / tonearm style radio view
+- YouTube ambient playback module
+- Retro TV / YTCH module
+
+### Tracking / telemetry
+- Weather station
+- ISS tracker
+- Tactical airspace radar
+- Packet visualizer
+- System diagnostics
+- API status board
+- Presence and signal-feed style cards
+
+### Communication and pairing
+- Aether Bridge
+- Aether Link
+- WebRTC / PeerJS style pairing
+- BroadcastChannel local sync
+- QR / code-based join flow
+- File and note exchange style actions
+
+## Public API / service inventory
+
+This repo references a lot of services. The important ones are below, grouped by what they actually do in the app.
 
 ### Music and lyrics
-- **Last.fm** — music identity, now playing, and listening data
-- **LRCLib** — primary synced lyrics lookup
-- **lyrics.ovh** — fallback lyrics provider when synced lyrics are not available
+- **Last.fm** — now playing, listening stats, and music identity.
+- **LRCLib** — first-pass synced lyrics.
+- **lyrics.ovh** — lyrics fallback when synced text is missing.
+- **Deezer** — music lookup and metadata fallback paths.
+- **iTunes / Apple lookup** — album / track lookup and artwork support.
+- **Web scrobble helpers** — used around the media console and history views.
 
 ### Presence and social
-- **Lanyard** — Discord presence over WebSocket
-- **Lanyard REST fallback** — used when the socket path fails
-- **Discord webhooks** — outbound status / alert / media packets
-- **GitHub API / GitHub data hooks** — used for GitHub-related integrations in settings and side features
+- **Lanyard** — Discord presence.
+- **Discord CDN / avatars** — profile image and activity imagery.
+- **GitHub API** — GitHub activity / profile data.
+- **RSS services** — custom feeds and feed aggregation.
+- **Reddit feed helpers** — subreddit and post aggregation.
+- **Hacker News** — feed-style content cards.
 
-### Weather and location
-- **Open-Meteo** — forecast engine
-- **ipwho.is** — first geolocation fallback
-- **ipapi.co** — second geolocation fallback
-- **Geocoding service** — manual city lookup for weather override
+### Weather and geography
+- **Open-Meteo** — weather and forecast data.
+- **Open-Meteo geocoding** — city lookup and weather override.
+- **ipwho.is** — first geolocation fallback.
+- **ipapi.co** — second geolocation fallback.
 
-### Radio and media discovery
-- **Radio Browser** — global radio station discovery and metadata
-- **ytch.tv / ytch.xyz** — retro TV / stream layer and mirror fallback
-- **Piped instances** — used for YouTube-style stream lookup and fallback playback flow
-- **Nekos / Giphy / Tenor** — GIF mood layers for radio and media states
+### Space / tracking
+- **Where The ISS At** — ISS coordinates and telemetry.
+- **OpenSky Network** — flight / airspace tracking.
+- **NASA** — APOD, EPIC, Mars, and DONKI-style data paths.
+- **CesiumJS** — 3D globe rendering.
+- **Three.js** — scene / geometry / rendering support.
 
-### Space and maps
-- **Where The ISS At** — ISS telemetry
-- **OpenSky Network** — flight / airspace style tracking
-- **CesiumJS** — 3D globe rendering
-- **Three.js** — scene rendering and vector math support
+### Radio / media / GIFs
+- **Radio Browser** — station discovery.
+- **OtakuGIFs** — reaction GIFs.
+- **Nekos / NekosAPI** — GIF and image reactions.
+- **Giphy** — alternative GIF source.
+- **Tenor** — alternative GIF source.
+- **Klipy** — character-specific GIF support.
+- **YTCH.TV / mirrors** — retro TV / stream handling.
+- **Piped instances** — YouTube-style playback fallback.
+- **Invidious mirrors** — alternate video access.
+- **Rammerhead** — web proxy / browser relay style fallback.
 
-### Research and knowledge
-- **Wikipedia** — wiki search and research cards
-- **WikiBoard local persistence** — local card storage and restoration
-- **Floor796** — live-shell rewrite / mirror support
-- **OpenAI / local planner glue** — the app includes a local action planner that maps UI requests to built-in functions
+### Research and content
+- **Wikipedia / Wikimedia** — research cards and wiki lookups.
+- **MangaDex** — manga source.
+- **Jikan** — anime / manga metadata and seasonal browsing.
+- **AniList** — anime discovery fallback.
+- **Kitsu** — anime discovery fallback.
+- **Dragon Ball API** — character / entity browsing.
+- **Animechan** — anime quote content.
+- **Quotable / Advice Slip / joke APIs** — assorted feed / fun content.
 
-### Miscellaneous services
-- **OpenStreetMap-style / geospatial helpers**
-- **Nekos Best**
-- **Animechan**
-- **OpenWeather-style fallback chains via the weather station**
-- **File System Access API**
-- **PeerJS / WebRTC**
+### Proxy / helper / transport
+- **AllOrigins**
+- **Codetabs proxy**
+- **CORS proxy helpers**
+- **R.jina.ai**
+- **cors.isomorphic-git**
 - **BroadcastChannel**
-- **File / clipboard sync between peers**
+- **PeerJS / WebRTC**
+- **File System Access API**
+- **Screen Wake Lock API**
+- **Web Crypto**
 
 ## Fallback chains
 
-This project is full of fallback paths because browser apps break in weird ways. The source already handles a lot of that.
+The source is full of fallback paths because browser apps break in odd ways.
 
 ### Presence
 1. Lanyard WebSocket
 2. Lanyard REST fallback
-3. Offline slate when the user is unreachable or the ID is not available
+3. Offline state when nothing can be fetched
 
 ### Weather
-1. `ipwho.is` geolocation
-2. `ipapi.co` geolocation fallback
-3. Open-Meteo forecast request
-4. Cached weather data when it is fresh enough
-5. Manual city override when geocoding is used
+1. `ipwho.is`
+2. `ipapi.co`
+3. Open-Meteo forecast
+4. Cached data when fresh enough
+5. Manual city override
 
 ### Lyrics
 1. LRCLib synced lyrics
 2. LRCLib plain lyrics
 3. lyrics.ovh fallback
-4. No lyrics available state when nothing is returned
+4. No-lyrics state when nothing returns
 
-### Keep awake
+### Video / ambient playback
+1. Piped search
+2. Alternate Piped instance
+3. Best-match selection
+4. Browser-safe embed fallback / proxy path
+5. Invidious-style mirrors when needed
+
+### Keep-awake
 1. Native Screen Wake Lock API
-2. In-page media keep-awake loop
-3. External `nosleep.page` helper
-
-### Retro TV / video
-1. Direct `ytch.tv`
-2. Mirror `ytch.xyz`
-3. Custom embed path
-4. External fallback behavior when the browser blocks embedded playback
+2. In-page keep-awake loop
+3. External helper fallback
 
 ### Aether Bridge
-1. File System Access API for real shared folders
-2. Demo / fallback mode when folder access is denied
-3. PeerJS / WebRTC for remote pairing
-4. BroadcastChannel for same-browser pairing and presence sync
-5. QR-based join flow
-
-### YouTube / ambient playback
-1. Piped instance search
-2. Alternative Piped instance if the first one fails
-3. Best-match video scoring
-4. Timestamp / chapter jumping for hooks, choruses, and drops
+1. File System Access API
+2. Demo / denied-access mode
+3. PeerJS / WebRTC pair channel
+4. BroadcastChannel sync
+5. QR / code join flow
 
 ### Notes
-1. Password-derived AES-GCM key
+1. Password-derived AES-GCM style lock flow
 2. Encrypted local storage buffer
-3. Decrypt-on-unlock flow
-4. Local-only storage, no obvious server round trip
+3. Unlock before viewing
+4. Local-only persistence
 
-## Hidden or easy-to-miss bits
+## Hidden details, commands, and small power-user tricks
 
-These are not the headline features, but they are real and worth documenting.
+These are directly present in the source:
 
-- Local memory and session counters
-- Sarcastic companion lines and AFK / return messages
-- Terminal logs for most actions
-- Saved radio favorites
-- WikiBoard saved state and connections
-- Shared file archive navigation
-- Searchable about / feature encyclopedia
-- Theme docs and module docs
-- Runtime error capture
-- Diagnostics export to clipboard
-- Window previews from the dock
-- Live top-bar indicators for performance and presence
-- Audio stream cleanup when force-killing media windows
-- Motion and particle effects that are swapped based on performance mode
+```text
+wiki <topic>    → spawns a WikiBoard card for the topic
+matrix          → maxes out stream entropy
+Delete          → deletes selected WikiBoard card
++ / -           → zoom in / zoom out on WikiBoard canvas
+oneko           → opens the Oneko picker
+```
 
-## Performance modes
+Other tiny things worth knowing:
 
-### Eco
-- Lower-cost visual behavior
-- Reduced glass blur
-- Less visual overhead
-- Better for weak machines or battery use
+- The Oneko pet can be dragged around.
+- The ball can be toggled separately.
+- Dog variants fetch.
+- The cat can idle-autoplay after a short timeout.
+- The companion can speak on boot, after AFK, and during state changes.
+- The notes module is meant to feel private and local.
+- The error console captures runtime errors and rejected promises.
+- The system diagnostics panel includes a hard format action that wipes saved keys, APIs, and layouts.
 
-### Cinematic
-- Heavier glass / blur / motion effects
-- More polished presentation
-- More expensive to render, but looks better
+## Roadmap / evolution notes from the source
 
-## Theme names
+The built-in timeline panel describes the project like this:
 
-The source includes a theme family that goes beyond the default dark look:
+- **v1.0** — core workspace, multi-window compositor, dock launchers, terminal shell
+- **v2.0** — tracking modules, weather, audio visualizers, lyric decks, living archives
+- **v3.0** — Jarvis-style companion, gaze cursor effects, reaction overlays, offline speech heartbeats, Nyan trail systems
+- **v4.0** — planned automation, client-side custom shader compilation, decentralized signal nodes
 
-- Midnight
-- Ember
-- Ice
-- Rose
-- Solar
-- Hacker
-- Neon Void
-- Sakura
-- Carbon
-- Ocean Depth
+## System statistics shown in the app
 
-## Visual tour
+The system stats panel displays:
 
-AetherOS is the kind of project that makes more sense when you see it than when you read about it. The best screenshots to include in the repo are:
+- total modules
+- API integrations
+- lines of code
+- render rate
+- runtime storage type
+- open windows
+- saved state size
+- performance mode
+- CPU cores
+- device RAM
+- pixel ratio
+- online / offline status
 
-- check `docs/screenshots/` 
+Those counters are part of the UI, so they are part of the project story too.
+
+## Theme catalog
+
+The source contains these themes:
+
+- `midnight`
+- `aurora`
+- `synthwave`
+- `ember`
+- `ice`
+- `rose`
+- `solar`
+- `hacker`
+- `neonvoid`
+- `sakura`
+- `carbon`
+- `ocean`
+
+Each theme changes accent color, wallpaper, glass intensity, and panel styling.
 
 ## Local persistence
 
-AetherOS stores its state in the browser so the desktop does not feel like it resets every time.
+The project stores state in the browser, so the desktop does not feel like a fresh boot every time.
 
-Saved state includes:
-- open windows
-- current settings
-- media / radio state
-- history
+Typical persisted pieces include:
+
+- open window layout
+- settings
+- media/radio preferences
+- notes
 - WikiBoard data
-- encrypted notes
-- some module-specific memory and logs
+- some companion and system state
+- webhook and API configuration fields
 
-## Browser requirements
-
-AetherOS depends on modern browser features. The source uses or benefits from:
+## Browser features used:
 
 - `localStorage`
 - `WebSocket`
 - `BroadcastChannel`
 - `WebRTC` / PeerJS
 - `File System Access API`
-- `Screen Wake Lock API`
 - `Web Crypto`
+- `Screen Wake Lock API`
 - `Canvas`
 - `requestAnimationFrame`
-- `navigator.connection` where available
+- `navigator.hardwareConcurrency`
+- `navigator.deviceMemory`
+- `navigator.onLine`
 
-## A note on the build
+## Credits
 
-This was built as a side project with Claude helping out along the way. It is still very much a hands-on project, not a polished product spec.
+The source’s credit panel calls out:
 
-## Status
+- GSAP
+- Three.js
+- Leaflet
+- Lucide
+- Open-Meteo
+- WhereTheISS
+- Lanyard API
+- OtakuGIFs / Nekos
 
-This repo is a live experiment, not a minimal demo. A lot of the value is in the combination of modules rather than any single feature.
+The code also directly imports or references Tailwind, CesiumJS, WebLLM, PeerJS, and several API helper and proxy services.
+
+## Build note
+
+This started as a side project with Claude helping along the way. The file is intentionally ambitious and a little extra. That is the point.
