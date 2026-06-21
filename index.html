@@ -5622,15 +5622,17 @@ RenderScheduler.start();
                             </div>
                             <button onclick="os.abToggleHost()" id="ab-host-btn" class="w-full py-1.5 text-[9px] font-bold uppercase tracking-wider rounded border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-500/10 text-white/60 hover:text-emerald-300 transition-all hover-target cursor-none">Start Hosting</button>
                             <div id="ab-host-info" class="hidden mt-2 space-y-1">
-                                <div class="text-[8px] text-white/35">Local Address</div>
+                                <div class="text-[8px] text-white/35">Connect Code <span class="text-white/15">(send this to the other device)</span></div>
                                 <div id="ab-host-url" class="text-emerald-400 font-bold text-[9px] break-all">—</div>
-                                <button onclick="os.abShowQR()" class="mt-1 w-full py-1 text-[8px] border border-white/8 rounded hover:bg-white/5 text-white/40 hover:text-white hover-target cursor-none transition-all flex items-center justify-center gap-1.5"><i data-lucide="qr-code" class="w-2.5 h-2.5"></i>Show QR</button>
+                                <button onclick="window.AetherBridgeAPI.copyHostId()" class="mt-1 w-full py-1 text-[8px] border border-white/8 rounded hover:bg-white/5 text-white/40 hover:text-white hover-target cursor-none transition-all flex items-center justify-center gap-1.5"><i data-lucide="copy" class="w-2.5 h-2.5"></i>Copy Code</button>
+                                <button onclick="os.abShowQR()" class="w-full py-1 text-[8px] border border-white/8 rounded hover:bg-white/5 text-white/40 hover:text-white hover-target cursor-none transition-all flex items-center justify-center gap-1.5"><i data-lucide="qr-code" class="w-2.5 h-2.5"></i>Show QR</button>
                                 <button onclick="document.getElementById('ab-sync-modal').classList.remove('hidden')" class="w-full py-1 text-[8px] border border-white/8 rounded hover:bg-white/5 text-white/40 hover:text-white hover-target cursor-none transition-all flex items-center justify-center gap-1.5"><i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>Sync Settings</button>
                             </div>
                         </div>
                         <div class="px-3 py-2 border-b border-white/[0.04]">
                             <div class="text-[8px] text-white/25 uppercase tracking-[0.18em] mb-2">Connect to Device</div>
-                            <input id="ab-connect-ip" type="text" placeholder="192.168.x.x:8443" class="w-full bg-black/60 border border-white/10 rounded px-2 py-1 text-[9px] text-white focus:outline-none focus:border-emerald-500/40 cursor-text mb-1.5" autocomplete="off">
+                            <div class="text-[7px] text-white/25 mb-1.5 leading-relaxed">Enter the connect code shown on the other device's "Start Hosting" panel</div>
+                            <input id="ab-connect-ip" type="text" placeholder="e.g. ab-93a012c6170b" class="w-full bg-black/60 border border-white/10 rounded px-2 py-1 text-[9px] text-white focus:outline-none focus:border-emerald-500/40 cursor-text mb-1.5" autocomplete="off">
                             <input id="ab-connect-name" type="text" placeholder="Device name (optional)" class="w-full bg-black/60 border border-white/10 rounded px-2 py-1 text-[9px] text-white focus:outline-none focus:border-emerald-500/40 cursor-text mb-1.5" autocomplete="off">
                             <button onclick="os.abConnectToDevice()" class="w-full py-1.5 text-[9px] font-bold uppercase tracking-wider rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all hover-target cursor-none">Connect</button>
                         </div>
@@ -5686,12 +5688,17 @@ RenderScheduler.start();
                         </div>
                     </div>
                     <div id="ab-qr-modal" class="hidden" style="position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(12px)">
-                        <div class="rounded-2xl border border-white/10 p-6 text-center" style="background:rgba(8,8,14,0.97);box-shadow:0 24px 80px rgba(0,0,0,0.8)">
+                        <div class="rounded-2xl border border-white/10 p-6 text-center" style="background:rgba(8,8,14,0.97);box-shadow:0 24px 80px rgba(0,0,0,0.8);max-width:280px">
                             <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-4">Scan to Connect</div>
-                            <canvas id="ab-qr-canvas" width="180" height="180" class="rounded-lg"></canvas>
-                            <div id="ab-qr-url" class="mt-3 text-[9px] text-emerald-400/70 font-mono"></div>
-                            <div class="mt-1 text-[8px] text-white/30">Point your phone camera at this code</div>
-                            <button onclick="document.getElementById('ab-qr-modal').style.display='none'" class="mt-4 px-4 py-1.5 rounded border border-white/10 text-[9px] text-white/40 hover:text-white hover:border-white/25 transition hover-target cursor-none">Close</button>
+                            <div style="background:#fff;padding:10px;border-radius:10px;display:inline-block">
+                                <canvas id="ab-qr-canvas" width="220" height="220" style="display:block"></canvas>
+                            </div>
+                            <div id="ab-qr-url" class="mt-3 text-[9px] text-emerald-400/70 font-mono break-all px-2"></div>
+                            <div class="mt-1 text-[8px] text-white/30">Scan with another Aether Bridge device, or copy the ID below</div>
+                            <div class="grid grid-cols-2 gap-2 mt-4">
+                                <button onclick="window.AetherBridgeAPI.copyQRPayload()" class="px-3 py-1.5 rounded border border-emerald-500/25 text-emerald-400/70 text-[9px] hover:border-emerald-500/50 hover:text-emerald-300 transition hover-target cursor-none flex items-center justify-center gap-1.5"><i data-lucide="copy" class="w-2.5 h-2.5"></i>Copy</button>
+                                <button onclick="document.getElementById('ab-qr-modal').style.display='none'" class="px-3 py-1.5 rounded border border-white/10 text-[9px] text-white/40 hover:text-white hover:border-white/25 transition hover-target cursor-none">Close</button>
+                            </div>
                         </div>
                     </div>
                     <div id="ab-preview-modal" class="hidden" style="position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px)">
@@ -5783,6 +5790,8 @@ RenderScheduler.start();
                                 <button onclick="os.alSwitchTab('transfer')" class="al-mod-btn w-full flex items-center gap-2 py-1.5 px-2 rounded text-[9px] text-white/40 hover:text-white hover:bg-white/5 transition hover-target cursor-none" data-tab="transfer"><i data-lucide="send" class="w-3 h-3"></i>File Transfer</button>
                                 <button onclick="os.alSwitchTab('activity')" class="al-mod-btn w-full flex items-center gap-2 py-1.5 px-2 rounded text-[9px] text-white/40 hover:text-white hover:bg-white/5 transition hover-target cursor-none" data-tab="activity"><i data-lucide="activity" class="w-3 h-3"></i>Activity Feed</button>
                                 <button onclick="os.alSwitchTab('miniapps')" class="al-mod-btn w-full flex items-center gap-2 py-1.5 px-2 rounded text-[9px] text-white/40 hover:text-white hover:bg-white/5 transition hover-target cursor-none" data-tab="miniapps"><i data-lucide="grid-2x2" class="w-3 h-3"></i>Mini Apps</button>
+                                <button onclick="os.alSwitchTab('screenshare')" class="al-mod-btn w-full flex items-center gap-2 py-1.5 px-2 rounded text-[9px] text-white/40 hover:text-white hover:bg-white/5 transition hover-target cursor-none" data-tab="screenshare"><i data-lucide="monitor-up" class="w-3 h-3"></i>Screen Share</button>
+                                <button onclick="os.alSwitchTab('voice')" class="al-mod-btn w-full flex items-center gap-2 py-1.5 px-2 rounded text-[9px] text-white/40 hover:text-white hover:bg-white/5 transition hover-target cursor-none" data-tab="voice"><i data-lucide="radio" class="w-3 h-3"></i>Voice / Walkie-Talkie</button>
                             </div>
                         </div>
                     </div>
@@ -5790,6 +5799,10 @@ RenderScheduler.start();
                         <div id="al-tab-header" class="flex items-center gap-3 px-4 py-2 border-b border-white/5 shrink-0" style="background:rgba(0,0,0,0.3)">
                             <i data-lucide="message-square" class="w-3.5 h-3.5 text-violet-400" id="al-header-icon"></i>
                             <span class="text-[10px] font-bold text-white/70 uppercase tracking-widest" id="al-header-title">Chat</span>
+                            <div id="al-voice-indicator" onclick="os.alSwitchTab('voice')" class="hidden items-center gap-1.5 px-2 py-0.5 rounded-full cursor-none hover-target" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3)">
+                                <i data-lucide="radio" class="w-2.5 h-2.5 text-violet-300"></i>
+                                <span id="al-voice-indicator-label" class="text-[8px] font-bold text-violet-300">VOICE LIVE</span>
+                            </div>
                             <div class="ml-auto flex items-center gap-1.5">
                                 <div id="al-conn-dot" class="w-1.5 h-1.5 rounded-full bg-white/20"></div>
                                 <span id="al-conn-text" class="text-[8px] text-white/25">Disconnected</span>
@@ -5886,6 +5899,105 @@ RenderScheduler.start();
                                 </button>
                             </div>
                             <div id="al-mini-app-container" class="flex-1 rounded-xl border border-white/8 overflow-hidden hidden" style="background:rgba(0,0,0,0.5)"></div>
+                        </div>
+
+                        <!-- ── SCREEN SHARE TAB ── -->
+                        <div id="al-tab-screenshare" class="al-tab hidden flex-1 flex flex-col overflow-hidden p-3">
+                            <div class="text-[8px] text-white/25 uppercase tracking-[0.18em] mb-3">Screen Sharing</div>
+
+                            <div id="al-ss-idle" class="flex-1 flex flex-col items-center justify-center gap-4 text-white/20">
+                                <i data-lucide="monitor-up" class="w-10 h-10 text-violet-500/30"></i>
+                                <div class="text-center">
+                                    <div class="text-xs text-white/30 mb-1">No active screen share</div>
+                                    <div class="text-[9px] text-white/15">Share your screen with a connected peer<br>over a real WebRTC video stream</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <select id="al-ss-peer-select" class="bg-black/50 border border-white/8 rounded px-2 py-1.5 text-[9px] text-white/70 focus:outline-none cursor-none">
+                                        <option value="">— Select peer —</option>
+                                    </select>
+                                    <button onclick="os.alStartScreenShare()" class="px-3 py-1.5 rounded text-[9px] uppercase tracking-wider hover-target cursor-none transition" style="background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.35);color:rgba(167,139,250,1)">Share My Screen</button>
+                                </div>
+                            </div>
+
+                            <div id="al-ss-active" class="hidden flex-1 flex flex-col">
+                                <div class="flex items-center justify-between mb-2 shrink-0">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full bg-red-500" style="animation:indicatorPulse 1.5s infinite"></div>
+                                        <span id="al-ss-status-label" class="text-[9px] font-bold text-white/70">Sharing your screen</span>
+                                    </div>
+                                    <button onclick="os.alStopScreenShare()" class="px-3 py-1 rounded text-[8px] uppercase tracking-wider hover-target cursor-none border border-red-500/30 text-red-400 hover:bg-red-500/10 transition">Stop Sharing</button>
+                                </div>
+                                <div class="flex-1 rounded-lg overflow-hidden flex items-center justify-center" style="background:#000">
+                                    <video id="al-ss-video" autoplay playsinline class="max-w-full max-h-full"></video>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── VOICE / WALKIE-TALKIE TAB ── -->
+                        <div id="al-tab-voice" class="al-tab hidden flex-1 flex flex-col overflow-hidden p-4">
+                            <div class="text-[8px] text-white/25 uppercase tracking-[0.18em] mb-3">Voice Chat</div>
+
+                            <!-- Mode selector -->
+                            <div class="grid grid-cols-2 gap-2 mb-4 shrink-0">
+                                <button id="al-voice-mode-open" onclick="os.alSetVoiceMode('open')" class="al-voice-mode-btn py-2 rounded-lg border border-white/10 text-[9px] text-white/50 hover:border-violet-500/30 hover:text-violet-300 transition hover-target cursor-none flex flex-col items-center gap-1">
+                                    <i data-lucide="mic" class="w-4 h-4"></i>
+                                    Open Mic (Duplex)
+                                </button>
+                                <button id="al-voice-mode-walkie" onclick="os.alSetVoiceMode('walkie')" class="al-voice-mode-btn py-2 rounded-lg border border-white/10 text-[9px] text-white/50 hover:border-violet-500/30 hover:text-violet-300 transition hover-target cursor-none flex flex-col items-center gap-1">
+                                    <i data-lucide="radio" class="w-4 h-4"></i>
+                                    Walkie-Talkie (PTT)
+                                </button>
+                            </div>
+
+                            <div id="al-voice-idle" class="flex-1 flex flex-col items-center justify-center gap-3 text-white/20">
+                                <i data-lucide="radio" class="w-10 h-10 text-violet-500/30"></i>
+                                <div class="text-center">
+                                    <div class="text-xs text-white/30 mb-1">Voice chat not active</div>
+                                    <div class="text-[9px] text-white/15">Pick a mode above to start a real<br>WebRTC audio session with connected peers</div>
+                                </div>
+                            </div>
+
+                            <div id="al-voice-active" class="hidden flex-1 flex flex-col">
+                                <div class="flex items-center justify-between mb-3 shrink-0">
+                                    <div class="flex items-center gap-2">
+                                        <div id="al-voice-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                        <span id="al-voice-status-label" class="text-[9px] font-bold text-white/70">Voice connected</span>
+                                    </div>
+                                    <button onclick="os.alLeaveVoice()" class="px-3 py-1 rounded text-[8px] uppercase tracking-wider hover-target cursor-none border border-red-500/30 text-red-400 hover:bg-red-500/10 transition">Leave Voice</button>
+                                </div>
+                                <div id="al-voice-participants" class="space-y-1.5 mb-4"></div>
+
+                                <div id="al-voice-open-controls" class="hidden flex items-center justify-center gap-3 mt-auto">
+                                    <button id="al-voice-mute-btn" onclick="os.alToggleMute()" class="w-12 h-12 rounded-full flex items-center justify-center border transition hover-target cursor-none" style="background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.3)">
+                                        <i data-lucide="mic" id="al-voice-mute-icon" class="w-5 h-5 text-violet-300"></i>
+                                    </button>
+                                    <span class="text-[9px] text-white/30">Click to mute / unmute your mic</span>
+                                </div>
+
+                                <div id="al-voice-ptt-controls" class="hidden flex flex-col items-center gap-3 mt-auto">
+                                    <button id="al-voice-ptt-btn"
+                                        onmousedown="os.alPTTStart()" onmouseup="os.alPTTEnd()" onmouseleave="os.alPTTEnd()"
+                                        ontouchstart="event.preventDefault();os.alPTTStart()" ontouchend="event.preventDefault();os.alPTTEnd()"
+                                        class="w-20 h-20 rounded-full flex items-center justify-center border-2 transition-all hover-target cursor-none select-none"
+                                        style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3)">
+                                        <i data-lucide="radio" class="w-8 h-8 text-violet-300"></i>
+                                    </button>
+                                    <span class="text-[9px] text-white/30">Hold to talk · Release to listen</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="al-ss-incoming-modal" style="display:none;position:absolute;inset:0;z-index:50;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(14px)">
+                        <div class="rounded-2xl border border-white/10 p-6 w-72 text-center" style="background:rgba(8,8,18,0.97);box-shadow:0 24px 80px rgba(0,0,0,0.9),0 0 0 1px rgba(139,92,246,0.15)">
+                            <div class="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center" style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25)">
+                                <i data-lucide="monitor-up" class="w-6 h-6 text-violet-400"></i>
+                            </div>
+                            <div class="text-xs font-bold text-white/80 mb-1">Screen Share Request</div>
+                            <div id="al-ss-incoming-msg" class="text-[10px] text-white/45 mb-4">A peer wants to share their screen with you</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="os.alAcceptScreenShare()" class="py-2 rounded-lg text-violet-300 text-[10px] font-bold uppercase tracking-wider transition hover-target cursor-none" style="background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.35)">Accept</button>
+                                <button onclick="os.alDeclineScreenShare()" class="py-2 rounded-lg border border-white/10 text-white/40 text-[10px] uppercase tracking-wider hover:border-white/25 hover:text-white transition hover-target cursor-none">Decline</button>
+                            </div>
                         </div>
                     </div>
                     <div id="al-pair-modal" style="display:none;position:absolute;inset:0;z-index:50;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(14px)">
@@ -8451,20 +8563,82 @@ RenderScheduler.start();
                 if(online!==null&&dot&&lbl){ dot.className=`w-1.5 h-1.5 rounded-full ${online?'bg-emerald-400':'bg-white/15'}`; lbl.textContent=online?'Connected':'Offline'; }
             }
 
-            function genQR(canvas, text) {
-                const ctx=canvas.getContext('2d'); const size=canvas.width;
-                ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size); ctx.fillStyle='#000';
-                const modules=21,cellSize=(size-20)/modules,offset=10;
-                [[0,0],[0,modules-7],[modules-7,0]].forEach(([r,c])=>{
-                    ctx.fillStyle='#000'; ctx.fillRect(offset+c*cellSize,offset+r*cellSize,7*cellSize,7*cellSize);
-                    ctx.fillStyle='#fff'; ctx.fillRect(offset+(c+1)*cellSize,offset+(r+1)*cellSize,5*cellSize,5*cellSize);
-                    ctx.fillStyle='#000'; ctx.fillRect(offset+(c+2)*cellSize,offset+(r+2)*cellSize,3*cellSize,3*cellSize);
+            // Real QR code generation using the 'qrcode' library (lazy loaded from CDN)
+            let _qrLibLoading = null;
+            function ensureQRLib() {
+                if (window.QRCode) return Promise.resolve();
+                if (_qrLibLoading) return _qrLibLoading;
+                _qrLibLoading = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                    s.onload = resolve;
+                    s.onerror = () => reject(new Error('QR library failed to load'));
+                    document.head.appendChild(s);
                 });
-                let seed=text.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-                for(let row=0;row<modules;row++) for(let col=0;col<modules;col++){
-                    if((row<9&&col<9)||(row<9&&col>modules-9)||(row>modules-9&&col<9)) continue;
-                    seed=(seed*1664525+1013904223)&0xffffffff;
-                    if((seed>>>0)%3!==0){ctx.fillStyle='#000';ctx.fillRect(offset+col*cellSize,offset+row*cellSize,cellSize-0.5,cellSize-0.5);}
+                return _qrLibLoading;
+            }
+
+            async function genQR(canvas, text) {
+                const size = canvas.width;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Generating QR…', size/2, size/2);
+
+                try {
+                    await ensureQRLib();
+                    // qrcodejs renders into a DOM element (canvas or table), so use a detached div
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.display = 'none';
+                    document.body.appendChild(tempDiv);
+                    new QRCode(tempDiv, {
+                        text: text,
+                        width: size,
+                        height: size,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                    // qrcodejs draws onto a <canvas> or <img> inside tempDiv depending on browser support
+                    await new Promise(r => setTimeout(r, 60)); // allow render
+                    const innerCanvas = tempDiv.querySelector('canvas');
+                    const innerImg = tempDiv.querySelector('img');
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, size, size);
+                    if (innerCanvas) {
+                        ctx.drawImage(innerCanvas, 0, 0, size, size);
+                    } else if (innerImg && innerImg.src) {
+                        await new Promise(res => {
+                            const im = new Image();
+                            im.onload = () => { ctx.drawImage(im, 0, 0, size, size); res(); };
+                            im.onerror = res;
+                            im.src = innerImg.src;
+                        });
+                    }
+                    document.body.removeChild(tempDiv);
+                } catch (e) {
+                    // Fallback: render the URL as readable text + a simple visual frame if the CDN is unreachable
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, size, size);
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(8, 8, size-16, size-16);
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 11px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('QR unavailable', size/2, size/2 - 14);
+                    ctx.font = '9px monospace';
+                    ctx.fillStyle = '#444';
+                    const words = text.match(/.{1,22}/g) || [text];
+                    words.slice(0,5).forEach((w,i) => ctx.fillText(w, size/2, size/2 + 4 + i*12));
+                    ctx.fillStyle = '#999';
+                    ctx.font = '8px monospace';
+                    ctx.fillText('Copy the ID below instead', size/2, size - 16);
                 }
             }
 
@@ -8768,9 +8942,23 @@ RenderScheduler.start();
                     }
 
                     const peerId='ab-'+state.sessionToken;
+                    updateStatus('Connecting to relay server…');
                     state.hostPeer = new Peer(peerId, {debug:0});
 
+                    let hostOpenSettled = false;
+                    const hostTimeoutId = setTimeout(() => {
+                        if(hostOpenSettled) return;
+                        hostOpenSettled = true;
+                        updateStatus('Could not reach the relay server — check your internet and try again', false);
+                        Notifications.push('AETHER BRIDGE', 'Hosting failed: relay server unreachable');
+                        try { state.hostPeer.destroy(); } catch(e) {}
+                        state.hostPeer = null;
+                    }, 10000);
+
                     state.hostPeer.on('open', id => {
+                        if(hostOpenSettled) return;
+                        hostOpenSettled = true;
+                        clearTimeout(hostTimeoutId);
                         state.hosting=true;
                         const url=`${location.origin}${location.pathname}?ab_connect=${id}`;
                         state.hostURL=url;
@@ -8784,9 +8972,19 @@ RenderScheduler.start();
                         if(info) info.classList.remove('hidden');
                         if(topbar) topbar.classList.add('active');
                         if(topLbl) topLbl.textContent='HOSTING';
-                        updateStatus('Hosting — Share your Peer ID to connect', true);
-                        Notifications.push('AETHER BRIDGE', `Hosting. ID: ${id}`);
+                        updateStatus('Hosting — send your connect code to the other device', true);
+                        Notifications.push('AETHER BRIDGE', `Hosting active. Connect code: ${id}`);
                         os.logTerminal(`Aether Bridge: Hosting as ${id}`);
+                    });
+
+                    state.hostPeer.on('error', e => {
+                        if(hostOpenSettled) return;
+                        hostOpenSettled = true;
+                        clearTimeout(hostTimeoutId);
+                        updateStatus('Hosting failed: '+(e.type||e.message||'unknown error'), false);
+                        Notifications.push('AETHER BRIDGE', `Hosting failed: ${e.type||'connection error'}`);
+                        os.logTerminal('Aether Bridge host error: '+(e.message||e.type));
+                        state.hostPeer = null;
                     });
 
                     state.hostPeer.on('connection', conn => {
@@ -8822,55 +9020,104 @@ RenderScheduler.start();
                     });
 
                     state.hostPeer.on('error', e => {
-                        updateStatus('PeerJS error: '+e.type);
-                        os.logTerminal('Aether Bridge error: '+e.message);
+                        // Errors after hosting is already active (the initial-connect error
+                        // is handled by the handler registered above before 'open' fires)
+                        if(state.hosting) {
+                            updateStatus('Connection error: '+(e.type||e.message), null);
+                            os.logTerminal('Aether Bridge error: '+(e.message||e.type));
+                        }
                     });
                 },
 
                 async connectToDevice() {
                     const ipEl=document.getElementById('ab-connect-ip');
                     const nameEl=document.getElementById('ab-connect-name');
-                    const peerId=(ipEl?.value||'').trim();
+                    let peerId=(ipEl?.value||'').trim();
                     const devName=(nameEl?.value||'').trim()||'Remote Device';
-                    if(!peerId){updateStatus('Enter a Peer ID to connect');return;}
+                    if(!peerId){updateStatus('Enter a connect code first');return;}
+
+                    // Accept either the bare code (ab-xxxx) or a pasted deep-link URL
+                    const urlMatch = peerId.match(/[?&]ab_connect=([a-zA-Z0-9-]+)/);
+                    if(urlMatch) peerId = urlMatch[1];
+                    if(state.connectedDevices.find(d=>d.id===peerId)) { updateStatus('Already connected to this device'); return; }
 
                     if(!window.Peer) {
                         updateStatus('Loading PeerJS…');
-                        await new Promise((resolve,reject)=>{
-                            const s=document.createElement('script');
-                            s.src='https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js';
-                            s.onload=resolve; s.onerror=reject;
-                            document.head.appendChild(s);
-                        });
+                        try {
+                            await new Promise((resolve,reject)=>{
+                                const s=document.createElement('script');
+                                s.src='https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js';
+                                s.onload=resolve; s.onerror=()=>reject(new Error('Failed to load PeerJS'));
+                                document.head.appendChild(s);
+                            });
+                        } catch(e) {
+                            updateStatus('Could not load the connection library — check your internet'); return;
+                        }
                     }
 
-                    // Create a client peer if we don't have one
+                    // Create a client peer if we don't have one yet
                     if(!state.hostPeer || state.hostPeer.destroyed) {
                         const clientId='ab-client-'+state.sessionToken;
+                        updateStatus('Connecting to relay server…');
                         state.hostPeer = new Peer(clientId, {debug:0});
-                        await new Promise(r=>state.hostPeer.on('open',r));
+                        try {
+                            await new Promise((resolve,reject)=>{
+                                const t=setTimeout(()=>reject(new Error('Relay server connection timed out')), 10000);
+                                state.hostPeer.on('open', ()=>{ clearTimeout(t); resolve(); });
+                                state.hostPeer.on('error', e=>{ clearTimeout(t); reject(e); });
+                            });
+                        } catch(e) {
+                            updateStatus('Could not reach the relay server: '+(e.message||e.type||'unknown error'));
+                            Notifications.push('AETHER BRIDGE', 'Connection setup failed — check your internet and try again');
+                            try { state.hostPeer.destroy(); } catch(err) {}
+                            state.hostPeer = null;
+                            return;
+                        }
                     }
 
                     updateStatus(`Connecting to ${peerId}…`);
                     const conn = state.hostPeer.connect(peerId, {reliable:true, serialization:'raw'});
+                    if(!conn) { updateStatus('Failed to start connection'); return; }
+
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if(settled) return;
+                        settled = true;
+                        try { conn.close(); } catch(e) {}
+                        updateStatus(`Could not reach ${peerId} — make sure that device is hosting right now`, false);
+                        Notifications.push('AETHER BRIDGE', `Could not connect: ${peerId} is not reachable`);
+                    }, 12000);
+
                     conn.on('open', () => {
+                        settled = true;
+                        clearTimeout(timeoutId);
                         const dev={id:peerId,name:devName,status:'online',fs:{}};
                         if(!state.connectedDevices.find(d=>d.id===peerId)) state.connectedDevices.push(dev);
                         setupConnection(conn, devName);
                         renderDeviceList();
                         updateStatus(`Connected to ${devName}`, true);
                         if(ipEl) ipEl.value=''; if(nameEl) nameEl.value='';
-                        // Request root listing
                         conn.send(JSON.stringify({type:'REQUEST_LISTING',path:'/'}));
                         const topbar=document.getElementById('ab-topbar-indicator');const topLbl=document.getElementById('ab-topbar-label');
                         if(topbar) topbar.classList.add('active');
                         if(topLbl) topLbl.textContent=state.connectedDevices.length+' DEVICE'+(state.connectedDevices.length>1?'S':'');
                         Notifications.push('AETHER BRIDGE', `Connected to ${devName}`);
                         os.logTerminal(`Aether Bridge: Connected to ${devName} (${peerId})`);
-                        // Auto browse
                         this.selectDevice(peerId);
                     });
-                    conn.on('error', e => updateStatus('Connection failed: '+e.message));
+                    conn.on('error', e => {
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        updateStatus('Connection failed: '+(e.message||e.type||'unknown error'), false);
+                        Notifications.push('AETHER BRIDGE', `Connection to ${peerId} failed`);
+                    });
+                },
+
+                copyHostId() {
+                    const id = state.hostPeer?.id;
+                    if(!id) return;
+                    navigator.clipboard?.writeText(id).catch(()=>{});
+                    Notifications.push('AETHER BRIDGE', 'Connect code copied to clipboard');
                 },
 
                 selectDevice(id) {
@@ -8940,14 +9187,36 @@ RenderScheduler.start();
                 sort(by) { state.sortBy=by; const dev=state.connectedDevices.find(d=>d.id===state.activeDevice); if(dev) renderFiles(dev.fs); },
                 refresh() { if(state.activeDevice) { send(state.activeDevice,{type:'REQUEST_LISTING',path:state.currentPath}); updateStatus('Refreshing…'); } },
 
-                showQR() {
+                async showQR() {
                     const modal=document.getElementById('ab-qr-modal');const canvas=document.getElementById('ab-qr-canvas');const urlEl=document.getElementById('ab-qr-url');
                     if(!modal||!canvas) return;
-                    const hostId=state.hostPeer?.id||state.sessionToken;
-                    const url=`${location.origin}${location.pathname}?ab_connect=${hostId}`;
-                    genQR(canvas, url);
-                    if(urlEl) urlEl.textContent=hostId;
+
+                    if(!state.hosting || !state.hostPeer || !state.hostPeer.id) {
+                        Notifications.push('AETHER BRIDGE', 'Start hosting first to generate a connect code');
+                        updateStatus('Start hosting before generating a QR code');
+                        return;
+                    }
+
+                    const hostId = state.hostPeer.id;
+                    // Real, working connect string: the AetherBridge Peer ID itself.
+                    // If the page is served over http(s), also build a deep-link URL that
+                    // auto-fills the connect field when opened on another device running this OS.
+                    const isWebURL = location.protocol === 'http:' || location.protocol === 'https:';
+                    const payload = isWebURL
+                        ? `${location.origin}${location.pathname}?ab_connect=${hostId}`
+                        : hostId; // file:// can't be opened cross-device, so encode just the Peer ID
+
                     modal.style.display='flex';
+                    if(urlEl) urlEl.textContent = 'Generating…';
+                    await genQR(canvas, payload);
+                    if(urlEl) urlEl.textContent = payload;
+                    state._lastQRPayload = payload;
+                },
+
+                copyQRPayload() {
+                    if(!state._lastQRPayload) return;
+                    navigator.clipboard?.writeText(state._lastQRPayload).catch(()=>{});
+                    Notifications.push('AETHER BRIDGE', 'Connect code copied to clipboard');
                 },
 
                 setSyncMode(mode) { state.syncMode=mode; document.querySelectorAll('.ab-sync-mode-btn').forEach(b=>{b.classList.toggle('border-emerald-500/40',b.dataset.mode===mode);b.classList.toggle('text-emerald-300',b.dataset.mode===mode);}); },
@@ -9002,6 +9271,43 @@ RenderScheduler.start();
                 pendingPairReq:null, activityLog:[], emojiVisible:false,
             };
             const todoItems=[];
+
+            // ── Chess game state (real, move-validated, turn-enforced) ──
+            const chessState = {
+                board: null,       // 8x8 array, null or {type,color}
+                turn: 'w',         // 'w' or 'b'
+                myColor: null,     // assigned on first sync: host=w, joiner=b
+                selected: null,    // {r,c} of selected piece
+                moveLog: [],
+                gameId: null,
+            };
+
+            // ── Pixel art state (16x16 grid, real synced colors) ──
+            const pixelState = {
+                grid: new Array(256).fill(''),  // hex colors or '' for blank
+            };
+
+            // ── Screen share state (real getDisplayMedia + WebRTC) ──
+            const screenShareState = {
+                active: false,
+                isSharing: false,      // am I the one sharing my screen
+                isViewing: false,      // am I viewing someone else's screen
+                localStream: null,
+                pc: null,              // RTCPeerConnection for screen share
+                remotePeerId: null,
+                pendingICE: [],
+            };
+
+            // ── Voice chat / walkie-talkie state (real getUserMedia + WebRTC audio) ──
+            const voiceState = {
+                mode: null,           // null | 'open' (continuous duplex) | 'walkie' (push-to-talk)
+                active: false,
+                localStream: null,
+                connections: {},      // peerId → { pc, remoteAudioEl, sending }
+                pttHeld: false,       // is the push-to-talk key currently held
+                pendingICE: {},       // peerId → [candidates] queued before remote description set
+                mutedOutput: false,
+            };
             let peerJsLoaded=false;
 
             async function ensurePeerJS() {
@@ -9019,12 +9325,7 @@ RenderScheduler.start();
             async function createPeer(id) {
                 await ensurePeerJS();
                 return new Promise((resolve, reject)=>{
-                    // Use PeerJS public cloud server
                     const p = new Peer(id, {
-                        host: '0.peerjs.com',
-                        port: 443,
-                        path: '/',
-                        secure: true,
                         debug: 0,
                         config: {
                             iceServers: [
@@ -9034,26 +9335,43 @@ RenderScheduler.start();
                             ]
                         }
                     });
-                    p.on('open', id => { resolve(p); });
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if(settled) return;
+                        settled = true;
+                        try { p.destroy(); } catch(e) {}
+                        reject(new Error('Signaling server connection timed out'));
+                    }, 10000);
+                    p.on('open', () => {
+                        if(settled) return;
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        resolve(p);
+                    });
                     p.on('error', e => {
-                        // Fallback: try default PeerJS server
-                        const p2 = new Peer(id, {debug:0});
-                        p2.on('open', ()=>resolve(p2));
-                        p2.on('error', e2=>reject(e2));
+                        if(settled) return;
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        try { p.destroy(); } catch(err) {}
+                        reject(e);
                     });
                 });
             }
 
             function sendToPeer(peerId, msg) {
                 const peer=state.peers[peerId]; if(!peer) return;
-                const conn=peer.conn; if(!conn||!conn.open) return;
-                try { conn.send(JSON.stringify(msg)); } catch(e) {}
+                if(peer.conn && peer.conn.open) {
+                    try { peer.conn.send(JSON.stringify(msg)); } catch(e) {}
+                } else if(peer.bc || !peer.conn) {
+                    // Same-browser peer (or no live WebRTC channel yet) — route via BroadcastChannel
+                    bcSend({...msg, targetCode: peerId});
+                }
             }
 
             function broadcastAll(msg) {
                 Object.keys(state.peers).forEach(id=>sendToPeer(id, msg));
-                // Also BroadcastChannel for same-browser tabs
-                if(state.peer?._bc) try { state.peer._bc.postMessage({...msg,from:state.myCode,fromName:state.myName,ts:Date.now()}); } catch(e){}
+                // Also broadcast via BC for any same-browser tabs that haven't formally "joined" yet
+                bcSend({...msg, broadcast: true});
             }
 
             function handlePeerMsg(fromId, rawData) {
@@ -9101,11 +9419,77 @@ RenderScheduler.start();
                         if(state.peers[fromId]) { state.peers[fromId].status=data.status; renderPeers(); renderPresence(); }
                         break;
                     case 'SHARED_NOTES':
+                        sharedNotesState.text = data.text;
                         const notesEl=document.getElementById('al-shared-notes');
                         if(notesEl && notesEl.value!==data.text) notesEl.value=data.text;
                         break;
+                    case 'SHARED_NOTES_REQUEST':
+                        sendToPeer(fromId, {type:'SHARED_NOTES', text: sharedNotesState.text});
+                        break;
                     case 'TODO_SYNC':
                         todoItems.length=0; data.items.forEach(i=>todoItems.push(i)); renderTodos();
+                        break;
+                    case 'TODO_SYNC_REQUEST':
+                        sendToPeer(fromId, {type:'TODO_SYNC', items: todoItems});
+                        break;
+                    case 'CHESS_MOVE':
+                        applyRemoteChessMove(data);
+                        break;
+                    case 'CHESS_RESET':
+                        resetChessBoard(false);
+                        break;
+                    case 'CHESS_SYNC_REQUEST':
+                        sendToPeer(fromId, {type:'CHESS_SYNC_STATE', board: chessState.board, turn: chessState.turn, moveLog: chessState.moveLog});
+                        break;
+                    case 'CHESS_SYNC_STATE':
+                        chessState.board = data.board; chessState.turn = data.turn; chessState.moveLog = data.moveLog || [];
+                        renderChessBoard();
+                        break;
+                    case 'PIXEL_PAINT':
+                        applyRemotePixel(data.index, data.color);
+                        break;
+                    case 'PIXEL_CLEAR':
+                        resetPixelGrid(false);
+                        break;
+                    case 'PIXEL_SYNC_REQUEST':
+                        sendToPeer(fromId, {type:'PIXEL_SYNC_STATE', grid: pixelState.grid});
+                        break;
+                    case 'PIXEL_SYNC_STATE':
+                        pixelState.grid = data.grid;
+                        renderPixelGridFromState();
+                        break;
+                    case 'SCREEN_SHARE_OFFER':
+                        showScreenShareIncoming(fromId, data);
+                        break;
+                    case 'SCREEN_SHARE_ANSWER':
+                        handleScreenShareAnswer(fromId, data);
+                        break;
+                    case 'SCREEN_SHARE_ICE':
+                        handleScreenShareICE(fromId, data);
+                        break;
+                    case 'SCREEN_SHARE_STOP':
+                        handleScreenShareStop(fromId);
+                        break;
+                    case 'VOICE_INVITE':
+                        handleVoiceInvite(fromId, data);
+                        break;
+                    case 'VOICE_OFFER':
+                        handleVoiceOffer(fromId, data);
+                        break;
+                    case 'VOICE_ANSWER':
+                        handleVoiceAnswer(fromId, data);
+                        break;
+                    case 'VOICE_ICE':
+                        handleVoiceICE(fromId, data);
+                        break;
+                    case 'VOICE_LEAVE':
+                        handleVoiceLeave(fromId);
+                        break;
+                    case 'VOICE_PTT_START':
+                        handlePTTStart(fromId);
+                        break;
+                    case 'VOICE_PTT_END':
+                        handlePTTEnd(fromId);
                         break;
                 }
             }
@@ -9186,6 +9570,8 @@ RenderScheduler.start();
                 if(!state.peers[id]) return;
                 const name=state.peers[id].name;
                 delete state.peers[id];
+                if(voiceState.connections[id]) teardownVoicePeer(id, false);
+                if(screenShareState.remotePeerId === id) stopScreenShareReal(false);
                 renderPeers(); renderPresence(); updateConnIndicator(); addActivity(name,'disconnected');
                 const sel=document.getElementById('al-chat-peer');
                 const opt=sel?.querySelector(`option[value="${id}"]`); if(opt) opt.remove();
@@ -9407,12 +9793,745 @@ RenderScheduler.start();
                 list.innerHTML=todoItems.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><input type="checkbox" ${t.done?'checked':''} onchange="window.AetherLinkAPI.toggleTodo(${t.id})" style="accent-color:#8b5cf6;cursor:none"><span style="font:400 9px Inter;color:${t.done?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.7)'};text-decoration:${t.done?'line-through':'none'};flex:1">${t.text}</span><button onclick="window.AetherLinkAPI.removeTodo(${t.id})" style="color:rgba(255,255,255,0.2);background:none;border:none;cursor:none">✕</button></div>`).join('');
             }
 
+            // ════════════════════════════════════════════════════════
+            // REAL COOP CHESS — move-validated, turn-enforced, synced
+            // ════════════════════════════════════════════════════════
+            const CHESS_PIECES = {'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'};
+
+            function freshChessBoard(){
+                return [
+                    ['r','n','b','q','k','b','n','r'],
+                    ['p','p','p','p','p','p','p','p'],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['P','P','P','P','P','P','P','P'],
+                    ['R','N','B','Q','K','B','N','R']
+                ];
+            }
+
+            function pieceColor(p){ if(!p) return null; return p===p.toUpperCase() ? 'w' : 'b'; }
+
+            // Simplified-but-real legal move generator (no check/checkmate detection,
+            // but enforces real per-piece movement rules + turn order + capture rules,
+            // which is what makes a casual coop chess board actually playable).
+            function getLegalMoves(board, r, c){
+                const p = board[r][c]; if(!p) return [];
+                const color = pieceColor(p);
+                const type = p.toLowerCase();
+                const moves = [];
+                const inBounds = (rr,cc) => rr>=0&&rr<8&&cc>=0&&cc<8;
+                const enemy = (rr,cc) => board[rr][cc] && pieceColor(board[rr][cc]) !== color;
+                const empty = (rr,cc) => !board[rr][cc];
+
+                const slide = (dirs) => {
+                    dirs.forEach(([dr,dc])=>{
+                        let rr=r+dr, cc=c+dc;
+                        while(inBounds(rr,cc)){
+                            if(empty(rr,cc)) { moves.push([rr,cc]); }
+                            else { if(enemy(rr,cc)) moves.push([rr,cc]); break; }
+                            rr+=dr; cc+=dc;
+                        }
+                    });
+                };
+
+                if(type==='p'){
+                    const dir = color==='w' ? -1 : 1;
+                    const startRow = color==='w' ? 6 : 1;
+                    if(inBounds(r+dir,c) && empty(r+dir,c)) {
+                        moves.push([r+dir,c]);
+                        if(r===startRow && empty(r+2*dir,c)) moves.push([r+2*dir,c]);
+                    }
+                    [[dir,-1],[dir,1]].forEach(([dr,dc])=>{
+                        const rr=r+dr, cc=c+dc;
+                        if(inBounds(rr,cc) && enemy(rr,cc)) moves.push([rr,cc]);
+                    });
+                } else if(type==='n'){
+                    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+                        const rr=r+dr, cc=c+dc;
+                        if(inBounds(rr,cc) && (empty(rr,cc)||enemy(rr,cc))) moves.push([rr,cc]);
+                    });
+                } else if(type==='b'){
+                    slide([[-1,-1],[-1,1],[1,-1],[1,1]]);
+                } else if(type==='r'){
+                    slide([[-1,0],[1,0],[0,-1],[0,1]]);
+                } else if(type==='q'){
+                    slide([[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]);
+                } else if(type==='k'){
+                    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+                        const rr=r+dr, cc=c+dc;
+                        if(inBounds(rr,cc) && (empty(rr,cc)||enemy(rr,cc))) moves.push([rr,cc]);
+                    });
+                }
+                return moves;
+            }
+
+            function initChessGame(){
+                if(!chessState.board) {
+                    chessState.board = freshChessBoard();
+                    chessState.turn = 'w';
+                    chessState.moveLog = [];
+                    // Assign color: whoever has fewer peer IDs alphabetically "hosts" white — simplest deterministic rule
+                    const peerIds = Object.keys(state.peers);
+                    if(peerIds.length === 0) {
+                        chessState.myColor = 'w'; // solo/testing
+                    } else {
+                        const allIds = [...peerIds, state.myCode||'me'].sort();
+                        chessState.myColor = allIds[0] === (state.myCode||'me') ? 'w' : 'b';
+                    }
+                }
+                // Ask peers for current state in case a game is already in progress
+                broadcastAll({type:'CHESS_SYNC_REQUEST'});
+            }
+
+            function renderChessBoard(){
+                const container = document.getElementById('al-chess-board');
+                if(!container || !chessState.board) return;
+                const flip = chessState.myColor === 'b';
+                let html = '';
+                for(let rr=0; rr<8; rr++){
+                    const r = flip ? 7-rr : rr;
+                    for(let cc=0; cc<8; cc++){
+                        const c = flip ? 7-cc : cc;
+                        const piece = chessState.board[r][c];
+                        const light = (r+c)%2===0;
+                        const isSelected = chessState.selected && chessState.selected[0]===r && chessState.selected[1]===c;
+                        let highlightMoves = [];
+                        if(chessState.selected) highlightMoves = getLegalMoves(chessState.board, chessState.selected[0], chessState.selected[1]);
+                        const isLegalTarget = highlightMoves.some(([mr,mc])=>mr===r&&mc===c);
+                        let bg = light ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.45)';
+                        if(isSelected) bg = 'rgba(139,92,246,0.45)';
+                        else if(isLegalTarget) bg = 'rgba(52,211,153,0.28)';
+                        html += `<div onclick="window.AetherLinkAPI.chessSquareClick(${r},${c})" style="width:32px;height:32px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:19px;cursor:none;transition:background 0.1s;user-select:none">${piece?CHESS_PIECES[piece]||piece:''}</div>`;
+                    }
+                }
+                container.innerHTML = html;
+
+                const turnEl = document.getElementById('al-chess-turn');
+                if(turnEl) {
+                    const isMyTurn = chessState.turn === chessState.myColor;
+                    turnEl.textContent = isMyTurn ? 'Your move' : `Waiting for opponent (${chessState.turn==='w'?'White':'Black'})`;
+                    turnEl.style.color = isMyTurn ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.3)';
+                }
+                const colorEl = document.getElementById('al-chess-color');
+                if(colorEl) colorEl.textContent = `Playing as: ${chessState.myColor==='w'?'White':'Black'}`;
+            }
+
+            function chessSquareClick(r, c){
+                if(!chessState.board) return;
+                const isMyTurn = chessState.turn === chessState.myColor;
+                if(!isMyTurn) { Notifications.push('AETHER LINK', "It's not your turn"); return; }
+
+                const piece = chessState.board[r][c];
+
+                if(chessState.selected) {
+                    const [sr, sc] = chessState.selected;
+                    const legal = getLegalMoves(chessState.board, sr, sc);
+                    const isLegal = legal.some(([mr,mc])=>mr===r&&mc===c);
+                    if(isLegal) {
+                        const movedPiece = chessState.board[sr][sc];
+                        const capturedPiece = chessState.board[r][c];
+                        chessState.board[r][c] = movedPiece;
+                        chessState.board[sr][sc] = '';
+                        chessState.turn = chessState.turn === 'w' ? 'b' : 'w';
+                        chessState.moveLog.push({from:[sr,sc], to:[r,c], piece:movedPiece, captured:capturedPiece});
+                        chessState.selected = null;
+                        renderChessBoard();
+                        broadcastAll({type:'CHESS_MOVE', from:[sr,sc], to:[r,c], board: chessState.board, turn: chessState.turn});
+                        addActivity('You', `moved ${CHESS_PIECES[movedPiece]||movedPiece} ${String.fromCharCode(97+sc)}${8-sr} → ${String.fromCharCode(97+c)}${8-r}`);
+                        return;
+                    }
+                    // Re-select if clicking own piece, else deselect
+                    chessState.selected = (piece && pieceColor(piece)===chessState.myColor) ? [r,c] : null;
+                    renderChessBoard();
+                    return;
+                }
+
+                if(piece && pieceColor(piece) === chessState.myColor) {
+                    chessState.selected = [r,c];
+                    renderChessBoard();
+                }
+            }
+
+            function applyRemoteChessMove(data){
+                if(!chessState.board) chessState.board = freshChessBoard();
+                chessState.board = data.board;
+                chessState.turn = data.turn;
+                chessState.selected = null;
+                renderChessBoard();
+                const [fr,fc] = data.from, [tr,tc] = data.to;
+                addActivity('Opponent', `moved ${String.fromCharCode(97+fc)}${8-fr} → ${String.fromCharCode(97+tc)}${8-tr}`);
+            }
+
+            function resetChessBoard(broadcast=true){
+                chessState.board = freshChessBoard();
+                chessState.turn = 'w';
+                chessState.selected = null;
+                chessState.moveLog = [];
+                renderChessBoard();
+                if(broadcast) broadcastAll({type:'CHESS_RESET'});
+            }
+
+            // ════════════════════════════════════════════════════════
+            // REAL COOP PIXEL ART — synced 16×16 grid, real broadcast
+            // ════════════════════════════════════════════════════════
+            function renderPixelGridFromState(){
+                const cells = document.querySelectorAll('.al-pixel-cell');
+                cells.forEach((cell,i)=>{
+                    cell.style.background = pixelState.grid[i] || 'transparent';
+                });
+            }
+
+            function paintPixelCell(index, el){
+                const colorInput = document.getElementById('al-pixel-color');
+                const color = colorInput?.value || '#a78bfa';
+                pixelState.grid[index] = color;
+                if(el) el.style.background = color;
+                broadcastAll({type:'PIXEL_PAINT', index, color});
+            }
+
+            function applyRemotePixel(index, color){
+                pixelState.grid[index] = color;
+                const cell = document.querySelector(`.al-pixel-cell[data-idx="${index}"]`);
+                if(cell) cell.style.background = color;
+            }
+
+            function resetPixelGrid(broadcast=true){
+                pixelState.grid = new Array(256).fill('');
+                renderPixelGridFromState();
+                if(broadcast) broadcastAll({type:'PIXEL_CLEAR'});
+            }
+
             const MINI_APPS={
-                chess:()=>{const P={'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'};const bd=[['r','n','b','q','k','b','n','r'],['p','p','p','p','p','p','p','p'],['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],['P','P','P','P','P','P','P','P'],['R','N','B','Q','K','B','N','R']];let h='<div style="padding:12px"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">♟ Chess — Multiplayer via Aether Link</div><div style="display:grid;grid-template-columns:repeat(8,35px);border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden">';for(let r=0;r<8;r++)for(let c=0;c<8;c++){const lt=(r+c)%2===0;const pc=bd[r][c];h+=`<div style="width:35px;height:35px;background:${lt?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.45)'};display:flex;align-items:center;justify-content:center;font-size:20px;cursor:none">${pc?`<span>${P[pc]||pc}</span>`:''}</div>`;}return h+'</div><div style="font:400 9px Inter;color:rgba(255,255,255,0.3);margin-top:8px">♟ Moves broadcast to all peers via Aether Link DataChannels</div></div>';},
-                pixelart:()=>{const sz=16;let h='<div style="padding:12px"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">🎨 Pixel Art — Collaborative</div><div style="display:grid;grid-template-columns:repeat(16,18px);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">';for(let i=0;i<sz*sz;i++) h+=`<div style="width:18px;height:18px;border:0.5px solid rgba(255,255,255,0.04);cursor:none" onmousedown="window.AetherLinkAPI.pixelPaint(this)" onmouseenter="if(event.buttons)window.AetherLinkAPI.pixelPaint(this)"></div>`;return h+'</div><div style="margin-top:8px;display:flex;align-items:center;gap:6px"><input type="color" id="al-pixel-color" value="#a78bfa" style="width:24px;height:24px;border:none;cursor:none"><span style="font:400 8px JetBrains Mono;color:rgba(255,255,255,0.3)">Paint · Broadcasts to peers</span></div></div>';},
-                notes:()=>`<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">📝 Shared Notes — Live Sync</div><textarea id="al-shared-notes" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;color:rgba(255,255,255,0.75);font:400 11px Inter;resize:none;outline:none" placeholder="Start typing — syncs to all connected peers via DataChannel…" oninput="window.AetherLinkAPI.syncNotes(this.value)"></textarea><div style="font:400 8px Inter;color:rgba(255,255,255,0.2);margin-top:6px">Real-time via PeerJS DataChannels</div></div>`,
-                todo:()=>`<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">✅ Shared To-Do — Live Sync</div><div style="display:flex;gap:6px;margin-bottom:8px"><input id="al-todo-input" type="text" placeholder="Add a task…" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 10px;color:rgba(255,255,255,0.8);font:400 10px Inter;outline:none" onkeydown="if(event.key==='Enter')window.AetherLinkAPI.addTodo()"><button onclick="window.AetherLinkAPI.addTodo()" style="padding:6px 12px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.35);border-radius:6px;color:rgba(167,139,250,1);font:700 9px Inter;cursor:none">Add</button></div><div id="al-todo-list" style="flex:1;overflow-y:auto"><div style="font:400 9px Inter;color:rgba(255,255,255,0.2);text-align:center;padding:20px 0">No tasks yet</div></div></div>`,
+                chess:()=>{
+                    initChessGame();
+                    setTimeout(renderChessBoard, 30);
+                    return `<div style="padding:12px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em">♟ Chess — Real Coop</div>
+                            <button onclick="window.AetherLinkAPI.chessReset()" style="font:600 8px Inter;color:rgba(255,255,255,0.3);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;cursor:none">Reset</button>
+                        </div>
+                        <div id="al-chess-board" style="display:grid;grid-template-columns:repeat(8,32px);border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;width:fit-content"></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                            <span id="al-chess-turn" style="font:700 9px Inter">Loading…</span>
+                            <span id="al-chess-color" style="font:400 8px JetBrains Mono;color:rgba(255,255,255,0.3)"></span>
+                        </div>
+                        <div style="font:400 8px Inter;color:rgba(255,255,255,0.2);margin-top:6px">Real moves sync to all connected peers · Turn-based</div>
+                    </div>`;
+                },
+                pixelart:()=>{
+                    setTimeout(renderPixelGridFromState, 30);
+                    broadcastAll({type:'PIXEL_SYNC_REQUEST'});
+                    let h='<div style="padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em">🎨 Pixel Art — Real Coop</div><button onclick="window.AetherLinkAPI.pixelReset()" style="font:600 8px Inter;color:rgba(255,255,255,0.3);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;cursor:none">Clear</button></div><div style="display:grid;grid-template-columns:repeat(16,18px);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;width:fit-content">';
+                    for(let i=0;i<256;i++) h+=`<div class="al-pixel-cell" data-idx="${i}" style="width:18px;height:18px;border:0.5px solid rgba(255,255,255,0.04);cursor:none;background:${pixelState.grid[i]||'transparent'}" onmousedown="window.AetherLinkAPI.pixelPaint(${i},this)" onmouseenter="if(event.buttons===1)window.AetherLinkAPI.pixelPaint(${i},this)"></div>`;
+                    h+='</div><div style="margin-top:8px;display:flex;align-items:center;gap:6px"><input type="color" id="al-pixel-color" value="#a78bfa" style="width:24px;height:24px;border:none;cursor:none"><span style="font:400 8px JetBrains Mono;color:rgba(255,255,255,0.3)">Paint syncs live to all peers</span></div></div>';
+                    return h;
+                },
+                notes:()=>{
+                    broadcastAll({type:'SHARED_NOTES_REQUEST'});
+                    return `<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">📝 Shared Notes — Live Sync</div><textarea id="al-shared-notes" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;color:rgba(255,255,255,0.75);font:400 11px Inter;resize:none;outline:none" placeholder="Start typing — syncs to all connected peers via DataChannel…" oninput="window.AetherLinkAPI.syncNotes(this.value)">${sharedNotesState.text||''}</textarea><div style="font:400 8px Inter;color:rgba(255,255,255,0.2);margin-top:6px">Real-time via PeerJS DataChannels</div></div>`;
+                },
+                todo:()=>{
+                    broadcastAll({type:'TODO_SYNC_REQUEST'});
+                    return `<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column"><div style="font:700 10px Inter;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">✅ Shared To-Do — Live Sync</div><div style="display:flex;gap:6px;margin-bottom:8px"><input id="al-todo-input" type="text" placeholder="Add a task…" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 10px;color:rgba(255,255,255,0.8);font:400 10px Inter;outline:none" onkeydown="if(event.key==='Enter')window.AetherLinkAPI.addTodo()"><button onclick="window.AetherLinkAPI.addTodo()" style="padding:6px 12px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.35);border-radius:6px;color:rgba(167,139,250,1);font:700 9px Inter;cursor:none">Add</button></div><div id="al-todo-list" style="flex:1;overflow-y:auto"></div></div>`;
+                },
             };
+
+            const sharedNotesState = { text: '' };
+
+            // ════════════════════════════════════════════════════════
+            // REAL SCREEN SHARING — getDisplayMedia + RTCPeerConnection
+            // Signaling travels over the existing PeerJS DataChannel (or
+            // BroadcastChannel for same-browser testing).
+            // ════════════════════════════════════════════════════════
+            const ICE_SERVERS = [
+                {urls:'stun:stun.l.google.com:19302'},
+                {urls:'stun:stun1.l.google.com:19302'},
+                {urls:'stun:global.stun.twilio.com:3478'}
+            ];
+
+            function showSSIdle(){
+                const idle=document.getElementById('al-ss-idle'); const active=document.getElementById('al-ss-active');
+                if(idle) idle.classList.remove('hidden'); if(active) active.classList.add('hidden');
+            }
+            function showSSActive(label){
+                const idle=document.getElementById('al-ss-idle'); const active=document.getElementById('al-ss-active');
+                if(idle) idle.classList.add('hidden'); if(active) active.classList.remove('hidden');
+                const lbl=document.getElementById('al-ss-status-label'); if(lbl) lbl.textContent=label;
+            }
+
+            async function startScreenShareReal(){
+                const sel=document.getElementById('al-ss-peer-select');
+                const peerId=sel?.value;
+                if(!peerId){ Notifications.push('AETHER LINK','Select a peer to share your screen with'); return; }
+                if(screenShareState.active){ Notifications.push('AETHER LINK','A screen share session is already active'); return; }
+
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getDisplayMedia({ video:{ frameRate:{ ideal:15, max:30 } }, audio:false });
+                } catch(e) {
+                    Notifications.push('AETHER LINK', 'Screen share cancelled or denied');
+                    return;
+                }
+
+                screenShareState.localStream = stream;
+                screenShareState.isSharing = true;
+                screenShareState.active = true;
+                screenShareState.remotePeerId = peerId;
+
+                const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+                screenShareState.pc = pc;
+                stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+                pc.onicecandidate = e => {
+                    if(e.candidate) sendToPeer(peerId, {type:'SCREEN_SHARE_ICE', candidate: e.candidate});
+                };
+
+                // If the user stops sharing via the browser's native "Stop sharing" control
+                stream.getVideoTracks()[0].onended = () => stopScreenShareReal();
+
+                pc.onconnectionstatechange = () => {
+                    if(['failed','disconnected','closed'].includes(pc.connectionState)) {
+                        if(screenShareState.active) stopScreenShareReal();
+                    }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                sendToPeer(peerId, {type:'SCREEN_SHARE_OFFER', sdp: offer});
+
+                showSSActive('Requesting to share your screen…');
+                const video = document.getElementById('al-ss-video');
+                if(video) video.srcObject = stream;
+
+                Notifications.push('AETHER LINK', `Screen share offer sent to ${state.peers[peerId]?.name||peerId}`);
+                addActivity('You', 'started sharing their screen');
+            }
+
+            function showScreenShareIncoming(fromId, data){
+                screenShareState.pendingOffer = { fromId, sdp: data.sdp };
+                const modal=document.getElementById('al-ss-incoming-modal');
+                const msg=document.getElementById('al-ss-incoming-msg');
+                if(msg) msg.textContent = `${state.peers[fromId]?.name||fromId} wants to share their screen with you`;
+                if(modal) modal.style.display='flex';
+                Notifications.push('AETHER LINK', `${state.peers[fromId]?.name||fromId} wants to share their screen`);
+            }
+
+            async function acceptScreenShareReal(){
+                const pending = screenShareState.pendingOffer;
+                document.getElementById('al-ss-incoming-modal').style.display='none';
+                if(!pending) return;
+
+                const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+                screenShareState.pc = pc;
+                screenShareState.isViewing = true;
+                screenShareState.active = true;
+                screenShareState.remotePeerId = pending.fromId;
+
+                pc.ontrack = e => {
+                    const video = document.getElementById('al-ss-video');
+                    if(video) video.srcObject = e.streams[0];
+                    // Switch to screen share tab to show the incoming stream
+                    if(window.AetherLinkAPI) window.AetherLinkAPI.switchTab('screenshare');
+                    showSSActive(`Viewing ${state.peers[pending.fromId]?.name||pending.fromId}'s screen`);
+                };
+
+                pc.onicecandidate = e => {
+                    if(e.candidate) sendToPeer(pending.fromId, {type:'SCREEN_SHARE_ICE', candidate: e.candidate});
+                };
+                pc.onconnectionstatechange = () => {
+                    if(['failed','disconnected','closed'].includes(pc.connectionState)) {
+                        if(screenShareState.active) stopScreenShareReal();
+                    }
+                };
+
+                await pc.setRemoteDescription(new RTCSessionDescription(pending.sdp));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                sendToPeer(pending.fromId, {type:'SCREEN_SHARE_ANSWER', sdp: answer});
+
+                // Flush any queued ICE candidates
+                screenShareState.pendingICE.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+                screenShareState.pendingICE = [];
+
+                addActivity(state.peers[pending.fromId]?.name||pending.fromId, 'is sharing their screen with you');
+                screenShareState.pendingOffer = null;
+            }
+
+            function declineScreenShareReal(){
+                const pending = screenShareState.pendingOffer;
+                document.getElementById('al-ss-incoming-modal').style.display='none';
+                if(pending) sendToPeer(pending.fromId, {type:'SCREEN_SHARE_STOP'});
+                screenShareState.pendingOffer = null;
+            }
+
+            async function handleScreenShareAnswer(fromId, data){
+                if(!screenShareState.pc) return;
+                try {
+                    await screenShareState.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    showSSActive(`Sharing your screen with ${state.peers[fromId]?.name||fromId}`);
+                    Notifications.push('AETHER LINK', `${state.peers[fromId]?.name||fromId} accepted your screen share`);
+                } catch(e) {}
+            }
+
+            function handleScreenShareICE(fromId, data){
+                if(screenShareState.pc && screenShareState.pc.remoteDescription) {
+                    screenShareState.pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(()=>{});
+                } else {
+                    screenShareState.pendingICE.push(data.candidate);
+                }
+            }
+
+            function handleScreenShareStop(fromId){
+                if(screenShareState.remotePeerId === fromId || !screenShareState.remotePeerId) {
+                    stopScreenShareReal(false);
+                    Notifications.push('AETHER LINK', `${state.peers[fromId]?.name||fromId} ended the screen share`);
+                }
+            }
+
+            function stopScreenShareReal(notifyPeer=true){
+                if(notifyPeer && screenShareState.remotePeerId) {
+                    sendToPeer(screenShareState.remotePeerId, {type:'SCREEN_SHARE_STOP'});
+                }
+                if(screenShareState.localStream) {
+                    screenShareState.localStream.getTracks().forEach(t => t.stop());
+                    screenShareState.localStream = null;
+                }
+                if(screenShareState.pc) {
+                    try { screenShareState.pc.close(); } catch(e) {}
+                    screenShareState.pc = null;
+                }
+                const video = document.getElementById('al-ss-video');
+                if(video) video.srcObject = null;
+                screenShareState.active = false;
+                screenShareState.isSharing = false;
+                screenShareState.isViewing = false;
+                screenShareState.remotePeerId = null;
+                screenShareState.pendingICE = [];
+                showSSIdle();
+                addActivity('You', 'ended the screen share');
+            }
+
+            // ════════════════════════════════════════════════════════
+            // REAL VOICE CHAT / WALKIE-TALKIE — getUserMedia + WebRTC audio
+            // Two modes:
+            //  - 'open'   : continuous duplex mic, mesh of RTCPeerConnections to every connected peer
+            //  - 'walkie' : push-to-talk — mic track only enabled while PTT button is held
+            // Signaling travels over the existing PeerJS DataChannel (or BroadcastChannel fallback).
+            // ════════════════════════════════════════════════════════
+
+            function updateVoiceIndicator(){
+                const ind = document.getElementById('al-voice-indicator');
+                const lbl = document.getElementById('al-voice-indicator-label');
+                if(!ind) return;
+                if(voiceState.active) {
+                    ind.classList.remove('hidden'); ind.classList.add('flex');
+                    if(lbl) lbl.textContent = voiceState.mode === 'walkie' ? 'WALKIE LIVE' : 'VOICE LIVE';
+                } else {
+                    ind.classList.add('hidden'); ind.classList.remove('flex');
+                }
+            }
+
+            function renderVoiceParticipants(){
+                const el = document.getElementById('al-voice-participants');
+                if(!el) return;
+                const ids = Object.keys(voiceState.connections);
+                if(!ids.length) { el.innerHTML = '<div class="text-[9px] text-white/20 text-center py-2">Just you — waiting for peers to join…</div>'; return; }
+                el.innerHTML = ids.map(id => {
+                    const name = state.peers[id]?.name || id;
+                    const conn = voiceState.connections[id];
+                    const speaking = conn?.speaking;
+                    return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-lg" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,${speaking?'0.4':'0.12'})">
+                        <div class="w-2 h-2 rounded-full ${speaking ? 'bg-emerald-400' : 'bg-white/20'}" style="${speaking?'animation:indicatorPulse 0.6s infinite':''}"></div>
+                        <span class="text-[9px] text-white/60 flex-1">${name}</span>
+                        <i data-lucide="${conn?.connected ? 'mic' : 'loader'}" class="w-3 h-3 text-white/25"></i>
+                    </div>`;
+                }).join('');
+                if(window.lucide) lucide.createIcons({nodes:[el]});
+            }
+
+            function showVoiceIdle(){
+                const idle=document.getElementById('al-voice-idle'); const active=document.getElementById('al-voice-active');
+                if(idle) idle.classList.remove('hidden'); if(active) active.classList.add('hidden');
+                document.querySelectorAll('.al-voice-mode-btn').forEach(b=>{ b.style.background=''; b.style.borderColor=''; b.classList.remove('text-violet-300'); b.classList.add('text-white/50'); });
+            }
+
+            function showVoiceActive(){
+                const idle=document.getElementById('al-voice-idle'); const active=document.getElementById('al-voice-active');
+                if(idle) idle.classList.add('hidden'); if(active) active.classList.remove('hidden');
+                const openCtl=document.getElementById('al-voice-open-controls'); const pttCtl=document.getElementById('al-voice-ptt-controls');
+                if(voiceState.mode==='walkie') { if(openCtl) openCtl.classList.add('hidden'); if(pttCtl) { pttCtl.classList.remove('hidden'); pttCtl.classList.add('flex'); } }
+                else { if(pttCtl) { pttCtl.classList.add('hidden'); pttCtl.classList.remove('flex'); } if(openCtl) { openCtl.classList.remove('hidden'); openCtl.classList.add('flex'); } }
+                const lbl=document.getElementById('al-voice-status-label');
+                if(lbl) lbl.textContent = voiceState.mode==='walkie' ? 'Walkie-talkie active — hold button to talk' : 'Open mic — live duplex audio';
+            }
+
+            // Get (or lazily create) the local mic stream
+            async function ensureLocalMicStream(startMuted){
+                if(voiceState.localStream) return voiceState.localStream;
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+                if(startMuted) stream.getAudioTracks().forEach(t => t.enabled = false);
+                voiceState.localStream = stream;
+                return stream;
+            }
+
+            // Set up a peer connection (audio only) to one specific peer for voice
+            function setupVoicePC(peerId, isInitiator){
+                const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+                voiceState.connections[peerId] = voiceState.connections[peerId] || {};
+                voiceState.connections[peerId].pc = pc;
+                voiceState.connections[peerId].connected = false;
+                voiceState.connections[peerId].speaking = false;
+
+                if(voiceState.localStream) {
+                    voiceState.localStream.getTracks().forEach(track => pc.addTrack(track, voiceState.localStream));
+                }
+
+                pc.onicecandidate = e => {
+                    if(e.candidate) sendToPeer(peerId, {type:'VOICE_ICE', candidate: e.candidate});
+                };
+
+                pc.ontrack = e => {
+                    let audioEl = document.getElementById('voice-audio-'+peerId);
+                    if(!audioEl) {
+                        audioEl = document.createElement('audio');
+                        audioEl.id = 'voice-audio-'+peerId;
+                        audioEl.autoplay = true;
+                        audioEl.style.display = 'none';
+                        document.body.appendChild(audioEl);
+                    }
+                    audioEl.srcObject = e.streams[0];
+                    audioEl.muted = voiceState.mutedOutput;
+                    voiceState.connections[peerId].remoteAudioEl = audioEl;
+                    voiceState.connections[peerId].connected = true;
+                    renderVoiceParticipants();
+
+                    // Simple speaking-detection via AnalyserNode for the live "speaking" dot
+                    try {
+                        const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+                        const src = audioCtx.createMediaStreamSource(e.streams[0]);
+                        const analyser = audioCtx.createAnalyser();
+                        analyser.fftSize = 512;
+                        src.connect(analyser);
+                        const data = new Uint8Array(analyser.frequencyBinCount);
+                        const tick = () => {
+                            if(!voiceState.connections[peerId]) { try{audioCtx.close();}catch(err){} return; }
+                            analyser.getByteFrequencyData(data);
+                            const avg = data.reduce((a,b)=>a+b,0)/data.length;
+                            const speaking = avg > 12;
+                            if(voiceState.connections[peerId].speaking !== speaking) {
+                                voiceState.connections[peerId].speaking = speaking;
+                                renderVoiceParticipants();
+                            }
+                            requestAnimationFrame(tick);
+                        };
+                        tick();
+                    } catch(e) {}
+                };
+
+                pc.onconnectionstatechange = () => {
+                    if(['failed','disconnected','closed'].includes(pc.connectionState)) {
+                        teardownVoicePeer(peerId, false);
+                    }
+                };
+
+                return pc;
+            }
+
+            async function joinVoiceWithPeer(peerId, isInitiator){
+                const pc = setupVoicePC(peerId, isInitiator);
+                if(isInitiator) {
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    sendToPeer(peerId, {type:'VOICE_OFFER', sdp: offer, mode: voiceState.mode});
+                }
+            }
+
+            async function startVoiceSession(mode){
+                if(voiceState.active && voiceState.mode === mode) return;
+                if(voiceState.active) stopVoiceSession(false); // switch mode cleanly
+
+                const peerIds = Object.keys(state.peers);
+                if(!peerIds.length) {
+                    Notifications.push('AETHER LINK', 'Connect to a peer first to start voice chat');
+                    return;
+                }
+
+                voiceState.mode = mode;
+                try {
+                    await ensureLocalMicStream(mode === 'walkie'); // walkie starts muted (PTT controls it)
+                } catch(e) {
+                    Notifications.push('AETHER LINK', 'Microphone access denied or unavailable');
+                    voiceState.mode = null;
+                    return;
+                }
+
+                voiceState.active = true;
+                document.querySelectorAll('.al-voice-mode-btn').forEach(b=>{
+                    const isThis = b.id === 'al-voice-mode-'+mode;
+                    b.style.background = isThis ? 'rgba(139,92,246,0.2)' : '';
+                    b.style.borderColor = isThis ? 'rgba(139,92,246,0.4)' : '';
+                    b.classList.toggle('text-violet-300', isThis);
+                    b.classList.toggle('text-white/50', !isThis);
+                });
+
+                // Connect to all current peers — invite them, then they answer
+                peerIds.forEach(id => {
+                    sendToPeer(id, {type:'VOICE_INVITE', mode});
+                    joinVoiceWithPeer(id, true);
+                });
+
+                showVoiceActive();
+                renderVoiceParticipants();
+                updateVoiceIndicator();
+                addActivity('You', `started ${mode==='walkie'?'walkie-talkie':'open mic'} voice chat`);
+                Notifications.push('AETHER LINK', `Voice chat started (${mode==='walkie'?'Walkie-Talkie':'Open Mic'})`);
+            }
+
+            function teardownVoicePeer(peerId, notify=true){
+                const conn = voiceState.connections[peerId];
+                if(conn) {
+                    if(conn.pc) try { conn.pc.close(); } catch(e) {}
+                    if(conn.remoteAudioEl) { conn.remoteAudioEl.srcObject=null; conn.remoteAudioEl.remove(); }
+                    delete voiceState.connections[peerId];
+                }
+                if(notify) sendToPeer(peerId, {type:'VOICE_LEAVE'});
+                renderVoiceParticipants();
+            }
+
+            function stopVoiceSession(notifyPeers=true){
+                Object.keys(voiceState.connections).forEach(id => teardownVoicePeer(id, notifyPeers));
+                if(voiceState.localStream) {
+                    voiceState.localStream.getTracks().forEach(t => t.stop());
+                    voiceState.localStream = null;
+                }
+                voiceState.active = false;
+                voiceState.mode = null;
+                voiceState.pttHeld = false;
+                showVoiceIdle();
+                updateVoiceIndicator();
+                addActivity('You', 'left voice chat');
+            }
+
+            function handleVoiceInvite(fromId, data){
+                // Auto-join: if we're not already in a voice session, mirror their mode and join.
+                // If we ARE in a session, just answer the connection (mesh).
+                if(!voiceState.active) {
+                    voiceState.mode = data.mode;
+                    ensureLocalMicStream(data.mode === 'walkie').then(()=>{
+                        voiceState.active = true;
+                        showVoiceActive();
+                        updateVoiceIndicator();
+                        document.querySelectorAll('.al-voice-mode-btn').forEach(b=>{
+                            const isThis = b.id === 'al-voice-mode-'+data.mode;
+                            b.style.background = isThis ? 'rgba(139,92,246,0.2)' : '';
+                            b.style.borderColor = isThis ? 'rgba(139,92,246,0.4)' : '';
+                        });
+                        Notifications.push('AETHER LINK', `${state.peers[fromId]?.name||fromId} started voice chat — you joined automatically`);
+                        addActivity(state.peers[fromId]?.name||fromId, 'started a voice session');
+                    }).catch(()=>{
+                        Notifications.push('AETHER LINK', 'Microphone access denied — cannot join voice chat');
+                    });
+                }
+            }
+
+            async function handleVoiceOffer(fromId, data){
+                if(!voiceState.localStream) {
+                    try { await ensureLocalMicStream(data.mode === 'walkie'); } catch(e) { return; }
+                }
+                if(!voiceState.active) { voiceState.active = true; voiceState.mode = data.mode; showVoiceActive(); updateVoiceIndicator(); }
+
+                const pc = setupVoicePC(fromId, false);
+                await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                sendToPeer(fromId, {type:'VOICE_ANSWER', sdp: answer});
+
+                // Flush queued ICE
+                (voiceState.pendingICE[fromId]||[]).forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+                voiceState.pendingICE[fromId] = [];
+                renderVoiceParticipants();
+            }
+
+            async function handleVoiceAnswer(fromId, data){
+                const conn = voiceState.connections[fromId];
+                if(!conn || !conn.pc) return;
+                try {
+                    await conn.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    (voiceState.pendingICE[fromId]||[]).forEach(c => conn.pc.addIceCandidate(new RTCIceCandidate(c)).catch(()=>{}));
+                    voiceState.pendingICE[fromId] = [];
+                } catch(e) {}
+            }
+
+            function handleVoiceICE(fromId, data){
+                const conn = voiceState.connections[fromId];
+                if(conn && conn.pc && conn.pc.remoteDescription) {
+                    conn.pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(()=>{});
+                } else {
+                    voiceState.pendingICE[fromId] = voiceState.pendingICE[fromId] || [];
+                    voiceState.pendingICE[fromId].push(data.candidate);
+                }
+            }
+
+            function handleVoiceLeave(fromId){
+                teardownVoicePeer(fromId, false);
+                Notifications.push('AETHER LINK', `${state.peers[fromId]?.name||fromId} left voice chat`);
+                addActivity(state.peers[fromId]?.name||fromId, 'left voice chat');
+                if(Object.keys(voiceState.connections).length === 0 && voiceState.active) {
+                    // Everyone left — stay "active" alone in case more peers join, just update UI
+                    renderVoiceParticipants();
+                }
+            }
+
+            // ── Push-to-talk signaling: when I hold PTT, unmute locally AND tell peers
+            //    I'm transmitting (used for the "speaking" UI on their end as a fallback
+            //    to the AnalyserNode VAD, and to gate that my mic track stays muted otherwise). ──
+            function pttStart(){
+                if(!voiceState.active || voiceState.mode !== 'walkie' || voiceState.pttHeld) return;
+                voiceState.pttHeld = true;
+                if(voiceState.localStream) voiceState.localStream.getAudioTracks().forEach(t => t.enabled = true);
+                const btn = document.getElementById('al-voice-ptt-btn');
+                if(btn) { btn.style.background='rgba(52,211,153,0.25)'; btn.style.borderColor='rgba(52,211,153,0.5)'; btn.style.transform='scale(0.95)'; }
+                Object.keys(voiceState.connections).forEach(id => sendToPeer(id, {type:'VOICE_PTT_START'}));
+            }
+
+            function pttEnd(){
+                if(!voiceState.pttHeld) return;
+                voiceState.pttHeld = false;
+                if(voiceState.localStream) voiceState.localStream.getAudioTracks().forEach(t => t.enabled = false);
+                const btn = document.getElementById('al-voice-ptt-btn');
+                if(btn) { btn.style.background='rgba(139,92,246,0.12)'; btn.style.borderColor='rgba(139,92,246,0.3)'; btn.style.transform=''; }
+                Object.keys(voiceState.connections).forEach(id => sendToPeer(id, {type:'VOICE_PTT_END'}));
+            }
+
+            function handlePTTStart(fromId){
+                const conn = voiceState.connections[fromId];
+                if(conn) { conn.speaking = true; renderVoiceParticipants(); }
+            }
+            function handlePTTEnd(fromId){
+                const conn = voiceState.connections[fromId];
+                if(conn) { conn.speaking = false; renderVoiceParticipants(); }
+            }
+
+            function toggleMicMute(){
+                if(!voiceState.localStream) return;
+                const track = voiceState.localStream.getAudioTracks()[0];
+                if(!track) return;
+                track.enabled = !track.enabled;
+                const btn = document.getElementById('al-voice-mute-btn');
+                const icon = document.getElementById('al-voice-mute-icon');
+                if(track.enabled) {
+                    if(btn) { btn.style.background='rgba(139,92,246,0.15)'; btn.style.borderColor='rgba(139,92,246,0.3)'; }
+                    if(icon) icon.setAttribute('data-lucide','mic');
+                } else {
+                    if(btn) { btn.style.background='rgba(239,68,68,0.15)'; btn.style.borderColor='rgba(239,68,68,0.4)'; }
+                    if(icon) icon.setAttribute('data-lucide','mic-off');
+                }
+                if(window.lucide) lucide.createIcons({nodes:[document.getElementById('al-voice-open-controls')]});
+            }
+
 
             // ── Public API ──
             const API = {
@@ -9454,10 +10573,10 @@ RenderScheduler.start();
                         os.logTerminal(`Aether Link: Code generated — ${shortCode} | PeerJS ID: ${peerjsId}`);
                         Notifications.push('AETHER LINK', `Your code: ${shortCode}`);
                     } catch(e) {
-                        // PeerJS unavailable — fall back to BroadcastChannel only (same-browser)
-                        if(el) el.textContent=shortCode+' (local)';
-                        os.logTerminal('Aether Link: PeerJS unavailable, using BroadcastChannel only: '+e.message);
-                        Notifications.push('AETHER LINK', `Code: ${shortCode} (same-browser only)`);
+                        // PeerJS unavailable — fall back to BroadcastChannel only (same browser tab group)
+                        if(el) el.textContent=shortCode+' (local only)';
+                        os.logTerminal('Aether Link: PeerJS unavailable, using BroadcastChannel only: '+(e.message||e.type||'unknown error'));
+                        Notifications.push('AETHER LINK', `Could not reach the relay server — this code only works for other tabs in this same browser`);
                     }
                 },
 
@@ -9474,29 +10593,66 @@ RenderScheduler.start();
                     const formatted=code.length>=8?code.slice(0,4)+'-'+code.slice(4,8):code;
                     if(input) input.value='';
 
-                    // First try BroadcastChannel (same browser)
-                    if(!state.myCode) await this.generateCode();
-                    bcSend({type:'PAIR_REQUEST', targetCode:formatted, fromName:state.myName});
-
-                    // Also try WebRTC connection directly using derived PeerJS ID
-                    const targetPeerjsId='al-'+formatted.replace('-','').toLowerCase();
-                    if(state.peer && !state.peer.destroyed) {
-                        try {
-                            const conn=state.peer.connect(targetPeerjsId,{reliable:true});
-                            setupDataConn(conn);
-                            // Register peer provisionally
-                            if(!state.peers[targetPeerjsId]) {
-                                state.peers[targetPeerjsId]={id:targetPeerjsId,name:formatted,status:'connecting',chatHistory:[],presence:{},conn};
-                                renderPeers();
-                            }
-                            Notifications.push('AETHER LINK',`Connecting to ${formatted}…`);
-                        } catch(e) {
-                            os.logTerminal('Aether Link connect error: '+e.message);
-                        }
-                    } else {
-                        Notifications.push('AETHER LINK',`Pair request sent to ${formatted}`);
+                    if(!state.myCode || !state.peer || state.peer.destroyed) {
+                        Notifications.push('AETHER LINK', 'Setting up your connection…');
+                        await this.generateCode();
                     }
-                    os.logTerminal(`Aether Link: Joining ${formatted}`);
+
+                    const targetPeerjsId='al-'+formatted.replace('-','').toLowerCase();
+
+                    if(!state.peer || state.peer.destroyed || state.peer.disconnected) {
+                        Notifications.push('AETHER LINK', 'Could not establish a relay connection — check your internet and try again');
+                        os.logTerminal('Aether Link: join failed — no usable PeerJS connection');
+                        return;
+                    }
+
+                    Notifications.push('AETHER LINK', `Connecting to ${formatted}…`);
+                    os.logTerminal(`Aether Link: Dialing ${targetPeerjsId}`);
+
+                    const conn = state.peer.connect(targetPeerjsId, {reliable:true});
+                    if(!conn) {
+                        Notifications.push('AETHER LINK', 'Failed to start connection — try again');
+                        return;
+                    }
+
+                    // Provisional entry so the UI shows "connecting…" immediately
+                    if(!state.peers[targetPeerjsId]) {
+                        state.peers[targetPeerjsId]={id:targetPeerjsId,name:formatted,status:'connecting',chatHistory:[],presence:{},conn};
+                        renderPeers();
+                    }
+
+                    // Real timeout: PeerJS will NOT error out on its own if the target
+                    // peer simply doesn't exist on the broker — the connect() call
+                    // succeeds optimistically and just never opens. We have to time it
+                    // out ourselves and tell the user clearly what went wrong.
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if(settled) return;
+                        settled = true;
+                        if(state.peers[targetPeerjsId] && state.peers[targetPeerjsId].status === 'connecting') {
+                            delete state.peers[targetPeerjsId];
+                            renderPeers();
+                        }
+                        try { conn.close(); } catch(e) {}
+                        Notifications.push('AETHER LINK', `Could not reach ${formatted} — make sure they generated a code and are online right now`);
+                        os.logTerminal(`Aether Link: connect timeout for ${targetPeerjsId}`);
+                    }, 12000);
+
+                    conn.on('open', () => {
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        setupDataConn(conn);
+                    });
+                    conn.on('error', e => {
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        if(state.peers[targetPeerjsId] && state.peers[targetPeerjsId].status === 'connecting') {
+                            delete state.peers[targetPeerjsId];
+                            renderPeers();
+                        }
+                        Notifications.push('AETHER LINK', `Connection to ${formatted} failed: ${e.type || e.message || 'unknown error'}`);
+                        os.logTerminal('Aether Link connect error: '+(e.message||e.type));
+                    });
                 },
 
                 acceptPair() {
@@ -9532,14 +10688,21 @@ RenderScheduler.start();
                     document.querySelectorAll('.al-tab').forEach(el=>el.classList.add('hidden'));
                     const ae=document.getElementById(`al-tab-${tab}`); if(ae) ae.classList.remove('hidden');
                     document.querySelectorAll('.al-mod-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-                    const icons={chat:'message-square',presence:'eye',whiteboard:'pen-tool',transfer:'send',activity:'activity',miniapps:'grid-2x2'};
-                    const titles={chat:'Chat',presence:'Live Presence',whiteboard:'Shared Whiteboard',transfer:'File Transfer',activity:'Activity Feed',miniapps:'Mini Apps'};
+                    const icons={chat:'message-square',presence:'eye',whiteboard:'pen-tool',transfer:'send',activity:'activity',miniapps:'grid-2x2',screenshare:'monitor-up',voice:'radio'};
+                    const titles={chat:'Chat',presence:'Live Presence',whiteboard:'Shared Whiteboard',transfer:'File Transfer',activity:'Activity Feed',miniapps:'Mini Apps',screenshare:'Screen Share',voice:'Voice / Walkie-Talkie'};
                     const ie=document.getElementById('al-header-icon');const te=document.getElementById('al-header-title');
                     if(ie) ie.setAttribute('data-lucide',icons[tab]||'layout');if(te) te.textContent=titles[tab]||tab;
                     if(window.lucide) lucide.createIcons({nodes:[document.getElementById('al-tab-header')]});
                     if(tab==='whiteboard') setTimeout(initWB,50);
                     if(tab==='presence') renderPresence();
                     if(tab==='activity') { if(!state.activityLog.length) addActivity('System','Activity feed opened'); }
+                    if(tab==='screenshare') {
+                        const sel=document.getElementById('al-ss-peer-select');
+                        if(sel) {
+                            sel.innerHTML='<option value="">— Select peer —</option>'+Object.values(state.peers).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+                        }
+                    }
+                    if(tab==='voice') { renderVoiceParticipants(); }
                 },
 
                 openChat(peerId) { state.activePeer=peerId; this.switchTab('chat'); const sel=document.getElementById('al-chat-peer');if(sel) sel.value=peerId; renderChat(peerId); },
@@ -9594,11 +10757,27 @@ RenderScheduler.start();
                 wbExport(){const c=document.getElementById('al-wb-canvas');if(!c) return;const a=document.createElement('a');a.download=`AetherLink_WB_${Date.now()}.png`;a.href=c.toDataURL();a.click();},
 
                 launchMiniApp(id){const c=document.getElementById('al-mini-app-container');if(!c) return;const r=MINI_APPS[id];if(!r) return;c.classList.remove('hidden');c.innerHTML=r();if(window.lucide) lucide.createIcons({nodes:[c]});},
-                pixelPaint(el){const ci=document.getElementById('al-pixel-color');const color=ci?.value||'#a78bfa';el.style.background=color;broadcastAll({type:'ACTIVITY',activity:'is painting'});},
-                syncNotes(text){broadcastAll({type:'SHARED_NOTES',text});},
+                pixelPaint(index, el){ paintPixelCell(index, el); },
+                pixelReset(){ resetPixelGrid(true); },
+                chessSquareClick(r,c){ chessSquareClick(r,c); },
+                chessReset(){ resetChessBoard(true); },
+                syncNotes(text){ sharedNotesState.text=text; broadcastAll({type:'SHARED_NOTES',text}); },
                 addTodo(){const i=document.getElementById('al-todo-input');const t=i?.value.trim();if(!t) return;const item={id:Date.now(),text:t,done:false};todoItems.push(item);if(i) i.value='';renderTodos();broadcastAll({type:'TODO_SYNC',items:todoItems});},
                 toggleTodo(id){const t=todoItems.find(x=>x.id===id);if(t){t.done=!t.done;renderTodos();broadcastAll({type:'TODO_SYNC',items:todoItems});}},
                 removeTodo(id){const idx=todoItems.findIndex(x=>x.id===id);if(idx!==-1){todoItems.splice(idx,1);renderTodos();broadcastAll({type:'TODO_SYNC',items:todoItems});}},
+
+                // ── Screen Sharing (real getDisplayMedia + WebRTC) ──
+                async startScreenShare(){ await startScreenShareReal(); },
+                stopScreenShare(){ stopScreenShareReal(); },
+                acceptScreenShare(){ acceptScreenShareReal(); },
+                declineScreenShare(){ declineScreenShareReal(); },
+
+                // ── Voice Chat / Walkie-Talkie (real getUserMedia + WebRTC audio) ──
+                async setVoiceMode(mode){ await startVoiceSession(mode); },
+                leaveVoice(){ stopVoiceSession(true); },
+                toggleMute(){ toggleMicMute(); },
+                pttStart(){ pttStart(); },
+                pttEnd(){ pttEnd(); },
             };
 
             window.AetherLinkAPI=API;
@@ -26294,7 +27473,18 @@ RenderScheduler.start();
             alWbClear:         () => window.AetherLinkAPI?.wbClear(),
             alWbExport:        () => window.AetherLinkAPI?.wbExport(),
             alLaunchMiniApp:   (id) => window.AetherLinkAPI?.launchMiniApp(id),
-            alPixelPaint:      (el) => window.AetherLinkAPI?.pixelPaint(el),
+            alPixelPaint:      (idx, el) => window.AetherLinkAPI?.pixelPaint(idx, el),
+            alPixelReset:      () => window.AetherLinkAPI?.pixelReset(),
+            alChessReset:      () => window.AetherLinkAPI?.chessReset(),
+            alStartScreenShare:() => window.AetherLinkAPI?.startScreenShare(),
+            alStopScreenShare: () => window.AetherLinkAPI?.stopScreenShare(),
+            alAcceptScreenShare: () => window.AetherLinkAPI?.acceptScreenShare(),
+            alDeclineScreenShare: () => window.AetherLinkAPI?.declineScreenShare(),
+            alSetVoiceMode:    (m) => window.AetherLinkAPI?.setVoiceMode(m),
+            alLeaveVoice:      () => window.AetherLinkAPI?.leaveVoice(),
+            alToggleMute:      () => window.AetherLinkAPI?.toggleMute(),
+            alPTTStart:        () => window.AetherLinkAPI?.pttStart(),
+            alPTTEnd:          () => window.AetherLinkAPI?.pttEnd(),
 
         };
 
