@@ -525,105 +525,6 @@ oneko          → open Oneko picker
 
 ---
 
-## Optimization Report
-
-**Baseline (original `index.html`):**
-- 2.91 MB, ~29.7k lines, 19 script tags, 79 `backdrop-filter`, 164 `box-shadow`, 492 `transition`
-- 300 Three particles + 70 aether particles + sakura DOM + Nyan polyline → ~40-60fps cinematic, drops to ~20 on low-end
-- `SystemState.save()` on every drag/resize → many localStorage writes (sync, blocks main thread)
-- ~25 `setInterval` (sysmon 1.5s, iss 0.5s/10s, globe 30s, lanyard heartbeat, etc.) running even when hidden
-- Heavy `backdrop-filter: blur(40px)` on every window/panel → GPU heavy
-- No `content-visibility`, no `contain`, repeated `lucide.createIcons()` → layout thrash
-
-**Patched (`index-updated.html`, +22 KB, 2.93 MB):**
-
-| Area | Before | After | Impact |
-|------|--------|-------|--------|
-| Saves | sync per drag | **600ms debounce** + idle + flush on hidden | -90% writes, no jank |
-| Hidden tab | keeps animating | **pause** bgEngine, particles, intervals <5s | CPU → ~0% when hidden, battery saved |
-| Intervals | native delays | **eco wrapper**: <400ms ×1.8, 400-1k→1200ms | -30-50% timer wakeups |
-| Glass | always blur 40px | **eco**: `backdrop-filter:none` on panels; dock 16px | GPU -40% on low-end |
-| Paint | full repaint | **contain + content-visibility** off-screen | -70% paint cost |
-| Icons | immediate per render | **80ms debounce** batch | -80% forced reflows |
-| Images | eager | **lazy + async + fetchpriority low** + MO | faster FCP, less decode jank |
-| FPS | uncapped RAF | **HUD + 12-sample avg** + auto eco suggest | visibility + control |
-| Particles | 70 always | **eco 40** + pause when hidden | -43% particles |
-
-**Measured (Chrome 120, 8-core, 8GB, 60Hz):**
-- **Idle (cinematic, 1 window):** 58-60fps → **58-60fps** (same, but 12% lower GPU)
-- **5 windows (cinematic):** 42fps → **48fps** (+14%)
-- **5 windows (eco):** 38fps → **52fps** (+36%) — blur off
-- **Hidden tab CPU:** 8% → **0.3%** (paused)
-- **Drag jank:** localStorage write 12ms → **0.4ms** (debounced)
-
-**Preserved:** all visuals, animations, GSAP, Three, Cesium, Oneko, Sakura, audio — only throttled, never removed.
-
----
-
-## Roadmap & Feature Suggestions
-
-```mermaid
-timeline
-    title AetherOS Evolution
-    section Shipped
-        v1.0 Core : Window manager + Dock + Terminal
-        v2.0 Sensory : Media + Weather + Tracking + Archive
-        v3.0 Soul : JARVIS + Nyan + Voice + Sakura
-        v3.5 Fluency : Perf HUD + Debounce + Eco auto
-    section Next (Suggested)
-        v4.0 Collaboration : CRDT WikiBoard + Voice Rooms + Shared Canvas
-        v4.1 Intelligence : Local RAG + Semantic search + Command LLM
-        v4.2 Workstation : File previews + Code runner + Terminal FS
-        v5.0 Platform : PWA + Offline + Plugins
-```
-
-### Suggested features (prioritized, no backend, single-file-friendly)
-
-**1. Collaboration (no server, P2P)**
-- **Shared WikiBoard via CRDT (Yjs) over PeerJS** — multiple peers edit same canvas, sync via DataChannels already present in Aether Link. Keep single-file by bundling `yjs` via CDN import map.
-- **Voice rooms in Aether Link** — extend existing `alSetVoiceMode` to mesh audio via WebRTC (already has `alStartScreenShare`), add push-to-talk HUD.
-- **Live cursors** — show remote cursor + selection on WikiBoard/filemanager, reuse `BroadcastChannel` for local.
-
-**2. Intelligence (local, browser-native)**
-- **RAG over Living Archive + WikiBoard** — embed `WebLLM` already loaded; index archive text via `embedText` (already there) → vector search in IndexedDB → cited answers. No new backend.
-- **Command palette LLM** — fuzzy + semantic: `GlobalSearchIndex` already ranks; add embedding rerank (already has `rerankKnowledgeWithEmbeddings`) to palette.
-- **Smart notes** — `notes` window → auto-tag + link to WikiBoard cards via embedding similarity.
-
-**3. Workstation power**
-- **File previews for code/PDF/WASM** — extend `filemanager` preview to `*.md`, `*.js`, `*.wasm` via `monaco` CDN (lazy) + PDF.js worker. Keep in same file: lazy-load on demand.
-- **In-browser terminal FS** — enhance `Data Stream` to expose `window.showDirectoryPicker` FS as virtual `~/` with `ls/cat/echo` commands, already has FS Access.
-- **Quick capture** — `Ctrl+Shift+N` quick note → overlay input → saves to `Memory Scratchpad` + WikiBoard.
-
-**4. Media & Presence**
-- **System-wide media keys** — `navigator.mediaSession` already implied; register `play/pause/next` to control Media Console + Radio + YouTube Ambient.
-- **Discord Rich Presence bridge** — use `Lanyard` WS already; add two-way: set status via webhook or local activity broadcast to Aether Link peers.
-- **Visualizer as wallpaper** — option to use audio visualizer canvas as `#lg-wallpaper` layer (already have `#rb-visualizer-canvas` + `aether-particles`).
-
-**5. Platform & Perf**
-- **PWA + Offline** — add `manifest.json` + service worker caching single file + CDN libs; already handles `navigator.onLine`.
-- **Plugin pockets** — define `window.AetherPlugins = []` + `os.registerPlugin({id, render})` → render as window; community can add via bookmarklet.
-- **Perf budgets** — extend HUD to show `JS heap`, `layout count`, `long tasks` via `PerformanceObserver`.
-
-**Minimal viable next steps (single-file safe):**
-- [ ] Yjs + PeerJS for WikiBoard CRDT (add 1 CDN import, ~80KB)
-- [ ] Media Session API hook (5 lines)
-- [ ] RAG: index `filemanager` on boot via idle callback (already has `runIdle`)
-- [ ] Quick note overlay (`Ctrl+Shift+N`)
-- [ ] PWA manifest (external file — but instruction says single file; alternatively inline via `data:` URL)
-
-```mermaid
-graph TD
-    A[Current<br/>index-updated.html] --> B[CRDT WikiBoard<br/>Yjs + PeerJS]
-    A --> C[Media Session]
-    A --> D[RAG Index<br/>embeddings in IDB]
-    B --> E[Shared Canvas<br/>Voice Rooms]
-    C --> F[Visualizer Wallpaper]
-    D --> G[Semantic Palette]
-    G --> H[Plugin System]
-```
-
----
-
 ## Credits
 
 - **GSAP** — window drag, inertia, Genie minimize
@@ -641,7 +542,7 @@ graph TD
 ## Build Note
 
 This started as a side project with Claude helping along the way. The file is intentionally ambitious and a little extra. That is the point.  
-`index-updated.html` keeps that spirit, just runs fluently: debounced saves, visibility pause, eco auto, HUD, help, and glass tuning — all inside the same single file.
+`index.html` keeps that spirit, just runs fluently: debounced saves, visibility pause, eco auto, HUD, help, and glass tuning — all inside the same single file.
 
 **License:** MIT — use, remix, break, rebuild.
 
