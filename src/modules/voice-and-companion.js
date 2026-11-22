@@ -1147,7 +1147,7 @@ window.extendOS({
                             this.speakWithCooldown("Browser tucked away. The internet will wait.", { priority: 1 });
                         } else if (data.id === 'terminal') {
                             this.speakWithCooldown("Terminal minimized. Background processes continue uninterrupted.", { priority: 1 });
-                        } else if (data.id === 'youtube' || data.id === 'youtubeambient') {
+                        } else if (data.id === 'winamp' || data.id === 'radiobrowser') {
                             this.speakWithCooldown("Media player minimized. The soundtrack continues in the shadows.", { priority: 1 });
                         }
                     }

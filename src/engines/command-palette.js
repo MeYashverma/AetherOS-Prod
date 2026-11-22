@@ -130,11 +130,11 @@
     }
 
     const QUICK_ACTIONS = [
-        { cmd: 'act:qr-gen',        icon: 'qr-code',     label: 'QR: Generate Offline Scannable QR Code', tag: 'Offline' },
-        { cmd: 'act:img-webp',      icon: 'scan-line',   label: 'Image: Compress / Convert Image to WebP', tag: 'Local' },
+        { cmd: 'open:shadertoy',    icon: 'flame',       label: 'GPU: Launch 60fps WebGL GLSL Shader Studio', tag: 'WebGL' },
+        { cmd: 'open:stellarium',   icon: 'orbit',       label: 'Space: Fly NASA 3D Solar System & Planetarium', tag: '3D' },
+        { cmd: 'open:worldmuseums', icon: 'landmark',    label: 'Art: Browse Met & Chicago IIIF Masterpieces', tag: 'API' },
+        { cmd: 'open:georadar',     icon: 'compass',     label: 'World: Open GeoRadar 10km Wikipedia Explorer', tag: 'API' },
         { cmd: 'act:pin-win',       icon: 'pin',         label: 'Window: Pin Active Window Always-on-Top', tag: 'Sticky' },
-        { cmd: 'act:diff-check',    icon: 'git-compare', label: 'Dev: Compare Side-by-Side Text Diff',   tag: 'LCS' },
-        { cmd: 'act:cron-lab',      icon: 'clock',       label: 'Dev: Cron Schedule Explainer & Next Runs', tag: 'Cron' },
         { cmd: 'act:focus-toggle',  icon: 'timer',       label: 'Focus: Start / Pause Pomodoro Timer', tag: 'Focus' },
         { cmd: 'act:tile-split',    icon: 'columns-2',   label: 'Window: Tile Top 2 Windows 50/50',    tag: 'Split' },
         { cmd: 'act:calendar',      icon: 'calendar',    label: 'Workspace: Open Calendar & World Clocks', tag: 'Agenda' },
@@ -372,7 +372,7 @@
                             `;
                         });
                 }
-                // 5. Deep Search inside Kanban Project Boards & Pinned Snippets
+                // 5. Deep Search inside Kanban Project Boards
                 if (window.os && os.kanbanState && Array.isArray(os.kanbanState.boards)) {
                     os.kanbanState.boards.forEach((b) => {
                         (b.cards || [])
@@ -390,23 +390,6 @@
                                 `;
                             });
                     });
-                }
-
-                if (window.os && os.clipboardState && Array.isArray(os.clipboardState.items)) {
-                    os.clipboardState.items
-                        .filter((it) => it.pinned && (it.title + ' ' + it.text).toLowerCase().includes(lower))
-                        .slice(0, 3)
-                        .forEach((it) => {
-                            html += `
-                                <div class="cmd-item flex items-center justify-between p-3 rounded hover:bg-white/5 cursor-none hover-target" data-cmd="copy:${esc(it.text)}">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i>
-                                        <span class="text-gray-200">Copy Snippet: <strong class="text-white">${esc(it.title || it.text.slice(0, 40))}</strong></span>
-                                    </div>
-                                    <span class="text-[10px] font-mono text-emerald-400">SNIPPET</span>
-                                </div>
-                            `;
-                        });
                 }
             }
 
@@ -520,14 +503,10 @@
             } else if (action === 'theme') {
                 window.os.applyTheme && window.os.applyTheme(target);
             } else if (action === 'act') {
-                if (target === 'qr-gen') { window.os.openWindow('imagelab'); setTimeout(() => os.imageLabSetMode && os.imageLabSetMode('qr'), 30); }
-                else if (target === 'img-webp') { window.os.openWindow('imagelab'); setTimeout(() => os.imageLabSetMode && os.imageLabSetMode('image'), 30); }
-                else if (target === 'pin-win') {
+                if (target === 'pin-win') {
                     const top = Object.entries(SystemState.windows || {}).filter(([, w]) => w.isOpen && !w.isMinimized).sort((a, b) => (b[1].zIndex || 0) - (a[1].zIndex || 0))[0];
                     if (top && window.winManager) window.winManager.togglePinWindow(top[0]);
                 }
-                else if (target === 'diff-check') { window.os.openWindow('datatools'); setTimeout(() => os.dataToolsSetTab && os.dataToolsSetTab('diff'), 30); }
-                else if (target === 'cron-lab') { window.os.openWindow('datatools'); setTimeout(() => os.dataToolsSetTab && os.dataToolsSetTab('cron'), 30); }
                 else if (target === 'focus-toggle') { window.os.openWindow('focus'); setTimeout(() => os.focusToggleTimer && os.focusToggleTimer(), 30); }
                 else if (target === 'tile-split') { setTimeout(() => os.tileSideBySide && os.tileSideBySide(), 30); }
                 else if (target === 'calendar') { setTimeout(() => os.toggleCalendarPopover && os.toggleCalendarPopover(true), 40); }

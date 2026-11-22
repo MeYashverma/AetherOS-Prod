@@ -122,32 +122,6 @@ Object.assign(WindowContents, {
                 </div>
             `,
 
-    youtubeambient: `
-                <div class="flex h-full bg-[#050305] font-mono text-xs overflow-hidden" id="yt-ambient-root">
-                    <div class="w-[340px] min-w-[300px] border-r border-white/5 bg-black/35 flex flex-col">
-                        <div class="p-3 border-b border-white/5 bg-black/55 space-y-2 flex-shrink-0">
-                            <div class="flex items-center justify-between"><div class="text-red-300 uppercase tracking-widest text-[9px] flex items-center gap-2"><i data-lucide="youtube" class="w-3 h-3"></i> YouTube Ambient</div><button onclick="os.ytaLogin()" class="px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 cursor-none hover-target text-[9px]">Login</button></div>
-                            <div class="flex gap-2">
-                                <input id="yt-ambient-input" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none text-white cursor-text" placeholder="Search YouTube or paste URL/video ID..." onkeydown="if(event.key==='Enter') os.ytaSmartAction()">
-                                <button onclick="os.ytaSmartAction()" class="px-3 py-2 bg-red-500/20 border border-red-500/30 text-red-100 rounded-lg hover:bg-red-500/30 cursor-none hover-target">Go</button>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2 text-[9px]">
-                                <button onclick="os.ytaSearch()" class="px-2 py-1.5 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-none hover-target">Search</button>
-                                <button onclick="os.ytaHome()" class="px-2 py-1.5 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-none hover-target">Home</button>
-                                <button onclick="os.ytaOpenExternal()" class="px-2 py-1.5 bg-white/5 border border-white/10 rounded hover:bg-white/10 cursor-none hover-target">Open</button>
-                            </div>
-                            <div class="text-[8px] text-gray-600 leading-relaxed">Login opens YouTube in a new tab. Google sign-in cannot be embedded in static iframes for security.</div>
-                        </div>
-                        <div id="yt-ambient-results" class="flex-1 overflow-y-auto p-3 space-y-2"><div class="text-gray-500 text-center mt-10">Click Home for trending videos or search directly.</div></div>
-                    </div>
-                    <div class="relative flex-1 overflow-hidden bg-black">
-                        <div id="yt-ambient-placeholder" class="absolute inset-0 flex items-center justify-center text-center p-8 bg-[radial-gradient(circle_at_center,rgba(239,68,68,.18),transparent_55%)]"><div><div class="text-5xl mb-3">▶</div><div class="text-white font-display uppercase tracking-widest">Ambient Player</div><div class="text-gray-500 mt-2">Search, browse trending/home feed, paste URL, or open YouTube login externally.</div></div></div>
-                        <iframe id="yt-ambient-frame" class="w-full h-full border-0 hidden" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                        <div id="yt-ambient-now" class="absolute left-3 bottom-3 right-3 hidden pointer-events-none"><div class="inline-block max-w-full bg-black/65 border border-white/10 rounded-xl px-3 py-2 backdrop-blur"><div id="yt-now-title" class="text-white text-[11px] font-bold truncate"></div><div id="yt-now-meta" class="text-gray-400 text-[9px] truncate"></div></div></div>
-                    </div>
-                </div>
-            `,
-
     ytchtv: `
                 <div class="flex flex-col h-full bg-[#030304] overflow-hidden font-mono text-xs" id="ytchtv-root">
                     <div class="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-black/60 shrink-0">

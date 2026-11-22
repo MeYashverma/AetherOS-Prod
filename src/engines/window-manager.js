@@ -306,8 +306,6 @@ class WindowManager {
                     os.initRadioBrowser();
                 } else if (winData.id === 'sysmon') {
                     os.switchSysmonView('perf');
-                } else if (winData.id === 'nosleep') {
-                    os.initNoSleepPanel();
                 } else if (winData.id === 'presence') {
                     os.renderPresenceDashboard();
                 } else if (winData.id === 'feed') {
@@ -322,8 +320,6 @@ class WindowManager {
                     os.initFloor796();
                 } else if (winData.id === 'market') {
                     os.initMarket();
-                } else if (winData.id === 'surveillance') {
-                    os.initSurveillance();
                 } else if (winData.id === 'memes') {
                     os.initMemes();
                 } else if (winData.id === 'ytchtv') {
@@ -346,20 +342,10 @@ class WindowManager {
                     os.initGames();
                 } else if (winData.id === 'iss') {
                     os.initISS();
-                } else if (winData.id === 'youtubeambient') {
-                    os.initYouTubeAmbient();
                 } else if (winData.id === 'anime') {
                     os.animeTrending();
                 } else if (winData.id === 'manga') {
                     os.initManga();
-                } else if (winData.id === 'storage') {
-                    os.storageRender();
-                } else if (winData.id === 'errorconsole') {
-                    os.errorConsoleRender();
-                } else if (winData.id === 'apistatus') {
-                    os.apiStatusRun();
-                } else if (winData.id === 'packetviz') {
-                    os.packetVizRender();
                 } else if (winData.id === 'aetherbridge') {
                     if (window.AetherBridgeAPI) AetherBridgeAPI.init();
                     if (window.lucide) setTimeout(() => lucide.createIcons(), 60);
@@ -372,30 +358,12 @@ class WindowManager {
                     os.initDevPad && os.initDevPad();
                 } else if (winData.id === 'kanban') {
                     os.initKanban && os.initKanban();
-                } else if (winData.id === 'clipboard') {
-                    os.initClipboardManager && os.initClipboardManager();
-                } else if (winData.id === 'capture') {
-                    os.initCaptureStudio && os.initCaptureStudio();
-                } else if (winData.id === 'imagelab') {
-                    os.initImageLab && os.initImageLab();
                 } else if (winData.id === 'codeplay') {
                     os.initCodePlay && os.initCodePlay();
-                } else if (winData.id === 'apiclient') {
-                    os.initApiClient && os.initApiClient();
-                } else if (winData.id === 'datatools') {
-                    os.initDataTools && os.initDataTools();
                 } else if (winData.id === 'photobooth') {
                     os.initPhotoBooth && os.initPhotoBooth();
-                } else if (winData.id === 'calculator') {
-                    os.initCalculator && os.initCalculator();
                 } else if (winData.id === 'synthstudio') {
                     os.initSynthStudio && os.initSynthStudio();
-                } else if (winData.id === 'voicememos') {
-                    os.initVoiceMemos && os.initVoiceMemos();
-                } else if (winData.id === 'clockapp') {
-                    os.initClockApp && os.initClockApp();
-                } else if (winData.id === 'stickies') {
-                    os.initStickies && os.initStickies();
                 } else if (winData.id === 'earthpulse') {
                     os.initEarthPulse && os.initEarthPulse();
                 } else if (winData.id === 'wayback') {
@@ -408,6 +376,22 @@ class WindowManager {
                     os.initWhiteboard && os.initWhiteboard();
                 } else if (winData.id === 'winamp') {
                     os.initWinamp && os.initWinamp();
+                } else if (winData.id === 'worldmuseums') {
+                    os.initWorldMuseums && os.initWorldMuseums();
+                } else if (winData.id === 'spacexhub') {
+                    os.initSpaceXHub && os.initSpaceXHub();
+                } else if (winData.id === 'worldfactbook') {
+                    os.initWorldFactbook && os.initWorldFactbook();
+                } else if (winData.id === 'gutendex') {
+                    os.initGutendex && os.initGutendex();
+                } else if (winData.id === 'shadertoy') {
+                    os.initShadertoy && os.initShadertoy();
+                } else if (winData.id === 'stellarium') {
+                    os.initStellarium && os.initStellarium();
+                } else if (winData.id === 'chiptune') {
+                    os.initChiptune && os.initChiptune();
+                } else if (winData.id === 'georadar') {
+                    os.initGeoRadar && os.initGeoRadar();
                 }
             }
 
@@ -522,7 +506,6 @@ class WindowManager {
                 if (id === 'sysmon' && os.killSysMonitor) os.killSysMonitor();
                 if (id === 'globe' && os.killGlobe) os.killGlobe();
                 if (id === 'market' && os.killMarket) os.killMarket();
-                if (id === 'surveillance' && os.killSurveillance) os.killSurveillance();
                 if (id === 'memes' && os.killMemes) os.killMemes();
                 if (id === 'iss' && os.killISS) os.killISS();
                 if (id === 'ytchtv' && os.killYtchtv) os.killYtchtv();
@@ -530,10 +513,13 @@ class WindowManager {
                 if (id === 'wikiboard' && os.killWikiBoard) os.killWikiBoard();
                 if (id === 'photobooth' && os.killPhotoBooth) os.killPhotoBooth();
                 if (id === 'synthstudio' && os.killSynthStudio) os.killSynthStudio();
-                if (id === 'voicememos' && os.killVoiceMemos) os.killVoiceMemos();
                 if (id === 'earthpulse' && os.killEarthPulse) os.killEarthPulse();
                 if (id === 'wayback' && os.killWayback) os.killWayback();
                 if (id === 'winamp' && os.killWinamp) os.killWinamp();
+                if (id === 'spacexhub' && os.killSpaceXHub) os.killSpaceXHub();
+                if (id === 'shadertoy' && os.killShadertoy) os.killShadertoy();
+                if (id === 'stellarium' && os.killStellarium) os.killStellarium();
+                if (id === 'chiptune' && os.killChiptune) os.killChiptune();
                 if (id === 'filemanager' && os.killFileManager) os.killFileManager();
                 if (id === 'aetherlink' && window.AetherLinkAPI && typeof window.AetherLinkAPI.suspendUI === 'function') {
                     window.AetherLinkAPI.suspendUI();

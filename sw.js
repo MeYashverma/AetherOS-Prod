@@ -1,5 +1,5 @@
 // AetherOS — Offline-Capable Service Worker (Network-First Shell + Offline Cache Fallback)
-const CACHE_NAME = 'aetheros-shell-v6';
+const CACHE_NAME = 'aetheros-shell-v8';
 const CORE_ASSETS = [
   './',
   './index.html',

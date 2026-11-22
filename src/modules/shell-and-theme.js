@@ -737,7 +737,7 @@ window.extendOS({
 
                 // Topbar module indicators
                 const awakeBtn = document.getElementById('topbar-awake-widget');
-                if (awakeBtn) awakeBtn.style.display = os.isModuleEnabled('nosleep') ? '' : 'none';
+                if (awakeBtn) awakeBtn.style.display = (os.wakeLock && os.wakeLock.enabled) ? '' : 'none';
 
                 const abInd = document.getElementById('ab-topbar-indicator');
                 const alInd = document.getElementById('al-topbar-indicator');
@@ -788,9 +788,10 @@ window.extendOS({
                 try {
                     const raw = localStorage.getItem('AetherOS_PinnedDock');
                     if (raw === null) {
-                        return ['filemanager', 'earthpulse', 'ossradar', 'wayback', 'photopea', 'whiteboard', 'winamp', 'photobooth', 'synthstudio', 'terminal'];
+                        return ['filemanager', 'worldmuseums', 'spacexhub', 'stellarium', 'shadertoy', 'earthpulse', 'ossradar', 'wayback', 'photopea', 'winamp'];
                     }
-                    return JSON.parse(raw) || [];
+                    const reg = window.AETHER_MODULE_REGISTRY || {};
+                    return (JSON.parse(raw) || []).filter((id) => Boolean(reg[id]));
                 } catch(e) { return []; }
             },
 
@@ -894,6 +895,14 @@ window.extendOS({
     finderModules: [
                 { id: 'about',          label: 'About This Mac',        icon: 'info',         category: 'System' },
                 { id: 'settings',       label: 'System Settings',       icon: 'sliders',      category: 'System' },
+                { id: 'worldmuseums',   label: 'World Museums Vault',   icon: 'landmark',     category: 'Live APIs' },
+                { id: 'spacexhub',      label: 'Orbital Launch Control',icon: 'rocket',       category: 'Live APIs' },
+                { id: 'stellarium',     label: 'NASA Eyes & Planetarium', icon: 'orbit',      category: 'Exploration' },
+                { id: 'shadertoy',      label: 'GLSL Shader Studio',    icon: 'flame',        category: 'Intelligence' },
+                { id: 'georadar',       label: 'GeoRadar Explorer',     icon: 'compass',      category: 'Exploration' },
+                { id: 'worldfactbook',  label: 'World Factbook & FX',   icon: 'flag',         category: 'Live APIs' },
+                { id: 'gutendex',       label: 'Gutenberg Library',     icon: 'library',      category: 'Content' },
+                { id: 'chiptune',       label: 'Retro & 3D Makers',     icon: 'boxes',        category: 'Content' },
                 { id: 'earthpulse',     label: 'Earth Pulse Radar',     icon: 'globe-2',      category: 'Exploration' },
                 { id: 'ossradar',       label: 'Open-Source Radar',     icon: 'git-branch',   category: 'Intelligence' },
                 { id: 'wayback',        label: 'Archive & DOS Vault',   icon: 'history',      category: 'Exploration' },
@@ -901,36 +910,24 @@ window.extendOS({
                 { id: 'whiteboard',     label: 'OpenCanvas Board',      icon: 'pen-tool',     category: 'Content' },
                 { id: 'winamp',         label: 'Webamp + SomaFM',       icon: 'disc-3',       category: 'Media' },
                 { id: 'photobooth',     label: 'Photo Booth',           icon: 'aperture',     category: 'Media' },
-                { id: 'calculator',     label: 'Calculator',            icon: 'calculator',   category: 'System' },
                 { id: 'synthstudio',    label: 'GaragePad Studio',      icon: 'music',        category: 'Media' },
-                { id: 'voicememos',     label: 'Voice Memos',           icon: 'mic',          category: 'Media' },
-                { id: 'clockapp',       label: 'Clock',                 icon: 'clock',        category: 'System' },
-                { id: 'stickies',       label: 'Stickies',              icon: 'sticky-note',  category: 'Content' },
                 { id: 'focus',          label: 'Focus & Soundscapes',   icon: 'timer',        category: 'System' },
                 { id: 'devpad',         label: 'Markdown & Dev Studio', icon: 'code-2',       category: 'Intelligence' },
                 { id: 'kanban',         label: 'Project Board',         icon: 'kanban',       category: 'Content' },
-                { id: 'clipboard',      label: 'Clipboard & Snippets',  icon: 'clipboard-list', category: 'System' },
-                { id: 'capture',        label: 'Capture & Sketch Studio', icon: 'video',      category: 'Media' },
-                { id: 'imagelab',       label: 'Image, WebP & QR Lab',  icon: 'image-plus',   category: 'Media' },
                 { id: 'codeplay',       label: 'Live Code Sandbox',     icon: 'play-square',  category: 'Intelligence' },
-                { id: 'apiclient',      label: 'HTTP & REST API Client',icon: 'send',         category: 'Network' },
-                { id: 'datatools',      label: 'Diff, CSV & Cron Lab',  icon: 'file-diff',    category: 'Intelligence' },
                 { id: 'terminal',       label: 'Data Stream',           icon: 'terminal',     category: 'System' },
                 { id: 'sysmon',         label: 'System Diagnostics',    icon: 'cpu',          category: 'System' },
-                { id: 'nosleep',       label: 'NoSleep Screen Lock',    icon: 'sun',          category: 'System' },
-                { id: 'notes',          label: 'Memory Scratchpad',     icon: 'lock',         category: 'System' },
                 { id: 'media',          label: 'Media Console',         icon: 'radio',        category: 'Media' },
                 { id: 'radiobrowser',   label: 'Global Radio',          icon: 'radio-tower',  category: 'Media' },
                 { id: 'ytchtv',         label: 'Retro TV',              icon: 'tv',           category: 'Media' },
                 { id: 'presence',       label: 'Uplink Presence',       icon: 'user',         category: 'Network' },
                 { id: 'feed',           label: 'Signal Feed',           icon: 'rss',          category: 'Network' },
                 { id: 'browser',        label: 'Web Proxy',             icon: 'globe',        category: 'Network' },
-                { id: 'wplace',         label: 'Wplace Live Canvas',     icon: 'paintbrush',   category: 'Network' },
-                { id: 'floor796',       label: 'Floor796 Explorer',      icon: 'building-2',   category: 'Content' },
+                { id: 'wplace',         label: 'Wplace Live Canvas',    icon: 'paintbrush',   category: 'Network' },
+                { id: 'floor796',       label: 'Floor796 Explorer',     icon: 'building-2',   category: 'Content' },
                 { id: 'globe',          label: 'Airspace Radar',        icon: 'plane',        category: 'Intelligence' },
                 { id: 'market',         label: 'Market Matrix',         icon: 'trending-up',  category: 'Intelligence' },
                 { id: 'entityscanner',  label: 'Entity Scanner',        icon: 'scan',         category: 'Intelligence' },
-                { id: 'surveillance',   label: 'Optics Node',           icon: 'camera',       category: 'Intelligence' },
                 { id: 'memes',          label: 'Memetic Intel',         icon: 'smile',        category: 'Content' },
                 { id: 'filemanager',    label: 'Living Archive',        icon: 'folder-tree',  category: 'Content' },
                 { id: 'wikiboard',      label: 'WikiBoard',             icon: 'network',      category: 'Content' },
@@ -938,14 +935,9 @@ window.extendOS({
                 { id: 'nasa',           label: 'NASA Deep Space',       icon: 'telescope',    category: 'Live APIs' },
                 { id: 'taskmanager',    label: 'Task Manager',          icon: 'list-x',       category: 'System' },
                 { id: 'games',          label: 'Game Vault',            icon: 'gamepad-2',    category: 'Media' },
-                { id: 'youtubeambient', label: 'YouTube Ambient',       icon: 'youtube',      category: 'Media' },
                 { id: 'anime',          label: 'Anime Discovery',       icon: 'sparkles',     category: 'Content' },
                 { id: 'manga',          label: 'Manga Launcher',        icon: 'book-open',    category: 'Content' },
                 { id: 'iss',            label: 'ISS Tracker',           icon: 'satellite',    category: 'Live APIs' },
-                { id: 'apistatus',      label: 'API Status Board',      icon: 'activity',     category: 'Live APIs' },
-                { id: 'storage',        label: 'Storage Inspector',     icon: 'database',     category: 'System' },
-                { id: 'errorconsole',   label: 'Error Console',         icon: 'bug',          category: 'System' },
-                { id: 'packetviz',      label: 'Packet Visualizer',     icon: 'network',      category: 'Network' },
                 { id: 'aetherbridge',   label: 'Aether Bridge',         icon: 'radio-tower',  category: 'Network' },
                 { id: 'aetherlink',     label: 'Aether Link',           icon: 'link-2',       category: 'Network' },
             ],
