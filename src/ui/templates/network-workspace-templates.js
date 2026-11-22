@@ -635,6 +635,7 @@ Object.assign(WindowContents, {
                             <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
                             <input id="fm-search-input" oninput="os.fmSearch(this.value)" onkeydown="if(event.key==='Enter'){os.fmWikiSearch(this.value)}" placeholder="Search Wikipedia — e.g. Tony Stark (Marvel Cinematic Universe)" class="w-full bg-black/70 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-[11px] text-white focus:outline-none focus:border-white/25 cursor-none hover-target">
                         </div>
+                        <button onclick="window.AetherVFS && AetherVFS.triggerUploadDialog()" class="px-3 py-2 rounded bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/25 cursor-none hover-target flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Upload</button>
                         <button onclick="os.fmWikiSearch(document.getElementById('fm-search-input').value)" class="px-3 py-2 rounded bg-white/10 border border-white/10 text-white hover:bg-white/15 cursor-none hover-target flex items-center gap-2"><i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>Fetch Wiki</button>
                         <button onclick="os.fmQuickLook()" class="px-3 py-2 rounded bg-white/10 border border-white/10 text-white hover:bg-white/15 cursor-none hover-target flex items-center gap-2"><i data-lucide="eye" class="w-3.5 h-3.5"></i>Quick Look</button>
                     </div>

@@ -252,10 +252,21 @@ window.extendOS({
                         const item = search.collection?.items?.[Math.floor(Math.random()*Math.min(8, search.collection.items.length))];
                         d = { title:item?.data?.[0]?.title || 'NASA Deep Space Archive', date:item?.data?.[0]?.date_created?.split('T')[0] || '', explanation:item?.data?.[0]?.description || 'Loaded from NASA Image and Video Library fallback feed.', url:item?.links?.[0]?.href, hdurl:item?.links?.[0]?.href, media_type:'image', copyright:'NASA Image Library' };
                     }
+                    os._lastNasaApod = d;
                     const media = d.media_type === 'video' ? `<iframe src="${os._html(d.url)}" class="w-full h-72 border-0" allowfullscreen></iframe>` : `<img src="${os._html(d.hdurl || d.url)}" class="w-full max-h-80 object-cover" alt="${os._html(d.title)}" loading="lazy">`;
                     el.innerHTML = `
                         <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 relative bg-black shadow-os-recessed">${media}<div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-transparent"></div></div>
-                        <div class="flex items-start justify-between gap-4"><div><div class="text-white font-display text-xl uppercase tracking-wide mb-1">${os._html(d.title)}</div><div class="text-[9px] text-os-accent font-mono mb-2">${os._html(d.date)} · ${os._html(d.copyright || 'NASA')}</div></div><button onclick="os.nasaLoadAPOD()" class="px-2 py-1 bg-white/5 border border-white/10 rounded cursor-none hover-target text-[9px]">Refresh</button></div>
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <div class="text-white font-display text-xl uppercase tracking-wide mb-1">${os._html(d.title)}</div>
+                                <div class="text-[9px] text-os-accent font-mono mb-2">${os._html(d.date)} · ${os._html(d.copyright || 'NASA')}</div>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                ${d.media_type !== 'video' ? `<button onclick="SystemState.settings.wallpaper_custom_url = os._lastNasaApod.hdurl || os._lastNasaApod.url; os.setOption('wallpaper_mode','custom'); Notifications && Notifications.push('WALLPAPER','Applied NASA APOD backdrop');" class="px-2 py-1 bg-white/5 hover:bg-white/12 border border-white/10 rounded cursor-none hover-target text-[9px] text-sky-300">Set Wallpaper</button>` : ''}
+                                <button onclick="window.AetherVFS && AetherVFS.saveClipperItem({ title: os._lastNasaApod.title, content: os._lastNasaApod.explanation, imageUrl: os._lastNasaApod.media_type !== 'video' ? (os._lastNasaApod.hdurl || os._lastNasaApod.url) : '', sourceUrl: os._lastNasaApod.hdurl || os._lastNasaApod.url, tags: ['nasa','apod'] })" class="px-2 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 rounded cursor-none hover-target text-[9px] text-emerald-200">Save to Files</button>
+                                <button onclick="os.nasaLoadAPOD()" class="px-2 py-1 bg-white/5 border border-white/10 rounded cursor-none hover-target text-[9px]">Refresh</button>
+                            </div>
+                        </div>
                         <div class="text-[11px] text-gray-300 leading-relaxed max-h-36 overflow-y-auto pr-2 select-text">${os._html(d.explanation || '').slice(0,1200)}</div>
                         <a href="${os._html(d.hdurl || d.url)}" target="_blank" class="inline-block mt-3 text-[9px] text-blue-300 hover:underline">Open NASA Asset ↗</a>`;
                 } catch(e) { os.nasaRenderError(el, 'APOD', e); }

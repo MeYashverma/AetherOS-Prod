@@ -1246,8 +1246,24 @@ window.extendOS({
                             </div>
                             <div class="text-[11px] text-white font-medium leading-snug ${item.link ? 'group-hover:text-green-400 transition-colors' : ''}">${os.escapeHtml(item.title)}</div>
                         </div>
-                        ${item.link ? '<div class="mt-0.5"><i data-lucide="external-link" class="w-3 h-3 text-gray-500 group-hover:text-green-400 transition-colors"></i></div>' : ''}
+                        <div class="flex items-center gap-1.5 mt-0.5 shrink-0">
+                            <button type="button" data-clip-feed="1" title="Save to File Explorer" class="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-emerald-300 transition cursor-none hover-target"><i data-lucide="bookmark-plus" class="w-3 h-3"></i></button>
+                            ${item.link ? '<i data-lucide="external-link" class="w-3 h-3 text-gray-500 group-hover:text-green-400 transition-colors"></i>' : ''}
+                        </div>
                     `;
+
+                    const clipBtn = el.querySelector('[data-clip-feed]');
+                    if (clipBtn) {
+                        clipBtn.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            window.AetherVFS && window.AetherVFS.saveClipperItem({
+                                title: item.title,
+                                content: `# ${item.title}\n\n- **Source**: ${item.source}\n- **Captured**: ${item.time}\n${item.link ? `- **Link**: ${item.link}\n` : ''}`,
+                                sourceUrl: item.link || '',
+                                tags: ['signal-feed', String(item.source || 'rss').toLowerCase()]
+                            });
+                        });
+                    }
 
                     container.prepend(el);
                     lucide.createIcons({root: el});

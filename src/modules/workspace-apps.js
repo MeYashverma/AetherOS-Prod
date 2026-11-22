@@ -631,7 +631,14 @@ window.extendOS({
 
     initFileManager: () => {
                 os.logTerminal('Living Archive: Mounted knowledge file system and relationship index.');
-                os.fmRender();
+                if (window.AetherVFS) {
+                    window.AetherVFS.getAllFiles().then(() => {
+                        window.AetherVFS.syncToFileManager();
+                        os.fmRender();
+                    });
+                } else {
+                    os.fmRender();
+                }
             },
 
     killFileManager: () => {
@@ -913,10 +920,26 @@ window.extendOS({
     fmRenderPreview: () => {
                 const el = document.getElementById('fm-preview'); if (!el) return;
                 const file = os.fmFindById(os.filemanager.activeFileId) || os.fmFlatten().find(n => n.kind !== 'folder');
-                if (!file) { el.innerHTML = '<div class="p-6 text-gray-600">Select a file for preview.</div>'; return; }
+                if (!file) { el.innerHTML = '<div class="p-6 text-gray-600">Select a file or drop files onto the desktop to upload.</div>'; return; }
                 const related = (file.related||[]).map(id => os.fmFindById(id)).filter(Boolean);
-                const mediaBlock = file.imageUrl ? `<div class="rounded-xl border border-white/10 bg-black/50 overflow-hidden"><img src="${os.fmEscape(file.imageUrl)}" class="w-full max-h-56 object-contain bg-black" alt="${os.fmEscape(file.originalName || file.name)}" referrerpolicy="no-referrer"><div class="px-3 py-2 text-[9px] text-gray-500 truncate">${os.fmEscape(file.originalName || file.imageUrl)}</div></div>` : '';
-                const source = file.sourceUrl ? `<a href="${os.fmEscape(file.sourceUrl)}" target="_blank" class="text-[9px] text-os-accent hover:text-white cursor-none hover-target">OPEN ORIGINAL WIKIPEDIA PAGE ↗</a>` : '';
+                const mediaBlock = file.imageUrl
+                    ? `<div class="rounded-xl border border-white/10 bg-black/50 overflow-hidden"><img src="${os.fmEscape(file.imageUrl)}" class="w-full max-h-56 object-contain bg-black" alt="${os.fmEscape(file.originalName || file.name)}" referrerpolicy="no-referrer"><div class="px-3 py-2 text-[9px] text-gray-500 truncate">${os.fmEscape(file.originalName || file.imageUrl)}</div></div>`
+                    : (file.audioUrl ? `<div class="rounded-xl border border-white/10 bg-black/50 p-3"><audio controls src="${os.fmEscape(file.audioUrl)}" class="w-full h-9"></audio></div>` : '');
+                const source = file.sourceUrl ? `<a href="${os.fmEscape(file.sourceUrl)}" target="_blank" class="text-[9px] text-os-accent hover:text-white cursor-none hover-target">OPEN ORIGINAL SOURCE ↗</a>` : '';
+                const canDevPad = ['markdown', 'text', 'code', 'json'].includes(file.kind) || (file.content && !file.imageUrl);
+                const canDataLab = file.kind === 'json' || /\.(csv|tsv|json)$/i.test(file.name || '');
+                const actionButtons = `
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="os.openQuickLook && os.openQuickLook('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 border border-white/20 text-[10px] text-white cursor-none hover-target">Quick Look (Space)</button>
+                        ${canDevPad ? `<button onclick="window.AetherVFS ? AetherVFS.openInDevPad('${file.id}') : (os.openWindow('devpad'))" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/30 text-[10px] text-indigo-200 cursor-none hover-target">Open in Dev Studio</button>` : ''}
+                        ${canDataLab ? `<button onclick="os.dataToolsOpenVfsFile && os.dataToolsOpenVfsFile('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 border border-teal-400/30 text-[10px] text-teal-200 cursor-none hover-target">Open in Data Lab</button>` : ''}
+                        ${file.imageUrl ? `<button onclick="os.ppOpenVfsImage && os.ppOpenVfsImage('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/30 text-[10px] text-purple-200 cursor-none hover-target">Edit in Photopea</button>` : ''}
+                        ${file.imageUrl ? `<button onclick="os.imageLabOpenVfsFile && os.imageLabOpenVfsFile('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 text-[10px] text-emerald-200 cursor-none hover-target">Compress / Edit</button>` : ''}
+                        ${file.imageUrl ? `<button onclick="window.AetherVFS && AetherVFS.applyFileAsWallpaper('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/30 text-[10px] text-sky-200 cursor-none hover-target">Set Wallpaper</button>` : ''}
+                        ${(file.isVfs || file.vfsBacked) ? `<button onclick="window.AetherVFS && AetherVFS.downloadFile('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-[10px] text-white cursor-none hover-target">Download</button>` : ''}
+                        ${(file.isVfs || file.vfsBacked) ? `<button onclick="window.AetherVFS && AetherVFS.deleteFile('${file.id}')" class="px-2.5 py-1.5 rounded-lg bg-red-500/12 hover:bg-red-500/22 border border-red-400/25 text-[10px] text-red-300 cursor-none hover-target">Delete</button>` : ''}
+                    </div>
+                `;
                 el.innerHTML = `<div class="p-4 space-y-4">
                     <div class="fm-preview-card fm-pulse-border rounded-2xl border border-white/10 p-4 overflow-hidden relative">
                         <div class="absolute right-4 top-4 w-24 h-24 rounded-full fm-mini-orbit opacity-50"></div>
@@ -924,14 +947,15 @@ window.extendOS({
                         <div class="text-white text-lg font-display uppercase tracking-wider leading-tight pr-20">${os.fmEscape(file.name)}</div>
                         <div class="text-[9px] text-os-accent uppercase tracking-widest mt-1">${file.kind} · ${file.signal} · ${file.size || 'folder'}</div>${source}
                     </div>
+                    ${actionButtons}
                     ${mediaBlock}
                     <div class="grid grid-cols-2 gap-2 text-[10px]">
                         <div class="fm-glass rounded-lg p-2"><div class="text-gray-600 uppercase text-[8px]">Modified</div><div class="text-gray-300">${file.modified || 'dynamic'}</div></div>
                         <div class="fm-glass rounded-lg p-2"><div class="text-gray-600 uppercase text-[8px]">References</div><div class="text-gray-300">${(file.refs||[]).length}</div></div>
                     </div>
-                    <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Quick Look Preview</div><p class="leading-relaxed text-gray-300 select-text">${os.fmEscape(file.content || 'Folder node containing nested archive objects and relationship metadata.')}</p></div>
+                    <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Quick Look Preview</div><p class="leading-relaxed text-gray-300 select-text whitespace-pre-wrap max-h-48 overflow-y-auto">${os.fmEscape(file.content || 'Folder node containing nested archive objects and relationship metadata.')}</p></div>
                     <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Metadata Tags</div><div class="flex flex-wrap gap-1.5">${(file.tags||[]).map(t=>`<span class="fm-chip px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-300">#${os.fmEscape(t)}</span>`).join('') || '<span class="text-gray-600">No tags</span>'}</div></div>
-                    <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Relationship Explorer</div><div class="space-y-1.5">${related.map(r=>`<button onclick="os.fmJumpToRelated('${r.id}')" class="w-full fm-chip px-2 py-2 rounded border border-white/10 bg-white/5 text-left cursor-none hover-target flex items-center gap-2"><i data-lucide="${r.icon||'folder'}" class="w-3.5 h-3.5 text-os-accent"></i><span class="truncate text-white/80">${os.fmEscape(r.name)}</span><span class="ml-auto text-[8px] text-gray-500 uppercase">${r.kind}</span></button>`).join('') || '<div class="text-gray-600">Open a live wiki summary to see extracted links and media.</div>'}</div></div>
+                    <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Relationship Explorer</div><div class="space-y-1.5">${related.map(r=>`<button onclick="os.fmJumpToRelated('${r.id}')" class="w-full fm-chip px-2 py-2 rounded border border-white/10 bg-white/5 text-left cursor-none hover-target flex items-center gap-2"><i data-lucide="${r.icon||'folder'}" class="w-3.5 h-3.5 text-os-accent"></i><span class="truncate text-white/80">${os.fmEscape(r.name)}</span><span class="ml-auto text-[8px] text-gray-500 uppercase">${r.kind}</span></button>`).join('') || '<div class="text-gray-600">Open a live wiki summary or drop local files onto the desktop.</div>'}</div></div>
                     <div><div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Extracted References</div><div class="space-y-1">${(file.refs||[]).slice(0,20).map(ref=>`<button onclick="os.fmWikiSearch('${os.fmEscape(ref).replace(/'/g,'\\&#39;')}')" class="w-full text-left px-2 py-1.5 rounded bg-black/35 border border-white/5 text-gray-400 hover:text-white hover:bg-white/5 cursor-none hover-target">↳ ${os.fmEscape(ref)}</button>`).join('') || '<div class="text-gray-600">No references extracted.</div>'}</div></div>
                 </div>`;
                 lucide.createIcons({ root: el });
@@ -1256,15 +1280,28 @@ window.extendOS({
     aboutViews: {
                 overview: `
                     <div class="space-y-6">
-                        <!-- Cinematic Header -->
-                        <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-950/20 to-black/60 border border-white/5 p-6 shadow-2xl">
-                            <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-                            <div class="text-[9px] text-cyan-400 tracking-[0.3em] font-bold uppercase mb-2">SYSTEM WORKSPACE ENCYCLOPEDIA</div>
-                            <h1 class="text-4xl font-display uppercase tracking-widest text-white leading-none">AETHEROS</h1>
-                            <p class="text-gray-400 mt-3 text-sm leading-relaxed max-w-2xl">A premium client-side virtual environment and real-time sensory tracking platform. AetherOS merges space tracking telemetry, real-time audio discovery, multi-window compositing, and an automated companion into a single, cohesive operating workstation.</p>
-                            <div class="flex gap-4 mt-6">
-                                <div class="px-3 py-1.5 rounded bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-bold uppercase tracking-wider">PROJECT BLUEPRINT</div>
-                                <div class="px-3 py-1.5 rounded bg-white/5 border border-white/10 text-gray-400 text-[10px] uppercase tracking-wider">CORE VERSION 1.0.0</div>
+                        <!-- Authentic macOS "About This Mac" Identity Card -->
+                        <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.08] via-slate-900/70 to-black/80 border border-white/15 p-6 shadow-2xl flex flex-col sm:flex-row items-center gap-6">
+                            <div class="w-24 h-24 rounded-3xl bg-white/[0.06] border border-white/15 flex items-center justify-center shrink-0 shadow-[0_0_40px_rgba(255,255,255,0.12)]">
+                                <svg class="w-12 h-12 text-white drop-shadow-[0_0_14px_rgba(255,255,255,0.45)]" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 text-center sm:text-left">
+                                <div class="text-[10px] text-sky-300 tracking-[0.25em] font-bold uppercase">macOS Liquid Glass Edition</div>
+                                <h1 class="text-3xl font-display font-semibold tracking-tight text-white mt-0.5">AetherOS Workstation</h1>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5 mt-3.5 text-[11px] text-gray-300">
+                                    <div><span class="text-gray-500">Processor:</span> ${typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency + '-Core Silicon' : 'Apple Neural Engine'}</div>
+                                    <div><span class="text-gray-500">Memory:</span> ${typeof navigator !== 'undefined' && navigator.deviceMemory ? navigator.deviceMemory + ' GB Unified' : '16 GB Unified'}</div>
+                                    <div><span class="text-gray-500">Display:</span> ${typeof screen !== 'undefined' ? screen.width + ' × ' + screen.height : 'Retina Liquid Glass'}</div>
+                                    <div><span class="text-gray-500">Apps Installed:</span> 50 Native Modules</div>
+                                    <div><span class="text-gray-500">Spaces:</span> 3 Virtual Desktops</div>
+                                    <div><span class="text-gray-500">Build:</span> 26A-LiquidGlass</div>
+                                </div>
+                                <div class="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
+                                    <button type="button" onclick="os.openWindow('settings')" class="px-3.5 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 border border-white/15 text-white text-[11px] font-sans font-medium hover-target cursor-none">System Settings...</button>
+                                    <button type="button" onclick="os.openWindow('sysmon')" class="px-3.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-gray-200 text-[11px] font-sans hover-target cursor-none">System Report...</button>
+                                </div>
                             </div>
                         </div>
 
