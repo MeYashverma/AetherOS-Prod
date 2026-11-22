@@ -30,16 +30,13 @@
     media: ['media','music','music player','player','audio','media console','visualizer'],
     radiobrowser: ['radio','radio browser','global radio','tuner','station','radio network','internet radio','fm','am'],
     sysmon: ['sysmon','system monitor','system diagnostics','diagnostics','monitor','performance'],
-    nosleep: ['nosleep','screen awake','awake','wake lock','screen lock','keep awake','screen on','no sleep','sleep'],
     presence: ['presence','uplink','discord presence','discord'],
     feed: ['feed','signal feed','news feed','global signal'],
     browser: ['browser','web proxy','proxy'],
     wplace: ['wplace','live canvas'],
     floor796: ['floor796','floor 796','explorer'],
-    globe: ['globe','airspace','maps','map','radar'],
+    globe: ['globe','airspace','flight radar'],
     market: ['market','market matrix','stocks','crypto market'],
-    surveillance: ['surveillance','optics','optics node','camera'],
-    notes: ['notes','memory scratchpad','scratchpad','secure notes'],
     memes: ['memes','memetic','memetic intelligence'],
     ytchtv: ['retro tv','ytch','ytch tv','television'],
     entityscanner: ['entity scanner','scanner','universal scanner'],
@@ -50,16 +47,19 @@
     taskmanager: ['task manager','tasks'],
     games: ['games','game vault'],
     iss: ['iss','iss tracker','space station'],
-    youtubeambient: ['youtube ambient','ambient','lofi','youtube'],
     anime: ['anime','anime discovery'],
     manga: ['manga','manga launcher'],
-    storage: ['storage','storage inspector','disk usage'],
-    errorconsole: ['error console','errors','bugs'],
-    apistatus: ['api status','api board','api status board'],
-    packetviz: ['packet visualizer','packet viz','network visualizer'],
     about: ['about','system encyclopedia','encyclopedia','system info','version'],
     aetherbridge: ['aether bridge','bridge','device bridge','file bridge','remote files','device files','phone files'],
-    aetherlink: ['aether link','link','workstation link','peer connect','remote workstation','p2p','collab']
+    aetherlink: ['aether link','link','workstation link','peer connect','remote workstation','p2p','collab'],
+    worldmuseums: ['museums','world museums','met museum','art institute','art','paintings'],
+    spacexhub: ['spacex','orbital launch','rocket launches','starship','falcon'],
+    worldfactbook: ['countries','world factbook','currency','exchange rates','nations'],
+    gutendex: ['books','gutenberg','library','ereader','classics'],
+    shadertoy: ['shadertoy','shader studio','glsl','webgl shaders'],
+    stellarium: ['stellarium','planetarium','nasa eyes','solar system','stars'],
+    chiptune: ['chiptune','beepbox','blockbench','jspaint','makers'],
+    georadar: ['georadar','landmarks','openstreetmap','nearby places']
   };
 
   function aetherNormalize(v){
@@ -757,13 +757,18 @@
         wikiboard: 'WikiBoard is an infinite research canvas with draggable cards, connections, zoom, saved state, and Wikipedia fetching.',
         filemanager: 'Living Archive is the file manager with folders, breadcrumbs, metadata, relationships, previews, and live Wikipedia folders.',
         weather: 'Weather Station shows forecast and weather telemetry.',
-        globe: 'Tactical Airspace Radar is the closest maps-like module with globe and radar style geospatial views.',
-        surveillance: 'Optics Node is the live camera and sensor module.',
+        globe: 'Tactical Airspace Radar tracks live aircraft transponders on a geospatial map.',
         presence: 'Uplink Presence shows Discord / Lanyard presence telemetry.',
         settings: 'System Config is where appearance, performance profile, cursor themes, speech, and API settings are configured.',
-        sysmon: 'System Diagnostics monitors performance, FPS, latency, memory, and battery details.',
-        notes: 'Memory Scratchpad is the secure notes window that unlocks with a password and encrypts notes locally.',
-        youtubeambient: 'YouTube Ambient searches ambient, lofi, and live video streams for focus or mood playback.'
+        sysmon: 'System Diagnostics monitors performance, FPS, latency, memory, and network speed.',
+        worldmuseums: 'World Museums Vault searches HD open-access artworks from the Art Institute of Chicago and The Met.',
+        spacexhub: 'Orbital Launch Control tracks live global rocket launch countdowns and SpaceX fleet hardware.',
+        worldfactbook: 'World Factbook explores 250+ nations and converts currencies via ECB Frankfurter rates.',
+        gutendex: 'Gutenberg Library reads 70,000+ public-domain books via Gutendex.',
+        shadertoy: 'GLSL Shader Studio compiles 60fps WebGL fragment shaders and embeds Shadertoy.',
+        stellarium: 'NASA Eyes & Planetarium flies 3D Solar System, Asteroids, Earth satellites, and Stellarium night sky.',
+        chiptune: 'Retro & 3D Makers hosts BeepBox chiptune DAW, Blockbench 3D studio, and JSPaint.',
+        georadar: 'GeoRadar Explorer pairs OpenStreetMap with Wikipedia GeoSearch 10km landmark discovery.'
       };
       (os.finderModules || []).forEach((mod) => {
         docs.push({
@@ -800,14 +805,6 @@
           wb.cards.slice(0, 160).forEach((card) => {
             const body = card && card.data ? JSON.stringify(card.data) : '';
             docs.push({ id: 'wb:' + card.id, kind: 'wikiboard', title: card.title || ('Card ' + card.id), text: `${card.title || ''} ${body}`, target: card.id });
-          });
-        }
-      } catch(_) {}
-      try {
-        const notes = document.getElementById('notes-textarea');
-        if (notes && notes.value && os.notesKey) {
-          aetherChunkText(notes.value, 380).slice(0, 12).forEach((chunk, idx) => {
-            docs.push({ id: 'secure-note:' + idx, kind: 'note', title: 'Memory Scratchpad', text: chunk, target: 'notes' });
           });
         }
       } catch(_) {}
@@ -1099,14 +1096,8 @@
         const allowed = new Set(['cursor_theme','cursor_oneko','cursor_oneko_ball','cursor_nyan_standard','sakura_petals','anime_quotes','speech_synthesis','speech_companion']);
         if (allowed.has(a.key)) { os.setOption(a.key, String(a.value || '')); ok = true; label = `setOption(${a.key}=${a.value})`; }
       } else if (kind === 'playAmbientSearch') {
-        os.openWindow('youtubeambient');
-        const query = String(a.target || '').trim() || 'lofi';
-        aetherSoon(() => {
-          const inp = document.getElementById('yt-ambient-input');
-          if (inp) inp.value = query;
-          if (os.ytaSearch) os.ytaSearch(query);
-        }, 650);
-        ok = true; label = `playAmbientSearch(${query})`;
+        os.openWindow('winamp');
+        ok = true; label = 'openWindow(winamp)';
       } else if (kind === 'searchWikiBoard') {
         const query = String(a.target || '').trim();
         os.openWindow('wikiboard');

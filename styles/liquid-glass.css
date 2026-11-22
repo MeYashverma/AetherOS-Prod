@@ -596,7 +596,7 @@ body::after {
     z-index: 1;
 }
 /* ── INPUTS ──────────────────────────────────────────────── */
-input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+input:not(#webamp input):not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
 textarea, select {
     background: var(--theme-glass-bg, rgba(255,255,255,0.08)) !important;
     border: 0.5px solid var(--theme-glass-border, rgba(255,255,255,0.20)) !important;
@@ -604,7 +604,7 @@ textarea, select {
     border-radius: 10px !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.3s ease !important;
 }
-input:focus:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+input:focus:not(#webamp input):not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
 textarea:focus, select:focus {
     border-color: rgba(255,255,255,0.40) !important;
     box-shadow: 0 0 0 3px rgba(255,255,255,0.10) !important;
@@ -837,7 +837,7 @@ button:focus-visible,
 }
 
 /* Glass input focus ring improvement */
-input:focus:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+input:focus:not(#webamp input):not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
 textarea:focus, select:focus {
     border-color: var(--theme-accent, rgba(255,255,255,0.40)) !important;
     box-shadow: 0 0 0 3px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.06) !important;

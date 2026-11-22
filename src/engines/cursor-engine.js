@@ -22,13 +22,18 @@ class CursorEngine {
                 document.addEventListener('mousedown', (e) => this.onMouseDown(e), {passive: true});
                 document.addEventListener('mouseup', () => this.onMouseUp(), {passive: true});
                 
-                document.addEventListener('mouseover', (e) => { 
-                    const h = e.target?.closest?.('.hover-target'); 
-                    if (h) { this.ring.classList.add('cursor-hover-grow'); }
-                    else { this.ring.classList.remove('cursor-hover-grow'); }
+                const hoverSel = '.hover-target, button, a[href], summary, [role="button"], #webamp #actions > div, #webamp #clutter-bar > div, #webamp .playlist-track-titles > div, #webamp input[type="range"], #webamp #close, #webamp #minimize, #webamp #shade, #webamp #equalizer-close, #webamp #equalizer-shade, #webamp #playlist-close-button, #webamp #playlist-shade-button, #webamp-context-menu li';
+                document.addEventListener('mouseover', (e) => {
+                    if (!this.ring) return;
+                    const h = e.target?.closest?.(hoverSel);
+                    this.ring.classList.toggle('cursor-hover-grow', Boolean(h));
                 }, {passive:true});
 
-                document.addEventListener('mouseout', (e) => { if (e.target && e.target.closest && e.target.closest('.hover-target')) this.ring.classList.remove('cursor-hover-grow'); }, {passive:true});
+                document.addEventListener('mouseout', (e) => {
+                    if (!this.ring) return;
+                    const next = e.relatedTarget?.closest?.(hoverSel);
+                    if (!next) this.ring.classList.remove('cursor-hover-grow');
+                }, {passive:true});
 
                 this.applyTheme(SystemState.settings.cursor_theme || 'aether');
                 this.applyOneko(SystemState.settings.cursor_oneko === 'on');
@@ -56,8 +61,8 @@ class CursorEngine {
                     }
                     // Re-apply positions immediately after DOM re-insertion to prevent visual glitches
                     if (this._mouseReceived) {
-                        if (this.dot) this.dot.style.transform = `translate3d(${this.mouse.x - 3.5}px, ${this.mouse.y - 3.5}px, 0)`;
-                        if (this.ring) this.ring.style.transform = `translate3d(${this.pos.x - 15}px, ${this.pos.y - 15}px, 0)`;
+                        if (this.dot) this.dot.style.transform = `translate3d(${this.mouse.x}px, ${this.mouse.y}px, 0) translate(-50%, -50%)`;
+                        if (this.ring) this.ring.style.transform = `translate3d(${this.pos.x}px, ${this.pos.y}px, 0) translate(-50%, -50%)`;
                     }
                 } catch(_) {}
             }
@@ -165,12 +170,16 @@ class CursorEngine {
             onMouseMove(e) {
                 const cx = e.clientX;
                 const cy = e.clientY;
-                // Ignore bogus zero-coordinate events that can occur on some platforms
-                if (!this._mouseReceived && cx === 0 && cy === 0) return;
-                this._mouseReceived = true;
+                // Ignore bogus synthetic (0,0) events that occur on keyboard/select/focus dispatch
+                if (!Number.isFinite(cx) || !Number.isFinite(cy) || (cx === 0 && cy === 0 && e.screenX === 0 && e.screenY === 0)) return;
+                if (!this._mouseReceived) {
+                    this._mouseReceived = true;
+                    this.pos.x = cx;
+                    this.pos.y = cy;
+                }
                 this.mouse.x = cx;
                 this.mouse.y = cy;
-                if (this.dot) this.dot.style.transform = `translate3d(${cx - 3.5}px, ${cy - 3.5}px, 0)`;
+                if (this.dot) this.dot.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
                 this.isActive = true;
                 this.spawnMoveFX(e);
                 this.wakeRender();
@@ -415,7 +424,7 @@ class CursorEngine {
                     const speed = Math.min(dist * 0.008, 0.4);
                     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
                     const r = this.ring;
-                    if (r) r.style.transform = `translate3d(${this.pos.x - 15}px, ${this.pos.y - 15}px, 0) rotate(${angle}deg) scaleX(${(1 + speed) * this._downScale}) scaleY(${(1 - speed/2) * this._downScale})`;
+                    if (r) r.style.transform = `translate3d(${this.pos.x}px, ${this.pos.y}px, 0) translate(-50%, -50%) rotate(${angle}deg) scaleX(${(1 + speed) * this._downScale}) scaleY(${(1 - speed/2) * this._downScale})`;
                 }
                 if (this.theme !== 'nyan' && ringSettled) {
                     this._rafActive = false;

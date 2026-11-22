@@ -70,56 +70,6 @@ Object.assign(WindowContents, {
                 </div>
             `,
 
-    nosleep: `
-                <div class="h-full bg-[#050506] text-xs font-mono relative overflow-hidden" id="nosleep-root">
-                    <div class="absolute inset-0 pointer-events-none opacity-25" style="background:radial-gradient(circle at 50% 25%,rgba(34,197,94,.14),transparent 45%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);background-size:auto,100% 4px;"></div>
-                    <div class="relative z-10 h-full grid grid-cols-[190px_1fr] gap-4 p-4">
-                        <div class="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-black/45 shadow-os-recessed">
-                            <div class="nosleep-orb" id="nosleep-orb">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-lucide="sun" class="w-12 h-12 text-green-300/80 drop-shadow-[0_0_18px_rgba(34,197,94,.45)]"></i>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-white font-display text-lg uppercase tracking-widest">NoSleep</div>
-                                <div class="text-[9px] text-gray-500 uppercase tracking-[0.2em]">screen wake lock</div>
-                            </div>
-                        </div>
-                        <div class="flex flex-col min-w-0 gap-3">
-                            <div class="rounded-2xl border border-white/10 bg-black/45 p-4 shadow-os-recessed">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div>
-                                        <div class="text-[9px] text-os-accent uppercase tracking-widest">Wake Status</div>
-                                        <div class="text-white text-xl font-display uppercase tracking-widest flex items-center gap-2 mt-1"><span class="nosleep-status-dot" id="nosleep-dot"></span><span id="nosleep-status-label">STANDBY</span></div>
-                                    </div>
-                                    <div class="text-right text-[9px] text-gray-500">
-                                        <div>MODE</div>
-                                        <div class="text-white font-bold" id="nosleep-mode-label">--</div>
-                                    </div>
-                                </div>
-                                <p class="text-gray-400 leading-relaxed text-[11px] select-text">
-                                    Keeps this workstation awake while AetherOS is visible. Uses the native Screen Wake Lock API when available, then falls back to a tiny in-page media keep-awake loop inspired by <span class="text-white">nosleep.page</span>. If the browser blocks both, open nosleep.page as an external helper.
-                                </p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="os.enableWakeLock()" class="nosleep-btn primary hover-target">Enable Keep Awake</button>
-                                <button onclick="os.disableWakeLock()" class="nosleep-btn danger hover-target">Disable</button>
-                                <button onclick="os.toggleWakeLock()" class="nosleep-btn hover-target">Toggle</button>
-                                <button onclick="os.openNoSleepPage()" class="nosleep-btn external hover-target">Open nosleep.page ↗</button>
-                            </div>
-                            <div class="rounded-xl border border-white/5 bg-black/35 p-3 text-[10px] text-gray-500 space-y-1">
-                                <div class="flex justify-between"><span>Native API</span><span id="nosleep-native-support" class="text-white">--</span></div>
-                                <div class="flex justify-between"><span>Fallback video</span><span id="nosleep-fallback-support" class="text-white">--</span></div>
-                                <div class="flex justify-between"><span>Visibility</span><span id="nosleep-visibility" class="text-white">VISIBLE</span></div>
-                            </div>
-                            <div class="text-[9px] text-gray-600 leading-relaxed">
-                                Note: Browsers may require a click/tap before a wake lock can start. Battery saver, OS policy, or hidden tabs can release it; AetherOS will re-acquire when visible.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `,
-
     terminal: `
                 <div class="h-full bg-[#030304] text-xs font-mono overflow-hidden relative" id="terminal-out">
                     <div class="absolute inset-0 opacity-[0.10] pointer-events-none" style="background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;"></div>
@@ -177,53 +127,6 @@ Object.assign(WindowContents, {
                         <span class="text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> SYSTEM_HEALTH_OK</span>
                     </div>
                     <div id="sysmon-content" class="flex-1 p-4 overflow-hidden"></div>
-                </div>
-            `,
-
-    storage: `
-                <div class="flex flex-col h-full bg-[#050607] text-xs font-mono overflow-hidden" id="storage-root">
-                    <div class="p-3 border-b border-white/5 bg-black/40 flex items-center gap-2 flex-shrink-0">
-                        <button onclick="os.storageRender()" class="px-3 py-1.5 bg-white/10 rounded cursor-none hover-target">Refresh</button>
-                        <button onclick="os.storageExport()" class="px-3 py-1.5 bg-blue-500/15 border border-blue-500/25 text-blue-200 rounded cursor-none hover-target">Export JSON</button>
-                        <button onclick="os.storageDeleteSelected()" class="px-3 py-1.5 bg-red-500/15 border border-red-500/25 text-red-200 rounded cursor-none hover-target">Delete Selected</button>
-                        <span id="storage-summary" class="ml-auto text-gray-500"></span>
-                    </div>
-                    <div id="storage-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
-                </div>
-            `,
-
-    errorconsole: `
-                <div class="flex flex-col h-full bg-[#070505] text-xs font-mono overflow-hidden" id="error-root">
-                    <div class="p-3 border-b border-white/5 bg-black/40 flex items-center gap-2 flex-shrink-0">
-                        <button onclick="os.errorConsoleRender()" class="px-3 py-1.5 bg-white/10 rounded cursor-none hover-target">Refresh</button>
-                        <button onclick="os.errorConsoleClear()" class="px-3 py-1.5 bg-red-500/15 border border-red-500/25 text-red-200 rounded cursor-none hover-target">Clear</button>
-                        <button onclick="setTimeout(()=>{throw new Error('AetherOS test error')},0)" class="px-3 py-1.5 bg-yellow-500/15 border border-yellow-500/25 text-yellow-200 rounded cursor-none hover-target">Test Error</button>
-                        <span class="ml-auto text-gray-500">Runtime errors + unhandled promises</span>
-                    </div>
-                    <div id="error-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
-                </div>
-            `,
-
-    apistatus: `
-                <div class="flex flex-col h-full bg-[#040706] text-xs font-mono overflow-hidden" id="api-status-root">
-                    <div class="p-3 border-b border-white/5 bg-black/40 flex items-center gap-2 flex-shrink-0">
-                        <button onclick="os.apiStatusRun()" class="px-3 py-1.5 bg-green-500/15 border border-green-500/25 text-green-200 rounded cursor-none hover-target">Run All Tests</button>
-                        <span class="text-gray-500">Tests: Open-Meteo, Radio Browser, Wikipedia, NASA, CoinGecko, Jikan, USGS</span>
-                    </div>
-                    <div id="api-status-list" class="flex-1 overflow-y-auto p-3 grid grid-cols-1 md:grid-cols-2 gap-3 content-start"></div>
-                </div>
-            `,
-
-    packetviz: `
-                <div class="flex flex-col h-full bg-[#020408] text-xs font-mono overflow-hidden" id="packet-root">
-                    <div class="p-3 border-b border-white/5 bg-black/40 flex items-center gap-2 flex-shrink-0">
-                        <button onclick="os.packetVizRender()" class="px-3 py-1.5 bg-cyan-500/15 border border-cyan-500/25 text-cyan-200 rounded cursor-none hover-target">Scan Resource Timing</button>
-                        <button onclick="performance.clearResourceTimings(); os.packetVizRender()" class="px-3 py-1.5 bg-white/10 rounded cursor-none hover-target">Clear Timing Buffer</button>
-                        <span id="packet-summary" class="ml-auto text-gray-500"></span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-4">
-                        <div id="packet-hosts" class="space-y-3"></div>
-                    </div>
                 </div>
             `
 });

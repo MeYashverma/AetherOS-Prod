@@ -70,19 +70,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const dock = document.getElementById('dock');
     if (dock) dock.classList.add('reactive-dock');
 
-    // Event-delegated cursor hover grow for dynamic .hover-target nodes
-    const _ring = document.getElementById('cursor-ring');
-    if (_ring) {
-        document.body.addEventListener('mouseenter', (e) => {
-            const target = e.target && e.target.closest && e.target.closest('.hover-target');
-            if (target) _ring.classList.add('cursor-hover-grow');
-        }, true);
-        document.body.addEventListener('mouseleave', (e) => {
-            const target = e.target && e.target.closest && e.target.closest('.hover-target');
-            if (target) _ring.classList.remove('cursor-hover-grow');
-        }, true);
-    }
-
     // Outside-click dismissal for topbar menus, Notification Center, and Dock context menu
     document.addEventListener('mousedown', (e) => {
         const t = e.target;

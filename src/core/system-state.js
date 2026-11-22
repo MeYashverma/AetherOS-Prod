@@ -3,9 +3,9 @@
 const AETHER_MODULE_PACKS = window.AETHER_MODULE_PACKS = [
     {
         id: 'core',
-        label: 'Core Workstation',
+        label: 'Core Workstation & Creative Studios',
         icon: 'cpu',
-        description: 'Essential desktop utilities, files, browser, notes, media, and diagnostics enabled out of the box.'
+        description: 'Files, Markdown/Dev Studio, Photopea, Whiteboard, Synth/BeepBox/Blockbench studios, Museums & Gutenberg Library.'
     },
     {
         id: 'network',
@@ -15,15 +15,15 @@ const AETHER_MODULE_PACKS = window.AETHER_MODULE_PACKS = [
     },
     {
         id: 'telemetry',
-        label: 'Space, Radar & Live Sensors',
+        label: 'Space, Earth & Live World APIs',
         icon: 'satellite',
-        description: '3D ISS orbital tracker, NASA space weather, ADS-B flight radar, crypto matrix, and camera HUD.'
+        description: 'NASA Eyes 3D Solar System, SpaceX Launch Control, USGS/EONET Earth Pulse, GeoRadar, World Factbook, ISS & Airspace.'
     },
     {
         id: 'entertainment',
-        label: 'Entertainment & Media Extras',
+        label: 'Media, Retro & Web Universes',
         icon: 'tv',
-        description: 'Retro channel-surfing TV, ambient YouTube deck, embedded arcade vault, and Reddit meme feed.'
+        description: 'Webamp + SomaFM, Internet Archive & MS-DOS Vault, Retro TV, Game Vault, and Memetic feed.'
     },
     {
         id: 'anime',
@@ -33,80 +33,71 @@ const AETHER_MODULE_PACKS = window.AETHER_MODULE_PACKS = [
     },
     {
         id: 'devtools',
-        label: 'Developer & Power Utilities',
+        label: 'GPU Shaders, Code & Open-Source',
         icon: 'wrench',
-        description: 'Wake-lock screen utility, LocalStorage inspector, runtime error console, API health, and packet monitor.'
+        description: '60fps WebGL Shadertoy GLSL IDE, Open-Source GitHub Radar, and Live HTML/CSS/JS Code Sandbox.'
     }
 ];
 
 const AETHER_MODULE_REGISTRY = window.AETHER_MODULE_REGISTRY = {
-    // Core Workstation (Enabled by default)
-    settings:       { id: 'settings',       label: 'System Settings',         pack: 'core', icon: 'sliders',     required: true,  defaultEnabled: true,  desc: 'System preferences, feature toggles, themes, and diagnostics' },
-    about:          { id: 'about',          label: 'System Encyclopedia',     pack: 'core', icon: 'info',        required: true,  defaultEnabled: true,  desc: 'Architecture overview, shortcuts, and platform documentation' },
-    terminal:       { id: 'terminal',       label: 'Terminal (Data Stream)',  pack: 'core', icon: 'terminal',    required: false, defaultEnabled: true,  desc: 'Interactive command shell and live system log stream' },
-    filemanager:    { id: 'filemanager',    label: 'File Explorer',           pack: 'core', icon: 'folder-tree', required: false, defaultEnabled: true,  desc: 'Virtual filesystem browser, asset previewer, and text editor' },
-    notes:          { id: 'notes',          label: 'Memory Scratchpad',       pack: 'core', icon: 'lock',        required: false, defaultEnabled: true,  desc: 'Local persistent notes and quick encrypted scratchpad' },
-    wikiboard:      { id: 'wikiboard',      label: 'WikiBoard Canvas',        pack: 'core', icon: 'network',     required: false, defaultEnabled: true,  desc: 'Infinite spatial research board with Wikipedia cards' },
-    browser:        { id: 'browser',        label: 'Web Proxy Browser',       pack: 'core', icon: 'globe',       required: false, defaultEnabled: true,  desc: 'Sandboxed web frame with reader & proxy fallback' },
-    media:          { id: 'media',          label: 'Media Console',           pack: 'core', icon: 'radio',       required: false, defaultEnabled: true,  desc: 'Last.fm scrobble analytics, synced lyrics, and audio player' },
-    radiobrowser:   { id: 'radiobrowser',   label: 'Global Radio',            pack: 'core', icon: 'radio-tower', required: false, defaultEnabled: true,  desc: 'Worldwide live internet radio directory and vinyl tuner' },
-    weather:        { id: 'weather',        label: 'Weather Station',         pack: 'core', icon: 'cloud-rain',  required: false, defaultEnabled: true,  desc: 'Local forecast, hourly atmospheric chart, and topbar pill' },
-    feed:           { id: 'feed',           label: 'Signal Feed',             pack: 'core', icon: 'rss',         required: false, defaultEnabled: true,  desc: 'Unified Hacker News, Reddit, and custom RSS reader' },
-    sysmon:         { id: 'sysmon',         label: 'System Monitor',          pack: 'core', icon: 'cpu',         required: false, defaultEnabled: true,  desc: 'Real-time FPS, memory, GPU, and hardware telemetry' },
-    taskmanager:    { id: 'taskmanager',    label: 'Task Manager',            pack: 'core', icon: 'list-checks', required: false, defaultEnabled: true,  desc: 'Active window process list and memory management' },
-    focus:          { id: 'focus',          label: 'Focus & Soundscapes',     pack: 'core', icon: 'timer',          required: false, defaultEnabled: true,  desc: 'Pomodoro focus timer, session checklist, and procedural WebAudio soundscapes' },
-    devpad:         { id: 'devpad',         label: 'Markdown & Dev Studio',   pack: 'core', icon: 'code-2',         required: false, defaultEnabled: true,  desc: 'Multi-tab Markdown live editor + JSON, Base64, JWT, Regex & Hash toolkit' },
-    kanban:         { id: 'kanban',         label: 'Project Board',           pack: 'core',     icon: 'kanban',         required: false, defaultEnabled: true,  desc: 'Multi-board Kanban sprint planner with drag-and-drop cards & Markdown export' },
-    clipboard:      { id: 'clipboard',      label: 'Clipboard & Snippets',    pack: 'core',     icon: 'clipboard-list', required: false, defaultEnabled: true,  desc: 'Auto-captured clipboard history and pinned reusable snippet vault (⌘⇧V)' },
-    capture:        { id: 'capture',        label: 'Capture & Sketch Studio', pack: 'core',     icon: 'video',          required: false, defaultEnabled: true,  desc: 'Screen/window video recorder, frame grabber, and quick diagram whiteboard' },
-    imagelab:       { id: 'imagelab',       label: 'Image, WebP & QR Lab',    pack: 'core',     icon: 'image-plus',     required: false, defaultEnabled: true,  desc: 'Local WebP/JPEG/PNG compressor, resizer, pixel eyedropper & offline QR maker' },
-    photobooth:     { id: 'photobooth',     label: 'Photo Booth',             pack: 'core',     icon: 'aperture',       required: false, defaultEnabled: true,  desc: 'Native camera & live FX studio with 9 real-time filters, 3×3 grid & photo strips' },
-    calculator:     { id: 'calculator',     label: 'Calculator',              pack: 'core',     icon: 'calculator',     required: false, defaultEnabled: true,  desc: 'Native macOS Standard & Scientific calculator with keyboard input and paper tape' },
-    synthstudio:    { id: 'synthstudio',    label: 'GaragePad Studio',        pack: 'core',     icon: 'music',          required: false, defaultEnabled: true,  desc: 'Playable polyphonic piano synthesizer, 16-step beat machine & live oscilloscope' },
-    voicememos:     { id: 'voicememos',     label: 'Voice Memos',             pack: 'core',     icon: 'mic',            required: false, defaultEnabled: true,  desc: 'Native audio recorder with live red waveform, variable speed & VFS archive' },
-    clockapp:       { id: 'clockapp',       label: 'Clock',                   pack: 'core',     icon: 'clock',          required: false, defaultEnabled: true,  desc: 'World Clock analog dials, Alarms, Lap Stopwatch, and Circular Countdown Timers' },
-    stickies:       { id: 'stickies',       label: 'Stickies',                pack: 'core',     icon: 'sticky-note',    required: false, defaultEnabled: true,  desc: 'Floating desktop sticky notes directly on your wallpaper in classic pastel tints' },
-    earthpulse:     { id: 'earthpulse',     label: 'Earth Pulse Radar',       pack: 'telemetry',     icon: 'globe-2',        required: false, defaultEnabled: true,  desc: 'Live USGS global earthquakes, NASA EONET volcanoes/wildfires & Windy storm radar' },
-    wayback:        { id: 'wayback',        label: 'Archive & DOS Vault',     pack: 'entertainment', icon: 'history',        required: false, defaultEnabled: true,  desc: 'Internet Archive Wayback Time Machine, playable MS-DOS games & cinema/audio vault' },
-    ossradar:       { id: 'ossradar',       label: 'Open-Source Radar',       pack: 'devtools',      icon: 'git-branch',     required: false, defaultEnabled: true,  desc: 'Live GitHub breakout repos API, repository file-tree & README explorer + GitHub1s' },
-    photopea:       { id: 'photopea',       label: 'Photopea Studio',         pack: 'core',          icon: 'layers',         required: false, defaultEnabled: true,  desc: 'Full Photoshop/PSD layer studio integrated via postMessage API with File Explorer' },
-    whiteboard:     { id: 'whiteboard',     label: 'OpenCanvas Board',        pack: 'core',          icon: 'pen-tool',       required: false, defaultEnabled: true,  desc: 'Excalidraw, Draw.io dark JSON VFS sync & tldraw infinite collaborative canvas' },
-    winamp:         { id: 'winamp',         label: 'Webamp + SomaFM',         pack: 'entertainment', icon: 'disc-3',         required: false, defaultEnabled: true,  desc: 'Open-source Winamp 2.9 skinnable desktop deck + live SomaFM radio & equalizer' },
-    codeplay:       { id: 'codeplay',       label: 'Live Code Sandbox',       pack: 'devtools', icon: 'play-square',    required: false, defaultEnabled: true,  desc: 'Instant HTML/CSS/JS sandboxed live preview with captured console & .html export' },
-    apiclient:      { id: 'apiclient',      label: 'HTTP & REST API Client',  pack: 'devtools', icon: 'send',           required: false, defaultEnabled: true,  desc: 'Send real GET/POST/PUT/DELETE requests, inspect headers/JSON, and copy cURL' },
-    datatools:      { id: 'datatools',      label: 'Diff, CSV & Cron Lab',    pack: 'devtools', icon: 'file-diff',      required: false, defaultEnabled: true,  desc: 'Line-by-line LCS diff viewer, CSV/JSON table explorer, and Cron schedule solver' },
+    // Core Workstation & Creative Studios (Enabled by default)
+    settings:       { id: 'settings',       label: 'System Settings',         pack: 'core',          icon: 'sliders',     required: true,  defaultEnabled: true,  desc: 'System preferences, feature toggles, themes, and diagnostics' },
+    about:          { id: 'about',          label: 'System Encyclopedia',     pack: 'core',          icon: 'info',        required: true,  defaultEnabled: true,  desc: 'Architecture overview, shortcuts, and platform documentation' },
+    terminal:       { id: 'terminal',       label: 'Terminal (Data Stream)',  pack: 'core',          icon: 'terminal',    required: false, defaultEnabled: true,  desc: 'Interactive command shell and live system log stream' },
+    filemanager:    { id: 'filemanager',    label: 'File Explorer',           pack: 'core',          icon: 'folder-tree', required: false, defaultEnabled: true,  desc: 'Virtual filesystem browser, asset previewer, and text editor' },
+    wikiboard:      { id: 'wikiboard',      label: 'WikiBoard Canvas',        pack: 'core',          icon: 'network',     required: false, defaultEnabled: true,  desc: 'Infinite spatial research board with Wikipedia cards' },
+    browser:        { id: 'browser',        label: 'Web Proxy Browser',       pack: 'core',          icon: 'globe',       required: false, defaultEnabled: true,  desc: 'Sandboxed web frame with reader & proxy fallback' },
+    media:          { id: 'media',          label: 'Media Console',           pack: 'core',          icon: 'radio',       required: false, defaultEnabled: true,  desc: 'Last.fm scrobble analytics, synced lyrics, and audio player' },
+    radiobrowser:   { id: 'radiobrowser',   label: 'Global Radio',            pack: 'core',          icon: 'radio-tower', required: false, defaultEnabled: true,  desc: 'Worldwide live internet radio directory and vinyl tuner' },
+    weather:        { id: 'weather',        label: 'Weather Station',         pack: 'core',          icon: 'cloud-rain',  required: false, defaultEnabled: true,  desc: 'Local forecast, hourly atmospheric chart, and topbar pill' },
+    feed:           { id: 'feed',           label: 'Signal Feed',             pack: 'core',          icon: 'rss',         required: false, defaultEnabled: true,  desc: 'Unified Hacker News, Reddit, and custom RSS reader' },
+    sysmon:         { id: 'sysmon',         label: 'System Monitor',          pack: 'core',          icon: 'cpu',         required: false, defaultEnabled: true,  desc: 'Real-time FPS, memory, GPU, and network speed telemetry' },
+    taskmanager:    { id: 'taskmanager',    label: 'Task Manager',            pack: 'core',          icon: 'list-checks', required: false, defaultEnabled: true,  desc: 'Active window process list and memory management' },
+    focus:          { id: 'focus',          label: 'Focus & Soundscapes',     pack: 'core',          icon: 'timer',       required: false, defaultEnabled: true,  desc: 'Pomodoro focus timer, session checklist, and procedural WebAudio soundscapes' },
+    devpad:         { id: 'devpad',         label: 'Markdown & Dev Studio',   pack: 'core',          icon: 'code-2',      required: false, defaultEnabled: true,  desc: 'Multi-tab Markdown live editor + JSON, Base64, JWT, Regex & Hash toolkit' },
+    kanban:         { id: 'kanban',         label: 'Project Board',           pack: 'core',          icon: 'kanban',      required: false, defaultEnabled: true,  desc: 'Multi-board Kanban sprint planner with drag-and-drop cards & Markdown export' },
+    photobooth:     { id: 'photobooth',     label: 'Photo Booth',             pack: 'core',          icon: 'aperture',    required: false, defaultEnabled: true,  desc: 'Native camera & live FX studio with 9 real-time filters, 3×3 grid & photo strips' },
+    synthstudio:    { id: 'synthstudio',    label: 'GaragePad Studio',        pack: 'core',          icon: 'music',       required: false, defaultEnabled: true,  desc: 'Playable polyphonic piano synthesizer, 16-step beat machine & live oscilloscope' },
+    photopea:       { id: 'photopea',       label: 'Photopea Studio',         pack: 'core',          icon: 'layers',      required: false, defaultEnabled: true,  desc: 'Full Photoshop/PSD layer studio integrated via postMessage API with File Explorer' },
+    whiteboard:     { id: 'whiteboard',     label: 'OpenCanvas Board',        pack: 'core',          icon: 'pen-tool',    required: false, defaultEnabled: true,  desc: 'Excalidraw, Draw.io dark JSON VFS sync & tldraw infinite collaborative canvas' },
+    chiptune:       { id: 'chiptune',       label: 'Retro & 3D Makers',       pack: 'core',          icon: 'boxes',       required: false, defaultEnabled: true,  desc: 'Open-source BeepBox chiptune DAW, Blockbench 3D studio & JSPaint pixel art' },
+    worldmuseums:   { id: 'worldmuseums',   label: 'World Museums Vault',     pack: 'core',          icon: 'landmark',    required: false, defaultEnabled: true,  desc: 'Live Art Institute of Chicago IIIF & Met Museum open-access HD masterpieces' },
+    gutendex:       { id: 'gutendex',       label: 'Gutenberg Library',       pack: 'core',          icon: 'library',     required: false, defaultEnabled: true,  desc: '70,000+ public-domain classics via Gutendex API with built-in typography e-reader' },
 
-    // P2P & Social Sync (Disabled by default — opt-in via Settings -> App Modules)
-    aetherbridge:   { id: 'aetherbridge',   label: 'Aether Bridge',           pack: 'network', icon: 'share-2',     required: false, defaultEnabled: false, desc: 'Encrypted WebRTC peer-to-peer file transfer & topbar badge' },
-    aetherlink:     { id: 'aetherlink',     label: 'Aether Link',             pack: 'network', icon: 'link-2',      required: false, defaultEnabled: false, desc: 'Peer-to-peer room chat, voice channels & topbar badge' },
-    presence:       { id: 'presence',       label: 'Discord Presence Studio', pack: 'network', icon: 'user',        required: false, defaultEnabled: false, desc: 'Live Lanyard status sync, sidebar widget, and webhook sender' },
+    // Live World, Space & Science Suites (Enabled by default)
+    earthpulse:     { id: 'earthpulse',     label: 'Earth Pulse Radar',       pack: 'telemetry',     icon: 'globe-2',     required: false, defaultEnabled: true,  desc: 'Live USGS global earthquakes, NASA EONET volcanoes/wildfires & Windy storm radar' },
+    spacexhub:      { id: 'spacexhub',      label: 'Orbital Launch Control',  pack: 'telemetry',     icon: 'rocket',      required: false, defaultEnabled: true,  desc: 'Live global rocket launch countdowns via The Space Devs API & SpaceX fleet specs' },
+    stellarium:     { id: 'stellarium',     label: 'NASA Eyes & Planetarium', pack: 'telemetry',     icon: 'orbit',       required: false, defaultEnabled: true,  desc: 'Official NASA JPL 3D Solar System, Asteroids, Earth Fleet & Stellarium night sky' },
+    georadar:       { id: 'georadar',       label: 'GeoRadar Explorer',       pack: 'telemetry',     icon: 'compass',     required: false, defaultEnabled: true,  desc: 'OpenStreetMap live viewport paired with Wikipedia GeoSearch 10 km landmark radar' },
+    worldfactbook:  { id: 'worldfactbook',  label: 'World Factbook & FX',     pack: 'telemetry',     icon: 'flag',        required: false, defaultEnabled: true,  desc: '250+ nations via REST Countries v3.1 + live ECB Frankfurter currency converter' },
 
-    // Space, Radar & Live Sensors (Disabled by default)
-    iss:            { id: 'iss',            label: 'ISS 3D Tracker',          pack: 'telemetry', icon: 'satellite',   required: false, defaultEnabled: false, desc: 'Interactive Three.js Earth globe tracking the Space Station' },
-    nasa:           { id: 'nasa',           label: 'NASA Deep Space',         pack: 'telemetry', icon: 'telescope',   required: false, defaultEnabled: false, desc: 'Astronomy Picture of the Day and DONKI solar storm alerts' },
-    globe:          { id: 'globe',          label: 'Airspace Radar',          pack: 'telemetry', icon: 'plane',       required: false, defaultEnabled: false, desc: 'Live ADS-B tactical flight map and aircraft transponder inspector' },
-    market:         { id: 'market',         label: 'Crypto Market Matrix',    pack: 'telemetry', icon: 'trending-up', required: false, defaultEnabled: false, desc: 'Live Binance WebSocket price stream and sparkline matrix' },
-    surveillance:   { id: 'surveillance',   label: 'Optics Node',             pack: 'telemetry', icon: 'camera',      required: false, defaultEnabled: false, desc: 'Local webcam viewfinder with HUD overlays and frame capture' },
+    // Entertainment, Shaders & Open-Source (Enabled by default)
+    wayback:        { id: 'wayback',        label: 'Archive & DOS Vault',     pack: 'entertainment', icon: 'history',     required: false, defaultEnabled: true,  desc: 'Internet Archive Wayback Time Machine, playable MS-DOS games & cinema/audio vault' },
+    winamp:         { id: 'winamp',         label: 'Webamp + SomaFM',         pack: 'entertainment', icon: 'disc-3',      required: false, defaultEnabled: true,  desc: 'Open-source Winamp 2.9 skinnable desktop deck + live SomaFM radio & equalizer' },
+    ossradar:       { id: 'ossradar',       label: 'Open-Source Radar',       pack: 'devtools',      icon: 'git-branch',  required: false, defaultEnabled: true,  desc: 'Live GitHub breakout repos API, repository file-tree & README explorer + GitHub1s' },
+    shadertoy:      { id: 'shadertoy',      label: 'GLSL Shader Studio',      pack: 'devtools',      icon: 'flame',       required: false, defaultEnabled: true,  desc: '60fps WebGL Shadertoy-compatible GLSL compiler + Shadertoy.com live player' },
+    codeplay:       { id: 'codeplay',       label: 'Live Code Sandbox',       pack: 'devtools',      icon: 'play-square', required: false, defaultEnabled: true,  desc: 'Instant HTML/CSS/JS sandboxed live preview with captured console & .html export' },
 
-    // Entertainment & Media Extras (Disabled by default)
-    games:          { id: 'games',          label: 'Game Vault',              pack: 'entertainment', icon: 'gamepad-2', required: false, defaultEnabled: false, desc: 'Embedded lightweight web arcade and puzzle collection' },
-    ytchtv:         { id: 'ytchtv',         label: 'Retro TV (YTCH.TV)',      pack: 'entertainment', icon: 'tv',        required: false, defaultEnabled: false, desc: 'Nostalgic channel-surfing television simulator' },
-    youtubeambient: { id: 'youtubeambient', label: 'YouTube Ambient Deck',    pack: 'entertainment', icon: 'youtube',   required: false, defaultEnabled: false, desc: 'Curated lo-fi, synthwave, and ambient focus streams' },
-    memes:          { id: 'memes',          label: 'Memetic Intelligence',    pack: 'entertainment', icon: 'smile',     required: false, defaultEnabled: false, desc: 'Curated Reddit visual humor and image stream browser' },
+    // P2P & Social Sync (Opt-in via Settings -> App Modules)
+    aetherbridge:   { id: 'aetherbridge',   label: 'Aether Bridge',           pack: 'network',       icon: 'share-2',     required: false, defaultEnabled: false, desc: 'Encrypted WebRTC peer-to-peer file transfer & topbar badge' },
+    aetherlink:     { id: 'aetherlink',     label: 'Aether Link',             pack: 'network',       icon: 'link-2',      required: false, defaultEnabled: false, desc: 'Peer-to-peer room chat, voice channels & topbar badge' },
+    presence:       { id: 'presence',       label: 'Discord Presence Studio', pack: 'network',       icon: 'user',        required: false, defaultEnabled: false, desc: 'Live Lanyard status sync, sidebar widget, and webhook sender' },
 
-    // Anime, Manga & Pixel Worlds (Disabled by default)
-    anime:          { id: 'anime',          label: 'Anime Discovery',         pack: 'anime', icon: 'sparkles',   required: false, defaultEnabled: false, desc: 'Seasonal anime charts, rankings, and synopses via Jikan' },
-    manga:          { id: 'manga',          label: 'Manga Launcher',          pack: 'anime', icon: 'book-open',  required: false, defaultEnabled: false, desc: 'Manga discovery dossiers and chapter reader links' },
-    entityscanner:  { id: 'entityscanner',  label: 'Entity Scanner',          pack: 'anime', icon: 'scan',       required: false, defaultEnabled: false, desc: 'Character & Pokémon stat lookup and battle simulator' },
-    floor796:       { id: 'floor796',       label: 'Floor796 Explorer',       pack: 'anime', icon: 'building-2', required: false, defaultEnabled: false, desc: 'Huge animated isometric pixel-art space station explorer' },
-    wplace:         { id: 'wplace',         label: 'Wplace Live Canvas',      pack: 'anime', icon: 'paintbrush', required: false, defaultEnabled: false, desc: 'Collaborative world map pixel canvas viewer' },
+    // Additional Space, Flight & Crypto Sensors (Opt-in)
+    iss:            { id: 'iss',            label: 'ISS 3D Tracker',          pack: 'telemetry',     icon: 'satellite',   required: false, defaultEnabled: false, desc: 'Interactive Three.js Earth globe tracking the Space Station' },
+    nasa:           { id: 'nasa',           label: 'NASA Deep Space',         pack: 'telemetry',     icon: 'telescope',   required: false, defaultEnabled: false, desc: 'Astronomy Picture of the Day and DONKI solar storm alerts' },
+    globe:          { id: 'globe',          label: 'Airspace Radar',          pack: 'telemetry',     icon: 'plane',       required: false, defaultEnabled: false, desc: 'Live ADS-B tactical flight map and aircraft transponder inspector' },
+    market:         { id: 'market',         label: 'Crypto Market Matrix',    pack: 'telemetry',     icon: 'trending-up', required: false, defaultEnabled: false, desc: 'Live Binance WebSocket price stream and sparkline matrix' },
 
-    // Developer & Power Utilities (Disabled by default)
-    nosleep:        { id: 'nosleep',        label: 'NoSleep Wake Lock',       pack: 'devtools', icon: 'sun',      required: false, defaultEnabled: false, desc: 'Prevent display sleep via Wake Lock API + topbar indicator' },
-    storage:        { id: 'storage',        label: 'Storage Inspector',       pack: 'devtools', icon: 'database', required: false, defaultEnabled: false, desc: 'Inspect, edit, and export browser LocalStorage keys' },
-    errorconsole:   { id: 'errorconsole',   label: 'Error Console',           pack: 'devtools', icon: 'bug',      required: false, defaultEnabled: false, desc: 'Captured runtime exceptions and promise rejection log' },
-    apistatus:      { id: 'apistatus',      label: 'API Status Board',        pack: 'devtools', icon: 'activity', required: false, defaultEnabled: false, desc: 'Latency and uptime probe across external public APIs' },
-    packetviz:      { id: 'packetviz',      label: 'Packet Visualizer',       pack: 'devtools', icon: 'radar',    required: false, defaultEnabled: false, desc: 'Browser ResourceTiming host traffic and payload inspector' }
+    // Additional Entertainment & Anime Worlds (Opt-in)
+    games:          { id: 'games',          label: 'Game Vault',              pack: 'entertainment', icon: 'gamepad-2',   required: false, defaultEnabled: false, desc: 'Embedded lightweight web arcade and puzzle collection' },
+    ytchtv:         { id: 'ytchtv',         label: 'Retro TV (YTCH.TV)',      pack: 'entertainment', icon: 'tv',          required: false, defaultEnabled: false, desc: 'Nostalgic channel-surfing television simulator' },
+    memes:          { id: 'memes',          label: 'Memetic Intelligence',    pack: 'entertainment', icon: 'smile',       required: false, defaultEnabled: false, desc: 'Curated Reddit visual humor and image stream browser' },
+    anime:          { id: 'anime',          label: 'Anime Discovery',         pack: 'anime',         icon: 'sparkles',    required: false, defaultEnabled: false, desc: 'Seasonal anime charts, rankings, and synopses via Jikan' },
+    manga:          { id: 'manga',          label: 'Manga Launcher',          pack: 'anime',         icon: 'book-open',   required: false, defaultEnabled: false, desc: 'Manga discovery dossiers and chapter reader links' },
+    entityscanner:  { id: 'entityscanner',  label: 'Entity Scanner',          pack: 'anime',         icon: 'scan',        required: false, defaultEnabled: false, desc: 'Character & Pokémon stat lookup and battle simulator' },
+    floor796:       { id: 'floor796',       label: 'Floor796 Explorer',       pack: 'anime',         icon: 'building-2',  required: false, defaultEnabled: false, desc: 'Huge animated isometric pixel-art space station explorer' },
+    wplace:         { id: 'wplace',         label: 'Wplace Live Canvas',      pack: 'anime',         icon: 'paintbrush',  required: false, defaultEnabled: false, desc: 'Collaborative world map pixel canvas viewer' }
 };
 
 function buildDefaultEnabledModules() {
@@ -125,7 +116,6 @@ const SystemState = window.SystemState = {
         media:          { id: 'media',          title: 'Media Console',           icon: 'radio',       width: 1040, height: 660, x: 180, y: 150, isOpen: false, isMinimized: false, zIndex: 3,  content: 'media' },
         radiobrowser:   { id: 'radiobrowser',   title: 'Global Radio Network',    icon: 'radio-tower', width: 640,  height: 480, x: 220, y: 130, isOpen: false, isMinimized: false, zIndex: 12, content: 'radiobrowser' },
         sysmon:         { id: 'sysmon',         title: 'System Diagnostics',      icon: 'cpu',         width: 980,  height: 650, x: 120, y: 50,  isOpen: false, isMinimized: false, zIndex: 4,  content: 'sysmon' },
-        nosleep:        { id: 'nosleep',        title: 'NoSleep Screen Lock',     icon: 'sun',         width: 560,  height: 430, x: 180, y: 90,  isOpen: false, isMinimized: false, zIndex: 32, content: 'nosleep' },
         presence:       { id: 'presence',       title: 'Uplink Presence',         icon: 'user',        width: 760,  height: 560, x: 220, y: 90,  isOpen: false, isMinimized: false, zIndex: 5,  content: 'presence' },
         feed:           { id: 'feed',           title: 'Global Signal Feed',      icon: 'rss',         width: 440,  height: 580, x: 450, y: 80,  isOpen: false, isMinimized: false, zIndex: 6,  content: 'feed' },
         browser:        { id: 'browser',        title: 'Web Proxy Interface',     icon: 'globe',       width: 800,  height: 550, x: 100, y: 60,  isOpen: false, isMinimized: false, zIndex: 7,  content: 'browser' },
@@ -133,8 +123,6 @@ const SystemState = window.SystemState = {
         floor796:       { id: 'floor796',       title: 'Floor796 Explorer',       icon: 'building-2',  width: 1180, height: 740, x: 50,  y: 32,  isOpen: false, isMinimized: false, zIndex: 34, content: 'floor796' },
         globe:          { id: 'globe',          title: 'Tactical Airspace Radar', icon: 'plane',       width: 850,  height: 580, x: 150, y: 50,  isOpen: false, isMinimized: false, zIndex: 8,  content: 'globe' },
         market:         { id: 'market',         title: 'Market Matrix',           icon: 'trending-up', width: 640,  height: 400, x: 300, y: 120, isOpen: false, isMinimized: false, zIndex: 9,  content: 'market' },
-        surveillance:   { id: 'surveillance',   title: 'Optics Node',             icon: 'camera',      width: 980,  height: 620, x: 110, y: 55,  isOpen: false, isMinimized: false, zIndex: 10, content: 'surveillance' },
-        notes:          { id: 'notes',          title: 'Memory Scratchpad',       icon: 'lock',        width: 400,  height: 500, x: 450, y: 150, isOpen: false, isMinimized: false, zIndex: 11, content: 'notes' },
         memes:          { id: 'memes',          title: 'Memetic Intelligence',    icon: 'smile',       width: 640,  height: 600, x: 350, y: 90,  isOpen: false, isMinimized: false, zIndex: 13, content: 'memes' },
         ytchtv:         { id: 'ytchtv',         title: 'Retro TV (YTCH.TV)',      icon: 'tv',          width: 850,  height: 580, x: 120, y: 80,  isOpen: false, isMinimized: false, zIndex: 14, content: 'ytchtv' },
         entityscanner:  { id: 'entityscanner',  title: 'Universal Entity Scanner',icon: 'scan',        width: 900,  height: 620, x: 100, y: 40,  isOpen: false, isMinimized: false, zIndex: 15, content: 'entityscanner' },
@@ -145,37 +133,31 @@ const SystemState = window.SystemState = {
         taskmanager:    { id: 'taskmanager',    title: 'Task Manager',            icon: 'list-x',      width: 680,  height: 480, x: 160, y: 80,  isOpen: false, isMinimized: false, zIndex: 22, content: 'taskmanager' },
         games:          { id: 'games',          title: 'Game Vault',              icon: 'gamepad-2',   width: 980,  height: 660, x: 70,  y: 35,  isOpen: false, isMinimized: false, zIndex: 23, content: 'games' },
         iss:            { id: 'iss',            title: 'ISS Tracker',             icon: 'satellite',   width: 980,  height: 660, x: 140, y: 70,  isOpen: false, isMinimized: false, zIndex: 24, content: 'iss' },
-        youtubeambient: { id: 'youtubeambient', title: 'YouTube Ambient',         icon: 'youtube',     width: 860,  height: 560, x: 120, y: 70,  isOpen: false, isMinimized: false, zIndex: 25, content: 'youtubeambient' },
         anime:          { id: 'anime',          title: 'Anime Discovery',         icon: 'sparkles',    width: 900,  height: 620, x: 95,  y: 45,  isOpen: false, isMinimized: false, zIndex: 26, content: 'anime' },
         manga:          { id: 'manga',          title: 'Manga Launcher',          icon: 'book-open',   width: 920,  height: 620, x: 105, y: 50,  isOpen: false, isMinimized: false, zIndex: 27, content: 'manga' },
-        storage:        { id: 'storage',        title: 'Storage Inspector',       icon: 'database',    width: 820,  height: 560, x: 130, y: 70,  isOpen: false, isMinimized: false, zIndex: 28, content: 'storage' },
-        errorconsole:   { id: 'errorconsole',   title: 'Error Console',           icon: 'bug',         width: 820,  height: 520, x: 150, y: 80,  isOpen: false, isMinimized: false, zIndex: 29, content: 'errorconsole' },
-        apistatus:      { id: 'apistatus',      title: 'API Status Board',        icon: 'activity',    width: 920,  height: 600, x: 110, y: 55,  isOpen: false, isMinimized: false, zIndex: 30, content: 'apistatus' },
-        packetviz:      { id: 'packetviz',      title: 'Packet Visualizer',       icon: 'network',     width: 980,  height: 640, x: 90,  y: 45,  isOpen: false, isMinimized: false, zIndex: 31, content: 'packetviz' },
         about:          { id: 'about',          title: 'System Encyclopedia',     icon: 'info',        width: 940,  height: 640, x: 120, y: 60,  isOpen: false, isMinimized: false, zIndex: 35, content: 'about' },
         aetherbridge:   { id: 'aetherbridge',   title: 'Aether Bridge',           icon: 'radio-tower', width: 1080, height: 680, x: 80,  y: 40,  isOpen: false, isMinimized: false, zIndex: 36, content: 'aetherbridge' },
         aetherlink:     { id: 'aetherlink',     title: 'Aether Link',             icon: 'link-2',      width: 1020, height: 680, x: 90,  y: 45,  isOpen: false, isMinimized: false, zIndex: 37, content: 'aetherlink' },
-        focus:          { id: 'focus',          title: 'Focus & Soundscapes',     icon: 'timer',          width: 780,  height: 540, x: 130, y: 65,  isOpen: false, isMinimized: false, zIndex: 38, content: 'focus' },
-        devpad:         { id: 'devpad',         title: 'Markdown & Dev Studio',   icon: 'code-2',         width: 960,  height: 620, x: 100, y: 50,  isOpen: false, isMinimized: false, zIndex: 39, content: 'devpad' },
-        kanban:         { id: 'kanban',         title: 'Project Board',           icon: 'kanban',         width: 980,  height: 620, x: 95,  y: 48,  isOpen: false, isMinimized: false, zIndex: 40, content: 'kanban' },
-        clipboard:      { id: 'clipboard',      title: 'Clipboard & Snippets',    icon: 'clipboard-list', width: 720,  height: 540, x: 160, y: 70,  isOpen: false, isMinimized: false, zIndex: 41, content: 'clipboard' },
-        capture:        { id: 'capture',        title: 'Capture & Sketch Studio', icon: 'video',          width: 920,  height: 620, x: 110, y: 52,  isOpen: false, isMinimized: false, zIndex: 42, content: 'capture' },
-        imagelab:       { id: 'imagelab',       title: 'Image, WebP & QR Lab',    icon: 'image-plus',     width: 960,  height: 630, x: 90,  y: 45,  isOpen: false, isMinimized: false, zIndex: 43, content: 'imagelab' },
-        codeplay:       { id: 'codeplay',       title: 'Live Code Sandbox',       icon: 'play-square',    width: 1040, height: 660, x: 75,  y: 38,  isOpen: false, isMinimized: false, zIndex: 44, content: 'codeplay' },
-        apiclient:      { id: 'apiclient',      title: 'HTTP & REST API Client',  icon: 'send',           width: 980,  height: 640, x: 95,  y: 46,  isOpen: false, isMinimized: false, zIndex: 45, content: 'apiclient' },
-        datatools:      { id: 'datatools',      title: 'Diff, CSV & Cron Lab',    icon: 'file-diff',      width: 1000, height: 640, x: 85,  y: 42,  isOpen: false, isMinimized: false, zIndex: 46, content: 'datatools' },
-        photobooth:     { id: 'photobooth',     title: 'Photo Booth',             icon: 'aperture',       width: 820,  height: 600, x: 115, y: 48,  isOpen: false, isMinimized: false, zIndex: 47, content: 'photobooth' },
-        calculator:     { id: 'calculator',     title: 'Calculator',              icon: 'calculator',     width: 340,  height: 510, x: 260, y: 80,  isOpen: false, isMinimized: false, zIndex: 48, content: 'calculator' },
-        synthstudio:    { id: 'synthstudio',    title: 'GaragePad Studio',        icon: 'music',          width: 900,  height: 580, x: 100, y: 52,  isOpen: false, isMinimized: false, zIndex: 49, content: 'synthstudio' },
-        voicememos:     { id: 'voicememos',     title: 'Voice Memos',             icon: 'mic',            width: 780,  height: 520, x: 135, y: 64,  isOpen: false, isMinimized: false, zIndex: 50, content: 'voicememos' },
-        clockapp:       { id: 'clockapp',       title: 'Clock',                   icon: 'clock',          width: 820,  height: 540, x: 125, y: 58,  isOpen: false, isMinimized: false, zIndex: 51, content: 'clockapp' },
-        stickies:       { id: 'stickies',       title: 'Stickies',                icon: 'sticky-note',    width: 580,  height: 450, x: 185, y: 78,  isOpen: false, isMinimized: false, zIndex: 52, content: 'stickies' },
-        earthpulse:     { id: 'earthpulse',     title: 'Earth Pulse Radar',       icon: 'globe-2',        width: 1060, height: 670, x: 75,  y: 38,  isOpen: false, isMinimized: false, zIndex: 53, content: 'earthpulse' },
-        wayback:        { id: 'wayback',        title: 'Archive & DOS Vault',     icon: 'history',        width: 1040, height: 660, x: 85,  y: 42,  isOpen: false, isMinimized: false, zIndex: 54, content: 'wayback' },
-        ossradar:       { id: 'ossradar',       title: 'Open-Source Radar',       icon: 'git-branch',     width: 1050, height: 660, x: 80,  y: 40,  isOpen: false, isMinimized: false, zIndex: 55, content: 'ossradar' },
-        photopea:       { id: 'photopea',       title: 'Photopea Studio',         icon: 'layers',         width: 1120, height: 700, x: 60,  y: 34,  isOpen: false, isMinimized: false, zIndex: 56, content: 'photopea' },
-        whiteboard:     { id: 'whiteboard',     title: 'OpenCanvas Board',        icon: 'pen-tool',       width: 1080, height: 680, x: 70,  y: 36,  isOpen: false, isMinimized: false, zIndex: 57, content: 'whiteboard' },
-        winamp:         { id: 'winamp',         title: 'Webamp + SomaFM',         icon: 'disc-3',         width: 760,  height: 540, x: 150, y: 65,  isOpen: false, isMinimized: false, zIndex: 58, content: 'winamp' }
+        focus:          { id: 'focus',          title: 'Focus & Soundscapes',     icon: 'timer',       width: 780,  height: 540, x: 130, y: 65,  isOpen: false, isMinimized: false, zIndex: 38, content: 'focus' },
+        devpad:         { id: 'devpad',         title: 'Markdown & Dev Studio',   icon: 'code-2',      width: 960,  height: 620, x: 100, y: 50,  isOpen: false, isMinimized: false, zIndex: 39, content: 'devpad' },
+        kanban:         { id: 'kanban',         title: 'Project Board',           icon: 'kanban',      width: 980,  height: 620, x: 95,  y: 48,  isOpen: false, isMinimized: false, zIndex: 40, content: 'kanban' },
+        codeplay:       { id: 'codeplay',       title: 'Live Code Sandbox',       icon: 'play-square', width: 1040, height: 660, x: 75,  y: 38,  isOpen: false, isMinimized: false, zIndex: 44, content: 'codeplay' },
+        photobooth:     { id: 'photobooth',     title: 'Photo Booth',             icon: 'aperture',    width: 820,  height: 600, x: 115, y: 48,  isOpen: false, isMinimized: false, zIndex: 47, content: 'photobooth' },
+        synthstudio:    { id: 'synthstudio',    title: 'GaragePad Studio',        icon: 'music',       width: 900,  height: 580, x: 100, y: 52,  isOpen: false, isMinimized: false, zIndex: 49, content: 'synthstudio' },
+        earthpulse:     { id: 'earthpulse',     title: 'Earth Pulse Radar',       icon: 'globe-2',     width: 1060, height: 670, x: 75,  y: 38,  isOpen: false, isMinimized: false, zIndex: 53, content: 'earthpulse' },
+        wayback:        { id: 'wayback',        title: 'Archive & DOS Vault',     icon: 'history',     width: 1040, height: 660, x: 85,  y: 42,  isOpen: false, isMinimized: false, zIndex: 54, content: 'wayback' },
+        ossradar:       { id: 'ossradar',       title: 'Open-Source Radar',       icon: 'git-branch',  width: 1050, height: 660, x: 80,  y: 40,  isOpen: false, isMinimized: false, zIndex: 55, content: 'ossradar' },
+        photopea:       { id: 'photopea',       title: 'Photopea Studio',         icon: 'layers',      width: 1120, height: 700, x: 60,  y: 34,  isOpen: false, isMinimized: false, zIndex: 56, content: 'photopea' },
+        whiteboard:     { id: 'whiteboard',     title: 'OpenCanvas Board',        icon: 'pen-tool',    width: 1080, height: 680, x: 70,  y: 36,  isOpen: false, isMinimized: false, zIndex: 57, content: 'whiteboard' },
+        winamp:         { id: 'winamp',         title: 'Webamp + SomaFM',         icon: 'disc-3',      width: 820,  height: 560, x: 110, y: 60,  isOpen: false, isMinimized: false, zIndex: 58, content: 'winamp' },
+        worldmuseums:   { id: 'worldmuseums',   title: 'World Museums Vault',     icon: 'landmark',    width: 1080, height: 680, x: 72,  y: 36,  isOpen: false, isMinimized: false, zIndex: 59, content: 'worldmuseums' },
+        spacexhub:      { id: 'spacexhub',      title: 'Orbital Launch Control',  icon: 'rocket',      width: 1050, height: 660, x: 82,  y: 40,  isOpen: false, isMinimized: false, zIndex: 60, content: 'spacexhub' },
+        worldfactbook:  { id: 'worldfactbook',  title: 'World Factbook & FX',     icon: 'flag',        width: 1040, height: 660, x: 88,  y: 42,  isOpen: false, isMinimized: false, zIndex: 61, content: 'worldfactbook' },
+        gutendex:       { id: 'gutendex',       title: 'Gutenberg Library',       icon: 'library',     width: 1060, height: 670, x: 78,  y: 38,  isOpen: false, isMinimized: false, zIndex: 62, content: 'gutendex' },
+        shadertoy:      { id: 'shadertoy',      title: 'GLSL Shader Studio',      icon: 'flame',       width: 1080, height: 660, x: 74,  y: 36,  isOpen: false, isMinimized: false, zIndex: 63, content: 'shadertoy' },
+        stellarium:     { id: 'stellarium',     title: 'NASA Eyes & Planetarium', icon: 'orbit',       width: 1120, height: 700, x: 64,  y: 34,  isOpen: false, isMinimized: false, zIndex: 64, content: 'stellarium' },
+        chiptune:       { id: 'chiptune',       title: 'Retro & 3D Makers',       icon: 'boxes',       width: 1100, height: 690, x: 68,  y: 35,  isOpen: false, isMinimized: false, zIndex: 65, content: 'chiptune' },
+        georadar:       { id: 'georadar',       title: 'GeoRadar Explorer',       icon: 'compass',     width: 1060, height: 660, x: 80,  y: 40,  isOpen: false, isMinimized: false, zIndex: 66, content: 'georadar' }
     },
     settings: {
         api_lastfm: '',

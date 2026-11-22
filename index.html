@@ -370,10 +370,10 @@
                         <button onclick="os.companionChatQuick('open terminal')" class="aether-chat-chip hover-target">terminal</button>
                         <button onclick="os.companionChatQuick('open wiki board')" class="aether-chat-chip hover-target">wiki</button>
                         <button onclick="os.companionChatQuick('open weather')" class="aether-chat-chip hover-target">weather</button>
-                        <button onclick="os.companionChatQuick('open globe')" class="aether-chat-chip hover-target">globe</button>
+                        <button onclick="os.companionChatQuick('open spacex')" class="aether-chat-chip hover-target">launches</button>
                         <button onclick="os.companionChatQuick('status')" class="aether-chat-chip hover-target">status</button>
-                        <button onclick="os.companionChatQuick('play lofi')" class="aether-chat-chip hover-target">lofi</button>
-                        <button onclick="os.companionChatQuick('open nosleep')" class="aether-chat-chip hover-target">nosleep</button>
+                        <button onclick="os.companionChatQuick('open museums')" class="aether-chat-chip hover-target">museums</button>
+                        <button onclick="os.companionChatQuick('open shader studio')" class="aether-chat-chip hover-target">shaders</button>
                     </div>
                     <div class="p-2.5 border-t border-white/5 bg-black/35 flex gap-2 items-center">
                         <button id="aether-chat-ptt" class="aether-chat-icon-btn hover-target cursor-none" title="Push to talk" onmousedown="os.aiAssistant&&os.aiAssistant.startPushToTalk(event)" onmouseup="os.aiAssistant&&os.aiAssistant.stopPushToTalk(event)" onmouseleave="os.aiAssistant&&os.aiAssistant.stopPushToTalk(event)" ontouchstart="os.aiAssistant&&os.aiAssistant.startPushToTalk(event)" ontouchend="os.aiAssistant&&os.aiAssistant.stopPushToTalk(event)"><i data-lucide="mic" class="w-4 h-4"></i></button>
@@ -418,7 +418,6 @@
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:media"><i data-lucide="radio" style="width:14px;height:14px;flex-shrink:0"></i> Media Player</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:radiobrowser"><i data-lucide="radio-tower" style="width:14px;height:14px;flex-shrink:0"></i> Global Radio Browser</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:sysmon"><i data-lucide="cpu" style="width:14px;height:14px;flex-shrink:0"></i> System Monitor</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:nosleep"><i data-lucide="sun" style="width:14px;height:14px;flex-shrink:0"></i> NoSleep Screen Lock</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:presence"><i data-lucide="user" style="width:14px;height:14px;flex-shrink:0"></i> Uplink Presence</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:feed"><i data-lucide="rss" style="width:14px;height:14px;flex-shrink:0"></i> Global Signal Feed</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:browser"><i data-lucide="globe" style="width:14px;height:14px;flex-shrink:0"></i> Web Proxy Interface</div>
@@ -426,8 +425,6 @@
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:floor796"><i data-lucide="building-2" style="width:14px;height:14px;flex-shrink:0"></i> Floor796 Explorer</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:globe"><i data-lucide="plane" style="width:14px;height:14px;flex-shrink:0"></i> 3D Global Tracker</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:market"><i data-lucide="trending-up" style="width:14px;height:14px;flex-shrink:0"></i> Live Market Matrix</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:surveillance"><i data-lucide="camera" style="width:14px;height:14px;flex-shrink:0"></i> Optics Node (Webcam)</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:notes"><i data-lucide="lock" style="width:14px;height:14px;flex-shrink:0"></i> Encrypted Scratchpad</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:memes"><i data-lucide="smile" style="width:14px;height:14px;flex-shrink:0"></i> Memetic Intelligence</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:ytchtv"><i data-lucide="tv" style="width:14px;height:14px;flex-shrink:0"></i> Retro TV (YTCH.TV)</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:entityscanner"><i data-lucide="scan" style="width:14px;height:14px;flex-shrink:0"></i> Universal Entity Scanner</div>
@@ -437,18 +434,13 @@
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:nasa"><i data-lucide="telescope" style="width:14px;height:14px;flex-shrink:0"></i> NASA Deep Space</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:taskmanager"><i data-lucide="list-x" style="width:14px;height:14px;flex-shrink:0"></i> Task Manager</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:games"><i data-lucide="gamepad-2" style="width:14px;height:14px;flex-shrink:0"></i> Game Vault</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:youtubeambient"><i data-lucide="youtube" style="width:14px;height:14px;flex-shrink:0"></i> YouTube Ambient</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:anime"><i data-lucide="sparkles" style="width:14px;height:14px;flex-shrink:0"></i> Anime Discovery</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:manga"><i data-lucide="book-open" style="width:14px;height:14px;flex-shrink:0"></i> Manga Launcher</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:iss"><i data-lucide="satellite" style="width:14px;height:14px;flex-shrink:0"></i> ISS Tracker</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:apistatus"><i data-lucide="activity" style="width:14px;height:14px;flex-shrink:0"></i> API Status Board</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:packetviz"><i data-lucide="network" style="width:14px;height:14px;flex-shrink:0"></i> Packet Visualizer</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:about"><i data-lucide="info" style="width:14px;height:14px;flex-shrink:0"></i> System Encyclopedia</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:aetherbridge"><i data-lucide="radio-tower" style="width:14px;height:14px;flex-shrink:0"></i> Aether Bridge</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:aetherlink"><i data-lucide="link-2" style="width:14px;height:14px;flex-shrink:0"></i> Aether Link</div>
                 <div style="padding:8px 10px 5px;margin-top:4px;font:500 9px 'JetBrains Mono',monospace;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:0.15em">System</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:storage"><i data-lucide="database" style="width:14px;height:14px;flex-shrink:0"></i> Storage Inspector</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:errorconsole"><i data-lucide="bug" style="width:14px;height:14px;flex-shrink:0"></i> Error Console</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.65);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="sys:reset"><i data-lucide="rotate-ccw" style="width:14px;height:14px;flex-shrink:0;color:rgba(248,113,113,0.7)"></i> <span style="color:rgba(248,113,113,0.85)">Reset System State</span></div>
             </div>
         </div>
@@ -580,35 +572,35 @@
     <div id="calendar-popover" aria-label="Calendar and World Clocks"></div>
     <div id="desktop-context-menu" aria-label="Desktop Context Menu">
         <div class="space-y-0.5 text-xs select-none">
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.stickiesAdd && os.stickiesAdd('yellow')">
-                <span class="flex items-center gap-2"><i data-lucide="sticky-note" class="w-3.5 h-3.5 text-yellow-300"></i> New Desktop Sticky Note</span>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('worldmuseums')">
+                <span class="flex items-center gap-2"><i data-lucide="landmark" class="w-3.5 h-3.5 text-amber-300"></i> World Museums Vault</span>
             </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('earthpulse')">
-                <span class="flex items-center gap-2"><i data-lucide="globe-2" class="w-3.5 h-3.5 text-sky-400"></i> Earth Pulse Radar</span>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('spacexhub')">
+                <span class="flex items-center gap-2"><i data-lucide="rocket" class="w-3.5 h-3.5 text-sky-400"></i> Orbital Launch Control</span>
             </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('ossradar')">
-                <span class="flex items-center gap-2"><i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-400"></i> Open-Source Radar</span>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('stellarium')">
+                <span class="flex items-center gap-2"><i data-lucide="orbit" class="w-3.5 h-3.5 text-indigo-400"></i> NASA Eyes &amp; Planetarium</span>
             </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('wayback')">
-                <span class="flex items-center gap-2"><i data-lucide="history" class="w-3.5 h-3.5 text-amber-400"></i> Archive &amp; DOS Vault</span>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('shadertoy')">
+                <span class="flex items-center gap-2"><i data-lucide="flame" class="w-3.5 h-3.5 text-emerald-400"></i> GLSL Shader Studio</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('georadar')">
+                <span class="flex items-center gap-2"><i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400"></i> GeoRadar Explorer</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('worldfactbook')">
+                <span class="flex items-center gap-2"><i data-lucide="flag" class="w-3.5 h-3.5 text-rose-400"></i> World Factbook &amp; FX</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('gutendex')">
+                <span class="flex items-center gap-2"><i data-lucide="library" class="w-3.5 h-3.5 text-amber-400"></i> Gutenberg Library</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('chiptune')">
+                <span class="flex items-center gap-2"><i data-lucide="boxes" class="w-3.5 h-3.5 text-violet-400"></i> Retro &amp; 3D Makers</span>
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('photopea')">
                 <span class="flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400"></i> Photopea Layer Studio</span>
             </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('whiteboard')">
-                <span class="flex items-center gap-2"><i data-lucide="pen-tool" class="w-3.5 h-3.5 text-cyan-400"></i> OpenCanvas Whiteboard</span>
-            </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('winamp')">
                 <span class="flex items-center gap-2"><i data-lucide="disc-3" class="w-3.5 h-3.5 text-orange-400"></i> Webamp + SomaFM</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('photobooth')">
-                <span class="flex items-center gap-2"><i data-lucide="aperture" class="w-3.5 h-3.5 text-rose-400"></i> Photo Booth</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('synthstudio')">
-                <span class="flex items-center gap-2"><i data-lucide="music" class="w-3.5 h-3.5 text-amber-400"></i> GaragePad Music Studio</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('calculator')">
-                <span class="flex items-center gap-2"><i data-lucide="calculator" class="w-3.5 h-3.5 text-orange-400"></i> Calculator</span>
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();window.AetherVFS && AetherVFS.triggerUploadDialog()">
                 <span class="flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i> Upload Local Files...</span>
@@ -620,12 +612,6 @@
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.toggleMissionControl(true)">
                 <span class="flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5 text-gray-300"></i> Mission Control</span>
                 <span class="text-[10px] font-mono text-gray-500">⌃↑</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('voicememos')">
-                <span class="flex items-center gap-2"><i data-lucide="mic" class="w-3.5 h-3.5 text-red-400"></i> Voice Memos</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('clockapp')">
-                <span class="flex items-center gap-2"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> World Clock &amp; Timers</span>
             </button>
             <div class="my-1 border-t border-white/10"></div>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.cycleNextTheme()">
@@ -698,11 +684,11 @@
     <script src="src/modules/focus-and-devpad.js"></script>
     <script src="src/modules/power-tools.js"></script>
     <script src="src/modules/dev-workbench.js"></script>
-    <script src="src/modules/image-and-qr-lab.js"></script>
-    <script src="src/modules/native-apple-apps.js"></script>
     <script src="src/modules/native-media-studios.js"></script>
     <script src="src/modules/api-earth-archive-oss.js"></script>
     <script src="src/modules/opensource-webapps-suite.js"></script>
+    <script src="src/modules/live-world-and-science-apis.js"></script>
+    <script src="src/modules/iconic-web-universes.js"></script>
     <script src="src/ui/desktop-shell-extras.js"></script>
     <script src="src/modules/voice-and-companion.js"></script>
     <script src="src/modules/lastfm-analytics.js"></script>

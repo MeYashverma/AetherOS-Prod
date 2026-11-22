@@ -163,10 +163,17 @@ window.extendOS({
                 else if (c === 'uptime') { const s = Math.floor(performance.now() / 1000); os.logTerminal(`Session uptime: ${Math.floor(s / 60)}m ${s % 60}s`); }
                 else if (c === 'lock') { os.lockScreen && os.lockScreen(); }
                 else if (c === 'backup') { window.AetherBackup && AetherBackup.triggerExportUI(); }
-                else if (c === 'scan') { os.packetVizRender && os.openWindow('packetviz'); os.logTerminal('Launching packet visual cortex...'); }
+                else if (c === 'scan') { os.openWindow('taskmanager'); os.logTerminal('Launching Task & Network Manager...'); }
                 else if (c === 'weather') os.openWindow('weather');
                 else if (c === 'iss') os.openWindow('iss');
-                else if (c === 'apis') os.openWindow('apistatus');
+                else if (c === 'space') os.openWindow('spacexhub');
+                else if (c === 'museums') os.openWindow('worldmuseums');
+                else if (c === 'countries') os.openWindow('worldfactbook');
+                else if (c === 'books') os.openWindow('gutendex');
+                else if (c === 'shader') os.openWindow('shadertoy');
+                else if (c === 'stars') os.openWindow('stellarium');
+                else if (c === 'geo') os.openWindow('georadar');
+                else if (c === 'apis') os.openWindow('sysmon');
                 else if (c === 'matrix') { os._terminalStats.entropy = 9.99; os.logTerminal('MATRIX INTENSITY BOOSTED // entropy maxed'); }
                 else if (c.startsWith('wiki ')) {
                     const query = raw.substring(5).trim();
@@ -178,24 +185,8 @@ window.extendOS({
                 }
                 else if (c.startsWith('curl ')) {
                     const url = raw.slice(5).trim();
-                    os.openWindow('apiclient');
-                    setTimeout(() => {
-                        const uEl = document.getElementById('apic-url');
-                        if (uEl) uEl.value = url;
-                        os.apiClientSend && os.apiClientSend();
-                    }, 40);
-                    os.logTerminal(`HTTP GET ${url} -> opened in HTTP API Client`);
-                }
-                else if (c.startsWith('qr ')) {
-                    const text = raw.slice(3).trim();
-                    os.openWindow('imagelab');
-                    setTimeout(() => {
-                        os.imageLabSetMode && os.imageLabSetMode('qr');
-                        const qEl = document.getElementById('qr-input-text');
-                        if (qEl) qEl.value = text;
-                        os.qrRender && os.qrRender();
-                    }, 40);
-                    os.logTerminal(`Generated offline ISO-18004 QR for "${text}"`);
+                    os.logTerminal(`Fetching ${url}...`);
+                    fetch(url).then((r) => r.text()).then((t) => os.logTerminal(t.slice(0, 260))).catch((e) => os.logTerminal('curl error: ' + e.message));
                 }
                 else if (c.startsWith('open ')) {
                     const appId = c.replace('open ', '').trim();
@@ -608,50 +599,6 @@ window.extendOS({
                             </div>
                         </div>`;
                 }
-            },
-
-    storageRender: () => { const el=document.getElementById('storage-list'), sum=document.getElementById('storage-summary'); if(!el)return; const keys=Object.keys(localStorage).sort(); let total=0; el.innerHTML=keys.map(k=>{ const v=localStorage.getItem(k)||''; total+=k.length+v.length; return `<label class="block rounded-lg border border-white/10 bg-white/[0.035] p-3"><div class="flex items-center gap-2"><input type="checkbox" class="storage-check accent-red-500" value="${os._html(k)}"><span class="text-white font-bold flex-1">${os._html(k)}</span><span class="text-gray-500">${(v.length/1024).toFixed(1)} KB</span></div><pre class="mt-2 max-h-20 overflow-auto text-[9px] text-gray-500 whitespace-pre-wrap select-text">${os._html(v.slice(0,900))}${v.length>900?'…':''}</pre></label>`; }).join('') || '<div class="text-gray-500 text-center mt-16">localStorage is empty.</div>'; if(sum)sum.textContent=`${keys.length} keys · ${(total/1024).toFixed(1)} KB`; },
-
-    storageExport: () => { const data={}; Object.keys(localStorage).forEach(k=>data[k]=localStorage.getItem(k)); const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='aetheros-localStorage-export.json'; a.click(); URL.revokeObjectURL(a.href); },
-
-    storageDeleteSelected: () => { const checks=[...document.querySelectorAll('.storage-check:checked')]; if(!checks.length)return; if(confirm('Delete selected localStorage keys?')){ checks.forEach(c=>localStorage.removeItem(c.value)); os.storageRender(); } },
-
-    errorConsoleRender: () => { const el=document.getElementById('error-list'); if(!el)return; const logs=window.aetherErrorLog||[]; el.innerHTML=logs.length?logs.slice().reverse().map(e=>`<div class="rounded-lg border border-red-500/20 bg-red-950/20 p-3"><div class="text-red-300 font-bold">${os._html(e.type)} · ${os._html(e.time)}</div><div class="text-white mt-1 select-text">${os._html(e.message)}</div><pre class="mt-2 text-[9px] text-gray-500 whitespace-pre-wrap select-text">${os._html(e.stack||'')}</pre></div>`).join(''):'<div class="text-gray-500 text-center mt-16">No captured runtime errors yet.</div>'; },
-
-    errorConsoleClear: () => { window.aetherErrorLog=[]; os.errorConsoleRender(); },
-
-    apiStatusRun: async () => { const el=document.getElementById('api-status-list'); if(!el)return; const tests=[['Open-Meteo','https://api.open-meteo.com/v1/forecast?latitude=28.61&longitude=77.20&current=temperature_2m'],['Radio Browser','https://de1.api.radio-browser.info/json/stations/topclick/1'],['Wikipedia','https://en.wikipedia.org/api/rest_v1/page/summary/Earth'],['NASA','https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY'],['CoinGecko','https://api.coingecko.com/api/v3/ping'],['Jikan','https://api.jikan.moe/v4/top/anime?limit=1'],['USGS','https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson']]; el.innerHTML=tests.map(t=>`<div id="api-${t[0].replace(/\W/g,'')}" class="p-4 rounded-xl border border-white/10 bg-white/[0.04]"><div class="text-white font-bold">${t[0]}</div><div class="text-gray-500 mt-1">Testing...</div></div>`).join(''); await Promise.all(tests.map(async ([name,url])=>{ const id='api-'+name.replace(/\W/g,''); const card=document.getElementById(id); const t0=performance.now(); try{ const r=await fetch(url,{signal:AbortSignal.timeout(9000)}); const ms=Math.round(performance.now()-t0); card.innerHTML=`<div class="flex justify-between"><span class="text-white font-bold">${name}</span><span class="text-green-400">ONLINE</span></div><div class="text-gray-500 mt-1">HTTP ${r.status} · ${ms} ms</div><div class="h-1 bg-green-500/40 rounded mt-3"></div>`; }catch(e){ card.innerHTML=`<div class="flex justify-between"><span class="text-white font-bold">${name}</span><span class="text-red-400">FAIL</span></div><div class="text-gray-500 mt-1">${os._html(e.message)}</div><div class="h-1 bg-red-500/40 rounded mt-3"></div>`; }})); },
-
-    packetVizRender: () => {
-                const el=document.getElementById('packet-hosts'), sum=document.getElementById('packet-summary');
-                if(!el)return;
-                const entries=performance.getEntriesByType('resource');
-                const hosts={};
-                entries.forEach(e=>{ try{ const u=new URL(e.name, location.href); const h=u.host||'local'; (hosts[h]||(hosts[h]=[])).push(e); }catch{} });
-                const names=Object.keys(hosts).sort((a,b)=>hosts[b].length-hosts[a].length).slice(0,9);
-                if(!names.length){
-                    if(sum) sum.textContent='0 packets · 0.0 KB · 0 hosts';
-                    el.innerHTML=`<div class="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-gray-400 font-mono text-xs"><div class="text-white font-bold uppercase tracking-widest mb-2">No Captured Resource Frames</div><div class="text-gray-500 text-[10px]">PerformanceResourceTiming buffer is currently empty. Open any live network module or click Rescan to inspect real browser resource transfers.</div><button onclick="os.packetVizRender()" class="mt-4 px-3 py-1.5 rounded bg-white/10 hover:bg-white/15 text-white text-[10px] cursor-none hover-target">Rescan</button></div>`;
-                    return;
-                }
-                const totalPackets=names.reduce((s,h)=>s+hosts[h].length,0), totalBytes=names.reduce((s,h)=>s+hosts[h].reduce((a,e)=>a+(e.transferSize||e.encodedBodySize||0),0),0);
-                if(sum)sum.textContent=`${totalPackets} packets · ${(totalBytes/1024).toFixed(1)} KB · ${names.length} hosts`;
-                const rows=names.map((h,i)=>{ const arr=hosts[h], bytes=arr.reduce((s,e)=>s+(e.transferSize||e.encodedBodySize||0),0), avg=Math.round(arr.reduce((s,e)=>s+(e.duration||0),0)/Math.max(1,arr.length)); const y=names.length===1?50:(12+i*(76/Math.max(1,names.length-1))); return {h,arr,bytes,avg,y,i}; });
-                const nodes=rows.map(r=>`<button class="pv-host" style="top:${r.y}%" title="${os._html(r.h)}"><span class="pv-dot"></span><span class="min-w-0"><b>${os._html(r.h)}</b><em>${r.arr.length} frames · ${(r.bytes/1024).toFixed(1)} KB · ${r.avg}ms</em></span></button>`).join('');
-                const lanes=rows.map(r=>{ const count=Math.min(8,Math.max(3,r.arr.length)); return `<div class="pv-lane" style="top:${r.y}%;--d:${(r.i*.17).toFixed(2)}s">${Array.from({length:count},(_,j)=>`<i style="animation-delay:${(j*.33+r.i*.08).toFixed(2)}s"></i>`).join('')}</div>`; }).join('');
-                const table=rows.map(r=>`<div class="grid grid-cols-12 gap-2 items-center py-2 border-t border-white/5"><div class="col-span-1 text-gray-600">${String(r.i+1).padStart(2,'0')}</div><div class="col-span-5 text-white truncate">${os._html(r.h)}</div><div class="col-span-2 text-gray-400">${r.arr.length} pkts</div><div class="col-span-2 text-gray-400">${(r.bytes/1024).toFixed(1)} KB</div><div class="col-span-2 text-right ${r.avg>500?'text-yellow-300':'text-green-300'}">${r.avg} ms</div></div>`).join('');
-                el.innerHTML=`
-                    <style>
-                        .pv-shell{position:relative;height:420px;border:1px solid rgba(255,255,255,.08);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(10,10,12,.96),rgba(2,2,3,.98));box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 24px 60px rgba(0,0,0,.45)}
-                        .pv-shell:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 52% 48%,rgba(255,255,255,.10),transparent 30%),linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:auto,32px 32px,32px 32px;opacity:.9}.pv-shell:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(255,255,255,.018) 50%);background-size:100% 4px;pointer-events:none}
-                        .pv-host{position:absolute;left:18px;transform:translateY(-50%);width:250px;z-index:3;display:flex;align-items:center;gap:9px;text-align:left;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(10px);transition:.18s}.pv-host:hover{background:rgba(255,255,255,.085);border-color:rgba(255,255,255,.22)}.pv-host b{display:block;color:white;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pv-host em{display:block;color:#6b7280;font-size:8px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pv-dot{width:9px;height:9px;border-radius:99px;background:white;box-shadow:0 0 12px white;flex:none}
-                        .pv-client{position:absolute;right:22px;top:50%;transform:translateY(-50%);z-index:3;width:190px;padding:14px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);text-align:center}.pv-client:before{content:"";display:block;width:36px;height:24px;margin:0 auto 8px;border:1px solid rgba(255,255,255,.35);border-radius:4px;box-shadow:0 8px 0 -4px rgba(255,255,255,.3)}
-                        .pv-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:132px;height:132px;border-radius:28px;background:rgba(0,0,0,.66);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 70px rgba(255,255,255,.08)}.pv-core:before{content:"";position:absolute;inset:15px;border-radius:22px;border:1px dashed rgba(255,255,255,.22);animation:pvSpin 12s linear infinite}.pv-core b{font-family:Oswald,sans-serif;color:white;letter-spacing:.16em}.pv-core span{display:block;color:#6b7280;font-size:8px;margin-top:3px}
-                        .pv-lane{position:absolute;left:282px;right:226px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),rgba(255,255,255,.55),rgba(255,255,255,.18),transparent);z-index:2}.pv-lane i{position:absolute;top:-3px;width:7px;height:7px;border-radius:50%;background:white;box-shadow:0 0 10px white;animation:pvPacket 2.15s linear infinite}.pv-lane i:nth-child(2n){width:5px;height:5px;opacity:.65}.pv-lane i:nth-child(3n){animation-duration:2.8s;opacity:.45}@keyframes pvPacket{0%{left:0;opacity:0;transform:scale(.5)}12%{opacity:.9}50%{filter:blur(0)}88%{opacity:.9}100%{left:100%;opacity:0;transform:scale(1.1)}}@keyframes pvSpin{to{transform:rotate(360deg)}}
-                    </style>
-                    <div class="grid grid-cols-4 gap-3 mb-4"><div class="rounded-xl border border-white/10 bg-white/[0.035] p-3"><div class="text-gray-500 uppercase text-[8px]">Captured Frames</div><div class="text-white text-2xl font-bold">${totalPackets}</div></div><div class="rounded-xl border border-white/10 bg-white/[0.035] p-3"><div class="text-gray-500 uppercase text-[8px]">Transfer</div><div class="text-white text-2xl font-bold">${(totalBytes/1024).toFixed(0)}K</div></div><div class="rounded-xl border border-white/10 bg-white/[0.035] p-3"><div class="text-gray-500 uppercase text-[8px]">Hosts</div><div class="text-white text-2xl font-bold">${names.length}</div></div><div class="rounded-xl border border-white/10 bg-white/[0.035] p-3"><div class="text-gray-500 uppercase text-[8px]">Mode</div><div class="text-green-300 text-lg font-bold">LIVE TAP</div></div></div>
-                    <div class="pv-shell">${nodes}${lanes}<div class="pv-core"><div><b>CORE</b><span>ROUTER / NAT</span><span>RESOURCE TIMING</span></div></div><div class="pv-client"><div class="text-white font-display uppercase tracking-widest">AetherOS</div><div class="text-gray-500 text-[9px]">Browser Client</div></div></div>
-                    <div class="mt-4 rounded-xl border border-white/10 bg-black/35 p-3"><div class="flex justify-between mb-1"><div class="text-os-accent uppercase tracking-widest text-[9px]">Trace Matrix</div><button onclick="os.packetVizRender()" class="text-[9px] text-white hover:underline cursor-none hover-target">Rescan</button></div>${table}</div>`;
             },
 
     initSpeedTestUI: () => {
