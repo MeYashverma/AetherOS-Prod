@@ -1,12 +1,12 @@
 # AetherOS — Browser-Native Operating Environment
 
-> **Single-file, client-side, overbuilt on purpose.**  
+> **Zero-build, client-side, modular desktop shell.**  
 > A desktop shell that happens to live inside the browser: multi-window, themeable, noisy in the right places, and packed with realtime modules, local memory, and visual polish.
 
 **Live demo:** https://meyashverma.github.io/AetherOS-Prod/  
 **Repo:** https://github.com/MeYashverma/AetherOS-Prod  
-**Build:** `index-updated.html` — single HTML file, no backend, no build step, no framework.  
-**Stack:** HTML · Tailwind · GSAP · Three.js · CesiumJS · Lucide · WebLLM · IndexedDB · Web APIs
+**Build:** Modular vanilla architecture (`index.html` + `styles/` + `src/`) — no backend, no build step, no framework.  
+**Stack:** HTML · CSS · Tailwind · GSAP · Three.js · Lucide · WebLLM · IndexedDB · WebRTC · Web APIs
 
 ---
 
@@ -33,7 +33,7 @@
 
 ## What this is
 
-AetherOS runs as a full **UI shell inside a single HTML file**. It ships its own:
+AetherOS runs as a full **browser-native desktop shell** organized into modular stylesheets, engines, services, templates, and feature modules with zero build step required. It ships its own:
 
 - Window manager (drag, resize, snap, focus, z-index, Genie minimize)
 - Dock with magnification, running indicators, minimized thumbnails, live previews
@@ -93,19 +93,50 @@ graph LR
 
 ## Architecture
 
-```
-index-updated.html (single file, ~3.0 MB, ~30k lines)
-├── <head> : Tailwind, Fonts, Three, Cesium, GSAP, Lucide, WebLLM, Early Perf Flags
-├── <style> : Design tokens, theme variables, liquid glass, dock, windows, fluency layer
-├── <body>
-│   ├── #webgl-container + #aether-particles + #lg-wallpaper + .ambient-overlay
-│   ├── #os-layer (header + workspace + dock + overlays)
-│   │   ├── header (top bar: logo, sys stats, weather, bridge/link indicators, control center)
-│   │   ├── #window-canvas (absolute windows)
-│   │   ├── #dock + #finder-overlay + #cmd-palette + #dock-context-menu
-│   │   └── #cursor-dot / #cursor-ring / #sakura-layer / #oneko
-│   └── <script> : SystemState, WindowManager, CursorEngine, BackgroundEngine, Sakura, AetherOS modules, Fluency Engine
-└── #aether-perf-hud + #aether-help-overlay (injected)
+```text
+AetherOS-Prod/
+├── index.html                                  # Lightweight desktop shell entrypoint (~567 lines)
+├── styles/
+│   ├── core.css                                # Design tokens, window chrome, dock previews & lyrics themes
+│   ├── modules-and-overlays.css                # Module layouts, companion sidebar, radio deck, Finder & menus
+│   └── liquid-glass.css                        # Liquid Glass surface system, wallpaper, dock pill & responsive rules
+└── src/
+    ├── config/
+    │   └── tailwind.config.js                  # Tailwind runtime color & shadow configuration
+    ├── core/
+    │   ├── primitives.js                       # SignalCore, ModuleLifecycle, Notifications, RenderScheduler & extendOS
+    │   └── system-state.js                     # SystemState settings, 35-window registry & localStorage persistence
+    ├── ui/
+    │   ├── settings-tabs.js                    # System Settings tab templates
+    │   ├── shell-interactions.js               # NotificationCenter, delegated cursor hover & outside-click/Escape dismissal
+    │   └── templates/
+    │       ├── system-templates.js             # System, diagnostics, terminal & inspector window templates + SysmonViews
+    │       ├── media-space-templates.js        # Media, radio, anime/manga, games, weather & space window templates
+    │       └── network-workspace-templates.js  # Browser, feeds, radar, optics, productivity & P2P window templates
+    ├── engines/
+    │   ├── ambient-engines.js                  # Three.js BackgroundEngine, Sakura petals & OnekoBallEngine
+    │   ├── cursor-engine.js                    # 12 cursor themes, Nyan overlay & Oneko companion cat physics
+    │   ├── window-manager.js                   # Window compositor, Genie mesh minimize, dock spring physics & previews
+    │   ├── command-palette.js                  # CommandPalette spotlight launcher (Ctrl/Cmd+K)
+    │   └── wikiboard-engine.js                 # WikiBoard infinite research canvas & graph minimap
+    ├── services/
+    │   ├── aether-bridge.js                    # AetherBridge WebRTC P2P device sync & file transfer service
+    │   ├── aether-link.js                      # AetherLink P2P chat, voice walkie-talkie, screen share & mini-apps
+    │   └── ai-assistant.js                     # Local AI Assistant, deterministic OS command parser & lazy WebLLM
+    ├── modules/
+    │   ├── shell-and-theme.js                  # Topbar telemetry, Finder, dock pinning, themes, wallpaper & WakeLock
+    │   ├── voice-and-companion.js              # Speech Synthesis TTS, Emo OLED face engine & Companion chat brain
+    │   ├── lastfm-analytics.js                 # Last.fm scrobble metrics, listening clock, heatmap & treemaps
+    │   ├── diagnostics-and-tasks.js            # Data Stream terminal, Sysmon, Cloudflare Speed Test & Task Manager
+    │   ├── space-and-weather.js                # Weather Station, NASA Explorer, ISS 3D Three.js tracker & Game Vault
+    │   ├── media-and-lyrics.js                 # Media Console, Audio Engine & BetterLyrics sync
+    │   ├── radio-and-youtube.js                # Global Radio Browser v3, station favorites & YouTube Ambient
+    │   ├── anime-and-tv.js                     # Anime & Manga explorer, YTCH Retro TV & Memetic Intelligence
+    │   ├── web-and-feeds.js                    # Browser engine, Floor796, WPlace, Signal Feed & Discord Lanyard/Webhook
+    │   ├── radar-and-optics.js                 # 2D ADS-B Flight Radar, Crypto Market Matrix & AI Vision Surveillance
+    │   └── workspace-apps.js                   # Entity Scanner, File Manager, Encrypted Notes, About & WikiBoard hooks
+    └── boot/
+        └── main.js                             # Runtime error collector, boot materialization & idle schedulers
 ```
 
 **Internal architecture view (in-app):**
@@ -506,15 +537,15 @@ oneko          → open Oneko picker
 
 ## Quick Start
 
-**No build. Single file.**
+**No build step required.**
 
-1. Download `index-updated.html` (or `index.html` legacy)
-2. Open in Chrome/Edge (best WebGPU/WakeLock support) — double-click or `npx serve .`
-3. **First boot:** `SystemState.init()` loads defaults, shows `settings` window
-4. **Configure:** System Config → APIs (Last.fm, Discord, GitHub) → Save
-5. **Toggle perf:** click HUD or `Ctrl+Shift+P` → eco for low-end
+1. Clone the repository and serve the project root over any static HTTP server (`python3 -m http.server 8080` or `npx serve .`)
+2. Open `http://localhost:8080` in Chrome/Edge (best WebGPU/WakeLock support)
+3. **First boot:** `SystemState.init()` loads defaults and mounts the desktop workspace
+4. **Configure:** System Settings → Integrations (Last.fm, Discord, GitHub) → Save
+5. **Toggle perf:** use Control Center or System Settings → `Eco` vs `Cinematic`
 
-**Deploy:** GitHub Pages → `https://meyashverma.github.io/AetherOS-Prod/` (static single file)
+**Deploy:** GitHub Pages → `https://meyashverma.github.io/AetherOS-Prod/` (serves directly from root `index.html` + `styles/` + `src/`)
 
 **Dev notes:**
 - All JS/CSS inline — view source is the source
