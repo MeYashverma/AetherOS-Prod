@@ -28,15 +28,45 @@ Object.assign(WindowContents, {
             `,
 
     settings: `
-                <div class="flex h-full text-sm">
-                    <div class="w-44 bg-black/40 border-r border-white/5 p-3 flex flex-col gap-1 font-mono text-xs" id="settings-tab-list">
-                        <div class="text-[8px] text-os-accent uppercase tracking-[0.2em] px-2 py-1 mb-1">Configuration</div>
-                        <button onclick="os.switchSettingsTab('api')" class="settings-tab active w-full text-left px-3 py-2 rounded bg-white/10 text-white hover-target cursor-none transition-all flex items-center gap-2"><i data-lucide="key" class="w-3 h-3"></i> API Keys</button>
-                        <button onclick="os.switchSettingsTab('appearance')" class="settings-tab w-full text-left px-3 py-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all hover-target cursor-none flex items-center gap-2"><i data-lucide="monitor" class="w-3 h-3"></i> Appearance</button>
-                        <button onclick="os.switchSettingsTab('themes')" class="settings-tab w-full text-left px-3 py-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all hover-target cursor-none flex items-center gap-2"><i data-lucide="layers" class="w-3 h-3"></i> Themes</button>
-                        <button onclick="os.switchSettingsTab('system')" class="settings-tab w-full text-left px-3 py-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all hover-target cursor-none flex items-center gap-2"><i data-lucide="cpu" class="w-3 h-3"></i> System</button>
-                    </div>
-                    <div class="flex-1 p-5 overflow-y-auto" id="settings-panel-content"></div>
+                <div class="settings-shell">
+                    <aside class="settings-sidebar" id="settings-tab-list">
+                        <div class="settings-search-box">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                            <input type="text" id="settings-search-input" placeholder="Search settings..." autocomplete="off" oninput="os.filterSettingsSearch(this.value)" class="hover-target cursor-none">
+                            <button type="button" id="settings-search-clear" onclick="const i=document.getElementById('settings-search-input');if(i){i.value='';os.filterSettingsSearch('');}" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                                <i data-lucide="x" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+
+                        <div class="settings-nav-section">Workspace</div>
+                        <button type="button" data-settings-tab="general" onclick="os.switchSettingsTab('general')" class="settings-nav-btn active hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> General</span>
+                        </button>
+                        <button type="button" data-settings-tab="appearance" onclick="os.switchSettingsTab('appearance')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="palette" class="w-3.5 h-3.5"></i> Appearance</span>
+                        </button>
+                        <button type="button" data-settings-tab="voice" onclick="os.switchSettingsTab('voice')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Sound &amp; Voice</span>
+                        </button>
+
+                        <div class="settings-nav-section">Extensions</div>
+                        <button type="button" data-settings-tab="modules" onclick="os.switchSettingsTab('modules')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> App Modules</span>
+                            <span class="settings-nav-badge" id="settings-modules-badge">13/35</span>
+                        </button>
+                        <button type="button" data-settings-tab="extras" onclick="os.switchSettingsTab('extras')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Desktop Extras</span>
+                        </button>
+                        <button type="button" data-settings-tab="api" onclick="os.switchSettingsTab('api')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="key" class="w-3.5 h-3.5"></i> Integrations</span>
+                        </button>
+
+                        <div class="settings-nav-section">System</div>
+                        <button type="button" data-settings-tab="system" onclick="os.switchSettingsTab('system')" class="settings-nav-btn hover-target cursor-none">
+                            <span class="flex items-center gap-2.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> System &amp; Reset</span>
+                        </button>
+                    </aside>
+                    <div class="settings-pane" id="settings-panel-content"></div>
                 </div>
             `,
 
