@@ -253,7 +253,7 @@ class WindowManager {
                 lucide.createIcons({root: el});
                 
                 if (winData.id === 'settings') {
-                    os.switchSettingsTab('api');
+                    os.switchSettingsTab(os._activeSettingsTab || 'general');
                 } else if (winData.id === 'terminal') {
                     os.initDataStream();
                 } else if (winData.id === 'media') {
@@ -904,6 +904,7 @@ class WindowManager {
                 let hasPinned = false;
                 pinned.forEach(pinId => {
                     if (openIds.has(pinId)) return;
+                    if (os.isModuleEnabled && !os.isModuleEnabled(pinId)) return;
                     const mod = os.finderModules.find(m => m.id === pinId) || os.finderExtraActions.find(m => m.id === pinId);
                     if (!mod) return;
                     hasPinned = true;
@@ -1324,8 +1325,15 @@ class WindowManager {
                 }
             }
 
-            open(id) {
-                if (!SystemState.windows[id]) return;
+            open(id, opts = {}) {
+                if (!SystemState.windows[id]) return false;
+                if (!opts?.bypassGate && window.os && window.os.isModuleEnabled && !window.os.isModuleEnabled(id)) {
+                    const label = (window.AETHER_MODULE_REGISTRY && window.AETHER_MODULE_REGISTRY[id]?.label) || SystemState.windows[id].title || id;
+                    if (window.Notifications) {
+                        window.Notifications.push('MODULE DISABLED', `"${label}" is off. Enable it in Settings → App Modules.`);
+                    }
+                    return false;
+                }
                 if (os.companion && os.companion.observeEvent) {
                     os.companion.observeEvent('window_open', { id });
                 }

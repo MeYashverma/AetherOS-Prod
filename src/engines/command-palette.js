@@ -77,10 +77,18 @@ class CommandPalette {
                 }
             }
 
-            filter(rawQuery) {
+                filter(rawQuery) {
                 const q = String(rawQuery || '').trim().toLowerCase();
                 this.el.querySelectorAll('.cmd-item').forEach(el => {
-                    const cmd = (el.getAttribute('data-cmd') || '').toLowerCase();
+                    const rawCmd = el.getAttribute('data-cmd') || '';
+                    if (rawCmd.startsWith('open:')) {
+                        const modId = rawCmd.slice(5);
+                        if (window.os && window.os.isModuleEnabled && !window.os.isModuleEnabled(modId)) {
+                            el.style.display = 'none';
+                            return;
+                        }
+                    }
+                    const cmd = rawCmd.toLowerCase();
                     const txt = (el.textContent || '').toLowerCase();
                     const show = !q || txt.includes(q) || cmd.includes(q);
                     el.style.display = show ? 'flex' : 'none';

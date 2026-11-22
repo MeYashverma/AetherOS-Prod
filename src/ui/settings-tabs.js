@@ -1,480 +1,772 @@
-// AetherOS — System Settings Tab Templates
-const SettingsTabs = window.SettingsTabs = {
-            api: `
-                <h2 class="font-display text-xl uppercase tracking-widest mb-5 border-b border-white/10 pb-2 text-white flex items-center gap-2"><i data-lucide="key" class="w-4 h-4 text-gray-400"></i> API Integration</h2>
-                <div class="space-y-4">
-                    <div class="p-3 rounded-lg bg-blue-500/5 border border-blue-500/15 text-[10px] font-mono text-blue-300/70">
-                        ⓘ API keys are stored locally in your browser. They are never transmitted to third parties.
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2 col-span-2">
-                            <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Last.FM Username</label>
-                            <input type="text" id="set-lastfm-user" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="Enter Last.fm username...">
-                        </div>
-                        <div class="space-y-2 col-span-2">
-                            <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Last.FM API Key <span class="text-gray-600 normal-case">(optional)</span></label>
-                            <input type="password" id="set-lastfm-key" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="Default public mode if blank...">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Discord / Lanyard ID</label>
-                            <input type="text" id="set-discord" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="18-digit User ID...">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">GitHub Username</label>
-                            <input type="text" id="set-github" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="Username for activity...">
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Custom RSS Feed URL</label>
-                        <input type="text" id="set-rss" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="https://techcrunch.com/feed/">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Custom Subreddits <span class="text-gray-600 normal-case">(comma separated)</span></label>
-                        <input type="text" id="set-subreddits" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="funny, me_irl, programmerhumor...">
-                    </div>
-                    <div class="pt-1">
-                        <button onclick="os.saveSettings()" class="px-5 py-2 bg-white text-black font-semibold text-xs font-mono uppercase tracking-wider rounded hover:bg-gray-100 transition hover-target cursor-none shadow-os-btn">Save Configuration</button>
-                    </div>
-                </div>
-            `,
-            appearance: `
-                <h2 class="font-display text-xl uppercase tracking-widest mb-5 border-b border-white/10 pb-2 text-white flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-gray-400"></i> Appearance</h2>
-                <div class="space-y-5">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Wallpaper Engine</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('wallpaper_mode', 'default')" id="opt-wall-default" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Tactical Dark</button>
-                            <button onclick="os.setOption('wallpaper_mode', 'gif')" id="opt-wall-gif" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Dynamic GIF</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Desktop Anime Quotes</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('anime_quotes', 'on')" id="opt-quote-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Display Quotes</button>
-                            <button onclick="os.setOption('anime_quotes', 'off')" id="opt-quote-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Disable Quotes</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Quote Background</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('quote_bg_mode', 'none')" id="opt-quote-bg-none" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">None</button>
-                            <button onclick="os.setOption('quote_bg_mode', 'static')" id="opt-quote-bg-static" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Static</button>
-                            <button onclick="os.setOption('quote_bg_mode', 'gif')" id="opt-quote-bg-gif" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">GIF</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Quote Position</label>
-                        <div class="flex gap-2 flex-wrap">
-                            <button onclick="os.setOption('quote_position', 'top-left')" id="opt-quote-pos-tl" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]">Top Left</button>
-                            <button onclick="os.setOption('quote_position', 'top-right')" id="opt-quote-pos-tr" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]">Top Right</button>
-                            <button onclick="os.setOption('quote_position', 'bottom-left')" id="opt-quote-pos-bl" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]">Bottom Left</button>
-                            <button onclick="os.setOption('quote_position', 'bottom-right')" id="opt-quote-pos-br" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]">Bottom Right</button>
-                            <button onclick="os.setOption('quote_position', 'center')" id="opt-quote-pos-c" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]">Center</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Klipy GIF API Key <span class="text-gray-600 normal-case">(character-specific GIFs)</span></label>
-                        <input type="password" id="set-quote-gif-key" class="w-full p-2.5 glass-input rounded-md hover-target cursor-none font-mono text-sm" placeholder="Paste klipy.com API key..." value="${SystemState.settings.quote_gif_api_key || ''}">
-                        <p class="text-[9px] text-gray-600 font-mono">Get a key at <a href="https://partner.klipy.com/" target="_blank" class="text-os-accent underline">partner.klipy.com</a>. Without a key, generic anime GIFs are used.</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Speech Synthesis Alerts</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('speech_synthesis', 'on')" id="opt-speech-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Voice Alerts</button>
-                            <button onclick="os.setOption('speech_synthesis', 'off')" id="opt-speech-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Silent Mode</button>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="space-y-1 col-span-2">
-                                <div class="flex items-center justify-between text-[9px] text-gray-500 font-mono">
-                                    <span>Real Voice Pack</span>
-                                    <span id="speech-voice-quality" class="text-os-accent">AUTO BEST</span>
-                                </div>
-                                <select id="speech-voice-select" onchange="os.setSpeechVoice(this.value)" class="hidden">
-                                    <option value="auto-real">Auto-select most natural local voice</option>
-                                </select>
-                                <div class="voice-pack-browser" id="voice-pack-browser">
-                                    <div class="voice-pack-searchbar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                        <input type="text" id="voice-pack-search" placeholder="Search voices..." oninput="os.filterVoicePackGrid(this.value)" class="voice-pack-search-input">
-                                        <div class="voice-pack-filter-tags" id="voice-pack-filters">
-                                            <button onclick="os.filterVoicePackTag('all')" class="voice-pack-tag active" data-tag="all">All</button>
-                                            <button onclick="os.filterVoicePackTag('neural')" class="voice-pack-tag" data-tag="neural">Neural</button>
-                                            <button onclick="os.filterVoicePackTag('english')" class="voice-pack-tag" data-tag="english">English</button>
-                                            <button onclick="os.filterVoicePackTag('local')" class="voice-pack-tag" data-tag="local">Local</button>
-                                        </div>
+// AetherOS — Clean, Grouped & Progressive-Disclosure Settings Panes
+(function () {
+    const esc = (v) => String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const ONEKO_SKINS = [
+        ['classic', 'Classic Cat'], ['dog', 'Dog'], ['tora', 'Tora'], ['maia', 'Maia'], ['vaporwave', 'Vaporwave'],
+        ['web-white', 'Web White'], ['web-black', 'Web Black'], ['web-gray', 'Web Gray'], ['web-calico', 'Web Calico'],
+        ['web-robot', 'Web Robot'], ['web-peach', 'Web Peach'], ['web-colourful', 'Web Colourful'], ['web-earth', 'Web Earth'],
+        ['web-air', 'Web Air'], ['web-water', 'Web Water'], ['web-fire', 'Web Fire'], ['web-spirit', 'Web Spirit'],
+        ['web-rainbow', 'Web Rainbow'], ['web-ghost', 'Web Ghost'], ['web-neon', 'Web Neon'], ['web-pink', 'Web Pink'],
+        ['web-orange', 'Web Orange'], ['web-blue', 'Web Blue'], ['bom-neko', 'Bom Neko'], ['bom-tabby', 'Bom Tabby'],
+        ['bom-dog', 'Bom Dog'], ['bom-ace', 'Bom Ace'], ['bom-black2', 'Bom Black 2'], ['bom-blue-tabby', 'Bom Blue Tabby'],
+        ['bom-boo-boo-kitty', 'Bom Boo-Boo'], ['bom-clorpoin', 'Bom Clorpoin'], ['bom-dave', 'Bom Dave'],
+        ['bom-dee-dee', 'Bom Dee-Dee'], ['bom-fancy', 'Bom Fancy'], ['bom-ghetto', 'Bom Ghetto'], ['bom-holiday', 'Bom Holiday'],
+        ['bom-jess', 'Bom Jess'], ['bom-kina', 'Bom Kina'], ['bom-kitty', 'Bom Kitty'], ['bom-kuramecha', 'Bom Kuramecha'],
+        ['bom-lucky', 'Bom Lucky'], ['bom-lucy', 'Bom Lucy'], ['bom-marmalade', 'Bom Marmalade'], ['bom-mermaid', 'Bom Mermaid'],
+        ['bom-mike', 'Bom Mike'], ['bom-multi', 'Bom Multi'], ['bom-neko-cool', 'Bom Cool'], ['bom-silver', 'Bom Silver'],
+        ['bom-silversky', 'Bom Silversky'], ['bom-socks', 'Bom Socks'], ['bom-spooky', 'Bom Spooky'], ['bom-usa', 'Bom USA'],
+        ['bom-valentine', 'Bom Valentine'], ['bom-browndog', 'Bom Brown Dog'], ['bom-bug', 'Bom Bug'], ['bom-caz', 'Bom Caz'],
+        ['bom-chocobo', 'Bom Chocobo'], ['bom-dalmy', 'Bom Dalmy'], ['bom-face', 'Bom Face'], ['bom-fox', 'Bom Fox'],
+        ['bom-lucydog', 'Bom Lucy Dog'], ['bom-alien', 'Bom Alien'], ['bom-bluemarine', 'Bom Blue Marine'],
+        ['bom-doom', 'Bom Doom'], ['bom-metroid', 'Bom Metroid'], ['bom-mini', 'Bom Mini'], ['bom-moon', 'Bom Moon'],
+        ['bom-white-pink-nose', 'Bom Pink Nose'], ['bom-moka', 'Bom Moka'], ['bom-royal', 'Bom Royal'], ['bom-air', 'Bom Air'],
+        ['bom-black', 'Bom Black'], ['bom-blue', 'Bom Blue'], ['bom-calico', 'Bom Calico'], ['bom-colourful', 'Bom Colourful'],
+        ['bom-earth', 'Bom Earth'], ['bom-fire', 'Bom Fire'], ['bom-ghost', 'Bom Ghost'], ['bom-gray', 'Bom Gray'],
+        ['bom-neon', 'Bom Neon'], ['bom-orange', 'Bom Orange'], ['bom-peach', 'Bom Peach'], ['bom-pink', 'Bom Pink'],
+        ['bom-rainbow', 'Bom Rainbow'], ['bom-robot', 'Bom Robot'], ['bom-rose', 'Bom Rose'], ['bom-spirit', 'Bom Spirit'],
+        ['bom-water', 'Bom Water'], ['bom-brownbsddaemon', 'BSD Daemon'], ['bom-captaingoodnight', 'Captain Goodnight'],
+        ['bom-cokebottle', 'Coke Bottle'], ['bom-greenghost', 'Green Ghost'], ['bom-monstertruck', 'Monster Truck']
+    ];
+
+    const THEMES = [
+        { id: 'midnight', name: 'Midnight', desc: 'Deep black · Pure glass', dot: '#ffffff', bg: 'linear-gradient(145deg,#060608,#14141d)' },
+        { id: 'aurora',   name: 'Aurora',   desc: 'Bioluminescent teal',    dot: '#14ffb4', bg: 'linear-gradient(145deg,#021008,#062e22)' },
+        { id: 'synthwave',name: 'Synthwave',desc: 'Neon purple retro',      dot: '#c084fc', bg: 'linear-gradient(145deg,#0a0412,#1e0e48)' },
+        { id: 'ember',    name: 'Ember',    desc: 'Warm amber contrast',    dot: '#fb923c', bg: 'linear-gradient(145deg,#0c0603,#261408)' },
+        { id: 'ice',      name: 'Arctic Ice',desc: 'Crisp glacial blue',    dot: '#60a5fa', bg: 'linear-gradient(145deg,#020810,#0d1e3a)' },
+        { id: 'rose',     name: 'Rosé',     desc: 'Soft pink dark glass',   dot: '#f472b6', bg: 'linear-gradient(145deg,#0c0208,#2e0818)' },
+        { id: 'solar',    name: 'Solar',    desc: 'Incandescent gold',      dot: '#facc15', bg: 'linear-gradient(145deg,#0d0800,#2e1e00)' },
+        { id: 'hacker',   name: 'Hacker',   desc: 'Phosphor matrix green',  dot: '#4ade80', bg: 'linear-gradient(145deg,#000a00,#001e00)' },
+        { id: 'neonvoid', name: 'Neon Void',desc: 'Indigo & magenta split', dot: '#818cf8', bg: 'linear-gradient(145deg,#000008,#0a0020)' },
+        { id: 'sakura',   name: 'Sakura',   desc: 'Cherry blossom tint',    dot: '#fbb6ce', bg: 'linear-gradient(145deg,#0e0508,#280e15)' },
+        { id: 'carbon',   name: 'Carbon',   desc: 'Minimal slate monochrome',dot:'#94a3b8', bg: 'linear-gradient(145deg,#0a0a0a,#1c1c1c)' },
+        { id: 'ocean',    name: 'Ocean',    desc: 'Deep aqua current',      dot: '#38bdf8', bg: 'linear-gradient(145deg,#00050f,#001840)' }
+    ];
+
+    const FX_CURSORS = [
+        ['neon', 'Neon Trail'], ['comet', 'Comet Dust'], ['cursorly', 'Bubbles'],
+        ['ripple', 'Click Ripple'], ['sparkle', 'Sparkle'], ['binary', 'Binary Rain'],
+        ['gold', 'Gold Pulse'], ['void', 'Void Lens'], ['nyan', 'Nyan Cat']
+    ];
+
+    const s = () => (window.SystemState && window.SystemState.settings) ? window.SystemState.settings : {};
+
+    function countModules() {
+        const reg = window.AETHER_MODULE_REGISTRY || {};
+        const ids = Object.keys(reg);
+        const enabledMap = s().enabled_modules || {};
+        const enabled = ids.filter((id) => reg[id].required || enabledMap[id] !== false && Boolean(enabledMap[id])).length;
+        return { enabled, total: ids.length || 35 };
+    }
+
+    function renderModulesSection(filterPack) {
+        const reg = window.AETHER_MODULE_REGISTRY || {};
+        const packs = window.AETHER_MODULE_PACKS || [];
+        const enabledMap = s().enabled_modules || {};
+        const activeFilter = filterPack || window._settingsModulePackFilter || 'all';
+        const counts = countModules();
+
+        const filterPills = [
+            { id: 'all', label: 'All Packs' },
+            ...packs.map((p) => ({ id: p.id, label: p.label.split(',')[0].split('&')[0].trim() }))
+        ].map((pill) => `
+            <button type="button" onclick="os.setSettingsModuleFilter('${pill.id}')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition hover-target cursor-none ${activeFilter === pill.id ? 'bg-white/15 text-white border border-white/20' : 'bg-white/[0.04] text-gray-400 border border-white/[0.06] hover:text-white'}">
+                ${esc(pill.label)}
+            </button>
+        `).join('');
+
+        const packCards = packs
+            .filter((pack) => activeFilter === 'all' || pack.id === activeFilter)
+            .map((pack) => {
+                const mods = Object.values(reg).filter((m) => m.pack === pack.id);
+                const enabledInPack = mods.filter((m) => m.required || Boolean(enabledMap[m.id])).length;
+                const toggleableMods = mods.filter((m) => !m.required);
+                const allToggleableOn = toggleableMods.length > 0 && toggleableMods.every((m) => Boolean(enabledMap[m.id]));
+
+                const rows = mods.map((m) => {
+                    const isOn = Boolean(m.required || enabledMap[m.id]);
+                    return `
+                        <div class="settings-row" data-search-item="${esc(m.label + ' ' + m.desc + ' ' + pack.label)}">
+                            <div class="settings-row-main">
+                                <div class="settings-row-icon"><i data-lucide="${esc(m.icon)}" class="w-3.5 h-3.5"></i></div>
+                                <div class="min-w-0">
+                                    <div class="settings-row-title flex items-center gap-2">
+                                        <span>${esc(m.label)}</span>
+                                        ${m.required ? '<span class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-white/10 text-gray-300">Core</span>' : ''}
                                     </div>
-                                    <div class="voice-pack-grid" id="voice-pack-grid">
-                                        <div class="voice-pack-card voice-pack-auto" data-voice-name="auto-real" onclick="os.handleVoiceCardClick(event, this.dataset.voiceName)">
-                                            <div class="voice-pack-play" onclick="event.stopPropagation();os.previewVoicePack(this.dataset.voiceName, this)" data-voice-name="auto-real">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                            </div>
-                                            <div class="voice-pack-info">
-                                                <div class="voice-pack-name">Auto Best</div>
-                                                <div class="voice-pack-meta">Let AetherOS choose the most natural voice available</div>
-                                            </div>
-                                            <div class="voice-pack-badge" style="background:rgba(16,185,129,0.15);color:#34d399">RECOMMENDED</div>
-                                            <div class="voice-pack-check">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <div class="settings-row-desc">${esc(m.desc)}</div>
                                 </div>
                             </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[8px] text-gray-500 uppercase"><span>Rate</span><span id="speech-rate-readout">0.92×</span></div>
-                                <input type="range" min="0.75" max="1.12" step="0.01" id="speech-rate-range" value="0.92" oninput="os.setSpeechTuning('speech_rate', this.value)" class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
-                            </div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-[8px] text-gray-500 uppercase"><span>Pitch</span><span id="speech-pitch-readout">0.88</span></div>
-                                <input type="range" min="0.72" max="1.18" step="0.01" id="speech-pitch-range" value="0.88" oninput="os.setSpeechTuning('speech_pitch', this.value)" class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                ${isOn && m.id !== 'settings' ? `<button type="button" onclick="os.openWindow('${m.id}')" class="px-2 py-1 rounded-md bg-white/[0.05] hover:bg-white/10 border border-white/10 text-[10.5px] text-gray-300 hover:text-white transition hover-target cursor-none">Open</button>` : ''}
+                                <button type="button" role="switch" aria-checked="${isOn}" ${m.required ? 'disabled title="Required system module"' : `onclick="os.toggleModuleEnabled('${m.id}')"`}
+                                    class="os-switch hover-target cursor-none" data-module-switch="${m.id}" data-on="${isOn}"></button>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between text-[9px] text-gray-500 font-mono">
-                            <span>Browser API: <span id="speech-api-support" class="text-white">--</span></span>
-                            <div class="flex gap-3">
-                                <button onclick="os.previewSpeechVoice()" class="text-os-accent hover:text-white hover-target cursor-none uppercase">Preview</button>
-                                <button onclick="os.speak('AetherOS real voice pack online. Voice synthesis is now routed through the most natural free browser voice available on this device.', {force:true, interrupt:true})" class="text-os-accent hover:text-white hover-target cursor-none uppercase">Test Voice</button>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-2 px-0.5 pt-2">
+                            <div class="min-w-0">
+                                <div class="text-xs font-semibold text-white flex items-center gap-2">
+                                    <i data-lucide="${esc(pack.icon)}" class="w-3.5 h-3.5 text-gray-400"></i>
+                                    <span>${esc(pack.label)}</span>
+                                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-gray-400">${enabledInPack}/${mods.length}</span>
+                                </div>
+                                <div class="text-[11px] text-gray-500 mt-0.5">${esc(pack.description)}</div>
+                            </div>
+                            ${toggleableMods.length ? `
+                                <button type="button" onclick="os.setModulePack('${pack.id}', ${!allToggleableOn})"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition shrink-0 hover-target cursor-none ${allToggleableOn ? 'bg-white/[0.04] border-white/10 text-gray-300 hover:bg-white/10' : 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/25'}">
+                                    ${allToggleableOn ? 'Disable Pack' : 'Enable Pack'}
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div class="settings-card">${rows}</div>
+                    </div>
+                `;
+            }).join('');
+
+        return `
+            <div class="settings-pane-header flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="settings-pane-title">App Modules</div>
+                    <div class="settings-pane-subtitle">Keep AetherOS minimal or enable optional packs anytime. Disabled apps stay hidden from the Dock, Launcher, and Command Palette.</div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="os.applyModulePreset('minimal')" class="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-[11px] font-medium text-gray-200 transition hover-target cursor-none">Minimal (${Object.values(reg).filter(m => m.required || m.defaultEnabled).length})</button>
+                    <button type="button" onclick="os.applyModulePreset('all')" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 text-[11px] font-medium text-emerald-200 transition hover-target cursor-none">Enable All (${counts.total})</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 mb-4">${filterPills}</div>
+
+            <div class="space-y-4" id="settings-modules-pack-list">${packCards}</div>
+        `;
+    }
+
+    const SettingsTabs = window.SettingsTabs = {
+        renderModulesSection,
+
+        get general() {
+            const st = s();
+            const counts = countModules();
+            const perf = st.performance_mode === 'cinematic' ? 'cinematic' : 'eco';
+            const motion = st.motion_intensity === 'low' ? 'low' : 'high';
+            const sidebarOn = st.desktop_sidebar === 'on';
+            const awakeOn = st.screen_awake_enabled === 'on';
+
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">General</div>
+                    <div class="settings-pane-subtitle">Core performance, workspace layout, and power behavior.</div>
+                </div>
+
+                <div class="settings-section-label">Performance &amp; Motion</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="performance mode eco cinematic gpu glass blur">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Performance Profile</div>
+                                <div class="settings-row-desc">Eco minimizes GPU blur overhead; Cinematic enables full Liquid Glass refraction.</div>
                             </div>
                         </div>
-                        <div class="text-[8px] text-gray-600 font-mono leading-relaxed">Uses free built-in browser/OS voices. On Chrome/Edge/Windows/macOS, AetherOS auto-prioritizes neural/natural voices like Microsoft Aria/Jenny/Guy, Google English, Samantha, Karen, Serena, or Daniel when available.</div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Aether Companion Chatter</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('speech_companion', 'on')" id="opt-companion-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Jarvis Mode</button>
-                            <button onclick="os.setOption('speech_companion', 'off')" id="opt-companion-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Quiet</button>
-                        </div>
-                        <div class="text-[8px] text-gray-600 font-mono leading-relaxed">Greets you on boot, welcomes you back after being away, and occasionally drops short dry-humor status lines while AFK. Uses the Speech toggle above; if voice alerts are silent, it stays as subtle toast/log chatter.</div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Aether Avatar Emotion Mode</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('companion_emotion_mode', 'gif')" id="opt-emo-gif" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">GIF Reaction</button>
-                            <button onclick="os.setOption('companion_emotion_mode', 'emo')" id="opt-emo-oled" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Emo OLED Face</button>
-                        </div>
-                        <div class="text-[8px] text-gray-600 font-mono leading-relaxed">GIF Reaction fetches anime reaction GIFs from online APIs. Emo OLED Face uses a built-in pixel-art animated face with expressions (angry, happy, sad, excited, dizzy, sleep, wink, neutral) inspired by CodersCafeTech/Emo.</div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Performance Engine</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('performance_mode', 'eco')" id="opt-perf-eco" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Eco (Super Fast)</button>
-                            <button onclick="os.setOption('performance_mode', 'cinematic')" id="opt-perf-cinematic" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Cinematic (Max FX)</button>
+                        <div class="os-segmented">
+                            <button type="button" id="opt-perf-eco" onclick="os.setOption('performance_mode','eco')" class="os-seg-btn ${perf === 'eco' ? 'active' : ''} hover-target cursor-none">Eco</button>
+                            <button type="button" id="opt-perf-cinematic" onclick="os.setOption('performance_mode','cinematic')" class="os-seg-btn ${perf === 'cinematic' ? 'active' : ''} hover-target cursor-none">Cinematic</button>
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Motion Acceleration</label>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('motion_intensity', 'high')" id="opt-motion-high" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Dynamic GSAP</button>
-                            <button onclick="os.setOption('motion_intensity', 'low')" id="opt-motion-low" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Low Motion</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Mouse / Cursor Theme</label>
-                        <p class="text-[9px] text-gray-600 font-mono leading-relaxed">Choose from native Aether cursor styles, Cursorly-inspired particles, and the actual adryd325 oneko.js cat-follow-cursor effect embedded locally for single-file use.</p>
-                        <div class="grid grid-cols-2 gap-2" id="cursor-theme-grid">
-                            <button onclick="os.setOption('cursor_theme','aether')" id="opt-cursor-aether" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Aether Ring</button>
-                            <button onclick="os.setOption('cursor_theme','minimal')" id="opt-cursor-minimal" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Minimal</button>
-                            <button onclick="os.setOption('cursor_theme','neon')" id="opt-cursor-neon" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Neon Trail</button>
-                            <button onclick="os.setOption('cursor_theme','comet')" id="opt-cursor-comet" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Comet Dust</button>
-                            <button onclick="os.setOption('cursor_theme','cursorly')" id="opt-cursor-cursorly" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Cursorly Bubbles</button>
-                            <button onclick="os.setOption('cursor_theme','ripple')" id="opt-cursor-ripple" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Click Ripple</button>
-                            <button onclick="os.setOption('cursor_theme','sparkle')" id="opt-cursor-sparkle" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Sparkle</button>
-                            <button onclick="os.setOption('cursor_theme','binary')" id="opt-cursor-binary" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Binary Rain</button>
-                            <button onclick="os.setOption('cursor_theme','crosshair')" id="opt-cursor-crosshair" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Crosshair</button>
-                            <button onclick="os.setOption('cursor_theme','gold')" id="opt-cursor-gold" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Gold Pulse</button>
-                            <button onclick="os.setOption('cursor_theme','void')" id="opt-cursor-void" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Void Lens</button>
-                            <button onclick="os.setOption('cursor_theme','nyan')" id="opt-cursor-nyan" class="p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Nyan Rainbow Cat</button>
-                        </div>
-                        <div class="space-y-1.5 mt-2.5">
-                            <label class="block text-[10px] font-mono text-gray-500 uppercase tracking-wider">Nyan Cat Standard Cursor Overlay</label>
-                            <div class="flex gap-2">
-                                <button onclick="os.setOption('cursor_nyan_standard','on')" id="opt-nyan-standard-on" class="flex-1 p-1.5 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Show Standard</button>
-                                <button onclick="os.setOption('cursor_nyan_standard','off')" id="opt-nyan-standard-off" class="flex-1 p-1.5 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Hide Standard</button>
+
+                    <div class="settings-row" data-search-item="motion animation speed gsap reduced">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-sky-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Window Animations</div>
+                                <div class="settings-row-desc">Control spring transitions and genie minimize animations.</div>
                             </div>
                         </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Oneko Cat Companion</label>
-                        <p class="text-[9px] text-gray-600 font-mono leading-relaxed">Toggle the actual oneko.js cat independently. It can run together with any cursor theme above.</p>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('cursor_oneko','on')" id="opt-oneko-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Cat On</button>
-                            <button onclick="os.setOption('cursor_oneko','off')" id="opt-oneko-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Cat Off</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('cursor_oneko_ball','on')" id="opt-oneko-ball-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Ball On</button>
-                            <button onclick="os.setOption('cursor_oneko_ball','off')" id="opt-oneko-ball-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Ball Off</button>
-                        </div>
-                        <div class="grid grid-cols-5 gap-2 pt-1" id="oneko-variant-grid">
-                            <button onclick="os.setOption('cursor_oneko_variant','classic')" id="opt-oneko-variant-classic" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Classic</button>
-                            <button onclick="os.setOption('cursor_oneko_variant','dog')" id="opt-oneko-variant-dog" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Dog</button>
-                            <button onclick="os.setOption('cursor_oneko_variant','tora')" id="opt-oneko-variant-tora" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Tora</button>
-                            <button onclick="os.setOption('cursor_oneko_variant','maia')" id="opt-oneko-variant-maia" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Maia</button>
-                            <button onclick="os.setOption('cursor_oneko_variant','vaporwave')" id="opt-oneko-variant-vaporwave" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Vapor</button>
-                        </div>
-                        <select id="oneko-variant-select" onchange="os.setOption('cursor_oneko_variant', this.value)" class="w-full p-2 bg-black/50 border border-white/10 rounded text-xs text-white font-mono outline-none cursor-none hover-target"><option value="classic">Classic</option><option value="dog">Dog</option><option value="tora">Tora</option><option value="maia">Maia</option><option value="vaporwave">Vaporwave</option><option value="web-white">Web White</option><option value="web-black">Web Black</option><option value="web-gray">Web Gray</option><option value="web-calico">Web Calico</option><option value="web-robot">Web Robot</option><option value="web-peach">Web Peach</option><option value="web-colourful">Web Colourful</option><option value="web-earth">Web Earth</option><option value="web-air">Web Air</option><option value="web-water">Web Water</option><option value="web-fire">Web Fire</option><option value="web-spirit">Web Spirit</option><option value="web-rainbow">Web Rainbow</option><option value="web-ghost">Web Ghost</option><option value="web-neon">Web Neon</option><option value="web-pink">Web Pink</option><option value="web-orange">Web Orange</option><option value="web-blue">Web Blue</option><option value="bom-neko">Bom Neko</option><option value="bom-tabby">Bom Tabby</option><option value="bom-dog">Bom Dog</option><option value="bom-ace">Bom Ace</option><option value="bom-black2">Bom Black2</option><option value="bom-blue-tabby">Bom Blue-Tabby</option><option value="bom-boo-boo-kitty">Bom Boo-Boo-Kitty</option><option value="bom-clorpoin">Bom Clorpoin</option><option value="bom-dave">Bom Dave</option><option value="bom-dee-dee">Bom Dee-Dee</option><option value="bom-fancy">Bom Fancy</option><option value="bom-ghetto">Bom Ghetto</option><option value="bom-holiday">Bom Holiday</option><option value="bom-jess">Bom Jess</option><option value="bom-kina">Bom Kina</option><option value="bom-kitty">Bom Kitty</option><option value="bom-kuramecha">Bom Kuramecha</option><option value="bom-lucky">Bom Lucky</option><option value="bom-lucy">Bom Lucy</option><option value="bom-marmalade">Bom Marmalade</option><option value="bom-mermaid">Bom Mermaid</option><option value="bom-mike">Bom Mike</option><option value="bom-multi">Bom Multi</option><option value="bom-neko-cool">Bom Neko-Cool</option><option value="bom-silver">Bom Silver</option><option value="bom-silversky">Bom Silversky</option><option value="bom-socks">Bom Socks</option><option value="bom-spooky">Bom Spooky</option><option value="bom-usa">Bom USA</option><option value="bom-valentine">Bom Valentine</option><option value="bom-browndog">Bom Brown Dog</option><option value="bom-bug">Bom Bug</option><option value="bom-caz">Bom Caz</option><option value="bom-chocobo">Bom Chocobo</option><option value="bom-dalmy">Bom Dalmy</option><option value="bom-face">Bom Face</option><option value="bom-fox">Bom Fox</option><option value="bom-lucydog">Bom Lucy Dog</option><option value="bom-alien">Bom Alien</option><option value="bom-bluemarine">Bom Blue Marine</option><option value="bom-doom">Bom Doom</option><option value="bom-metroid">Bom Metroid</option><option value="bom-mini">Bom Mini</option><option value="bom-moon">Bom Moon</option><option value="bom-white-pink-nose">Bom Pink Nose</option><option value="bom-moka">Bom Moka</option><option value="bom-royal">Bom Royal</option><option value="bom-air">Bom Air</option><option value="bom-black">Bom Black</option><option value="bom-blue">Bom Blue</option><option value="bom-calico">Bom Calico</option><option value="bom-colourful">Bom Colourful</option><option value="bom-earth">Bom Earth</option><option value="bom-fire">Bom Fire</option><option value="bom-ghost">Bom Ghost</option><option value="bom-gray">Bom Gray</option><option value="bom-neon">Bom Neon</option><option value="bom-orange">Bom Orange</option><option value="bom-peach">Bom Peach</option><option value="bom-pink">Bom Pink</option><option value="bom-rainbow">Bom Rainbow</option><option value="bom-robot">Bom Robot</option><option value="bom-rose">Bom Rose</option><option value="bom-spirit">Bom Spirit</option><option value="bom-water">Bom Water</option><option value="bom-brownbsddaemon">Bom Brown BSD Daemon</option><option value="bom-captaingoodnight">Bom Captain Goodnight</option><option value="bom-cokebottle">Bom Coke Bottle</option><option value="bom-greenghost">Bom Green Ghost</option><option value="bom-monstertruck">Bom MonsterTruck</option></select>
-                        <div class="flex items-center justify-between text-[9px] text-gray-500 font-mono">
-                            <span>Drag cat/ball · throw ball · dog fetches · idle autoplay after 30s · type <b class="text-os-accent">oneko</b> picker</span>
-                            <button onclick="window.cursorEngine && window.cursorEngine.showOnekoPicker()" class="text-os-accent hover:text-white hover-target cursor-none uppercase">Picker</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Sakura Petal Overlay</label>
-                        <p class="text-[9px] text-gray-600 font-mono leading-relaxed">Vanilla Sakura.js-style falling blossom petals adapted from jhammann/sakura. Runs below OS windows and always below the cursor.</p>
-                        <div class="flex gap-2">
-                            <button onclick="os.setOption('sakura_petals','on')" id="opt-sakura-on" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Petals On</button>
-                            <button onclick="os.setOption('sakura_petals','off')" id="opt-sakura-off" class="flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded transition hover-target cursor-none">Petals Off</button>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2" id="sakura-intensity-grid">
-                            <button onclick="os.setOption('sakura_intensity','light')" id="opt-sakura-light" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Light</button>
-                            <button onclick="os.setOption('sakura_intensity','normal')" id="opt-sakura-normal" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Normal</button>
-                            <button onclick="os.setOption('sakura_intensity','storm')" id="opt-sakura-storm" class="p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded transition hover-target cursor-none">Storm</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Accent Highlight Color</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" id="opt-color-accent" class="w-10 h-10 bg-transparent border-none cursor-none hover-target rounded" value="#ffffff" onchange="os.setOption('theme_accent', this.value)">
-                            <span class="font-mono text-xs text-gray-500">Custom system highlight color</span>
+                        <div class="os-segmented">
+                            <button type="button" id="opt-motion-high" onclick="os.setOption('motion_intensity','high')" class="os-seg-btn ${motion === 'high' ? 'active' : ''} hover-target cursor-none">Dynamic</button>
+                            <button type="button" id="opt-motion-low" onclick="os.setOption('motion_intensity','low')" class="os-seg-btn ${motion === 'low' ? 'active' : ''} hover-target cursor-none">Reduced</button>
                         </div>
                     </div>
                 </div>
-            `,
-            themes: `
-                <h2 class="font-display text-xl uppercase tracking-widest mb-5 border-b border-white/10 pb-2 text-white flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-gray-400"></i> UI Themes</h2>
-                <style>
-                    .theme-btn {
-                        position: relative; overflow: hidden; border-radius: 16px; height: 88px;
-                        display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px;
-                        transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease, border-color 0.22s ease;
-                        cursor: none; text-align: left; border-width: 0.5px;
-                    }
-                    .theme-btn:hover { transform: translateY(-3px) scale(1.025); }
-                    .theme-btn .theme-glow { position: absolute; border-radius: 50%; filter: blur(22px); pointer-events: none; transition: opacity 0.3s ease; opacity: 0.55; }
-                    .theme-btn:hover .theme-glow { opacity: 0.85; }
-                    .theme-btn .theme-orbs { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
-                    .theme-btn .theme-label { font: 700 10px/1.2 'Inter', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
-                    .theme-btn .theme-desc { font: 400 8px/1.4 'JetBrains Mono', monospace; margin-top: 2px; opacity: 0.55; }
-                    .theme-btn .theme-accent-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
-                    .theme-btn .theme-active-badge {
-                        position: absolute; top: 8px; right: 8px; font: 600 7px 'JetBrains Mono', monospace;
-                        letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
-                        background: rgba(255,255,255,0.14); border: 0.5px solid rgba(255,255,255,0.28); color: rgba(255,255,255,0.9);
-                        opacity: 0; transition: opacity 0.2s; pointer-events: none;
-                    }
-                    .theme-btn.theme-active .theme-active-badge { opacity: 1; }
-                    .theme-btn .theme-rim { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent); pointer-events: none; }
-                    #theme-grid { grid-template-columns: repeat(3, 1fr); }
-                </style>
-                <div class="space-y-4">
-                    <p class="text-[10px] text-gray-500 font-mono">Select a complete visual theme for AetherOS. Themes affect accent colors, glass intensity, wallpaper, and all panel styling.</p>
-                    <div class="grid gap-3" id="theme-grid">
 
-                        <button onclick="os.applyTheme('midnight')" id="theme-btn-midnight" class="theme-btn" style="background:linear-gradient(145deg,#060608 0%,#0e0e14 60%,#161620 100%);border-color:rgba(255,255,255,0.13);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)">
-                            <div class="theme-rim"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:80px;height:80px;background:#6366f1;top:-20px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:60px;height:60px;background:#ec4899;top:10px;left:10px;opacity:0.3;filter:blur(18px)"></div>
+                <div class="settings-section-label">Workspace &amp; Power</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="sidebar telemetry chat assistant right panel">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="panel-right" class="w-3.5 h-3.5 text-indigo-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Desktop Telemetry &amp; AI Sidebar</div>
+                                <div class="settings-row-desc">Pin the right-hand network, media, and local AI chat rail on wide screens.</div>
                             </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#ffffff;color:#ffffff"></span>
-                                <span class="theme-label" style="color:#ffffff">Midnight</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(255,255,255,0.5)">Deep black · Pure white glass</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('aurora')" id="theme-btn-aurora" class="theme-btn" style="background:linear-gradient(145deg,#021008 0%,#042018 60%,#062e22 100%);border-color:rgba(20,255,180,0.20);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(20,255,180,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(20,255,180,0.55),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:90px;height:90px;background:#14ffb4;top:-30px;right:-15px;"></div>
-                                <div class="theme-glow" style="width:50px;height:50px;background:#00ffd5;bottom:-10px;left:5px;opacity:0.25;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#14ffb4;color:#14ffb4"></span>
-                                <span class="theme-label" style="color:#14ffb4">Aurora</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(20,255,180,0.5)">Bioluminescent · Teal glass</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('synthwave')" id="theme-btn-synthwave" class="theme-btn" style="background:linear-gradient(145deg,#0a0412 0%,#160838 60%,#1e0e48 100%);border-color:rgba(168,85,247,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(192,132,252,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(192,132,252,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:90px;height:90px;background:#c084fc;top:-25px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:55px;height:55px;background:#a855f7;bottom:-5px;left:10px;opacity:0.35;filter:blur(18px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#c084fc;color:#c084fc"></span>
-                                <span class="theme-label" style="color:#c084fc">Synthwave</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(192,132,252,0.5)">Neon purple · Retro-futurist</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('ember')" id="theme-btn-ember" class="theme-btn" style="background:linear-gradient(145deg,#0c0603 0%,#1a0a02 60%,#261408 100%);border-color:rgba(251,146,60,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(251,146,60,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(251,146,60,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:85px;height:85px;background:#fb923c;top:-25px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:50px;height:50px;background:#f97316;bottom:-5px;left:5px;opacity:0.3;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#fb923c;color:#fb923c"></span>
-                                <span class="theme-label" style="color:#fb923c">Ember</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(251,146,60,0.5)">Warm amber · High contrast</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('ice')" id="theme-btn-ice" class="theme-btn" style="background:linear-gradient(145deg,#020810 0%,#071428 60%,#0d1e3a 100%);border-color:rgba(96,165,250,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(147,197,253,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(147,197,253,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:90px;height:90px;background:#60a5fa;top:-28px;right:-12px;"></div>
-                                <div class="theme-glow" style="width:55px;height:55px;background:#93c5fd;bottom:-5px;left:5px;opacity:0.28;filter:blur(18px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#60a5fa;color:#60a5fa"></span>
-                                <span class="theme-label" style="color:#60a5fa">Arctic Ice</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(96,165,250,0.5)">Cool blue · Crisp precision</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('rose')" id="theme-btn-rose" class="theme-btn" style="background:linear-gradient(145deg,#0c0208 0%,#200510 60%,#2e0818 100%);border-color:rgba(244,114,182,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,150,200,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(255,150,200,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:88px;height:88px;background:#f472b6;top:-25px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:52px;height:52px;background:#ec4899;bottom:-5px;left:8px;opacity:0.3;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#f472b6;color:#f472b6"></span>
-                                <span class="theme-label" style="color:#f472b6">Rosé</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(244,114,182,0.5)">Soft pink · Elegant dark</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('solar')" id="theme-btn-solar" class="theme-btn" style="background:linear-gradient(145deg,#0d0800 0%,#1e1200 60%,#2e1e00 100%);border-color:rgba(250,204,21,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(250,204,21,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(250,204,21,0.7),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:95px;height:95px;background:#facc15;top:-30px;right:-15px;"></div>
-                                <div class="theme-glow" style="width:55px;height:55px;background:#f59e0b;bottom:-5px;left:5px;opacity:0.28;filter:blur(18px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#facc15;color:#facc15"></span>
-                                <span class="theme-label" style="color:#facc15">Solar</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(250,204,21,0.5)">Incandescent gold · Cosmic</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('hacker')" id="theme-btn-hacker" class="theme-btn" style="background:linear-gradient(145deg,#000a00 0%,#001400 60%,#001e00 100%);border-color:rgba(74,222,128,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(74,222,128,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(74,222,128,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:88px;height:88px;background:#4ade80;top:-25px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:52px;height:52px;background:#22c55e;bottom:-5px;left:8px;opacity:0.28;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#4ade80;color:#4ade80"></span>
-                                <span class="theme-label" style="color:#4ade80">Hacker</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(74,222,128,0.5)">Terminal green · Matrix glass</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('neonvoid')" id="theme-btn-neonvoid" class="theme-btn" style="background:linear-gradient(145deg,#000008 0%,#060014 60%,#0a0020 100%);border-color:rgba(99,102,241,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(165,180,252,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(165,180,252,0.6),rgba(244,114,182,0.4),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:90px;height:90px;background:#6366f1;top:-28px;right:-12px;"></div>
-                                <div class="theme-glow" style="width:60px;height:60px;background:#f472b6;bottom:-10px;left:-5px;opacity:0.35;filter:blur(18px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:linear-gradient(90deg,#818cf8,#f472b6);color:#818cf8"></span>
-                                <span class="theme-label" style="background:linear-gradient(90deg,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Neon Void</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(129,140,248,0.5)">Electric indigo · Magenta split</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('sakura')" id="theme-btn-sakura" class="theme-btn" style="background:linear-gradient(145deg,#0e0508 0%,#1e0a10 60%,#280e15 100%);border-color:rgba(251,182,206,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(251,182,206,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(251,182,206,0.6),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:88px;height:88px;background:#fbb6ce;top:-28px;right:-12px;"></div>
-                                <div class="theme-glow" style="width:55px;height:55px;background:#f9a8d4;bottom:-5px;left:5px;opacity:0.28;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#fbb6ce;color:#fbb6ce"></span>
-                                <span class="theme-label" style="color:#fbb6ce">Sakura</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(251,182,206,0.5)">Cherry blossom · Petal glass</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('carbon')" id="theme-btn-carbon" class="theme-btn" style="background:linear-gradient(145deg,#0a0a0a 0%,#141414 60%,#1c1c1c 100%);border-color:rgba(148,163,184,0.18);box-shadow:0 2px 12px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.06)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(148,163,184,0.4),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:85px;height:85px;background:#64748b;top:-25px;right:-10px;"></div>
-                                <div class="theme-glow" style="width:50px;height:50px;background:#94a3b8;bottom:-5px;left:8px;opacity:0.22;filter:blur(16px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#94a3b8;color:#94a3b8"></span>
-                                <span class="theme-label" style="color:#94a3b8">Carbon</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(148,163,184,0.5)">Slate gray · Ultra minimal</div>
-                        </button>
-
-                        <button onclick="os.applyTheme('ocean')" id="theme-btn-ocean" class="theme-btn" style="background:linear-gradient(145deg,#00050f 0%,#001030 60%,#001840 100%);border-color:rgba(56,189,248,0.22);box-shadow:0 2px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(56,189,248,0.12)">
-                            <div class="theme-rim" style="background:linear-gradient(90deg,transparent,rgba(56,189,248,0.6),rgba(34,211,238,0.3),transparent)"></div>
-                            <div class="theme-orbs">
-                                <div class="theme-glow" style="width:90px;height:90px;background:#38bdf8;top:-28px;right:-12px;"></div>
-                                <div class="theme-glow" style="width:60px;height:60px;background:#22d3ee;bottom:-8px;left:5px;opacity:0.3;filter:blur(18px)"></div>
-                            </div>
-                            <div class="theme-active-badge">ACTIVE</div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="theme-accent-dot" style="background:#38bdf8;color:#38bdf8"></span>
-                                <span class="theme-label" style="color:#38bdf8">Ocean Depth</span>
-                            </div>
-                            <div class="theme-desc" style="color:rgba(56,189,248,0.5)">Deep ocean · Aqua current</div>
-                        </button>
-
+                        </div>
+                        <button type="button" role="switch" aria-checked="${sidebarOn}" onclick="os.setOption('desktop_sidebar', SystemState.settings.desktop_sidebar === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="desktop_sidebar" data-on="${sidebarOn}"></button>
                     </div>
-                    <div class="mt-3 p-3 rounded-xl text-[9px] font-mono text-gray-500 flex items-center justify-between" style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08)">
-                        <span>Active theme: <span id="active-theme-name" class="text-white font-bold">Midnight</span></span>
-                        <span>Accent: <span id="active-theme-accent" class="font-bold" style="color:var(--os-accent-custom)">#ffffff</span></span>
+
+                    <div class="settings-row" data-search-item="keep screen awake wake lock sleep">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Keep Screen Awake</div>
+                                <div class="settings-row-desc">Prevent your display from dimming while AetherOS is active.</div>
+                            </div>
+                        </div>
+                        <button type="button" role="switch" aria-checked="${awakeOn}" onclick="os.toggleWakeLock()"
+                            class="os-switch hover-target cursor-none" data-setting-switch="screen_awake_enabled" data-on="${awakeOn}"></button>
                     </div>
                 </div>
-            `,
-            system: `
-                <h2 class="font-display text-xl uppercase tracking-widest mb-5 border-b border-white/10 pb-2 text-white flex items-center gap-2"><i data-lucide="cpu" class="w-4 h-4 text-gray-400"></i> System Diagnostics</h2>
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3 font-mono text-xs">
-                        <div class="p-3 bg-black/40 border border-white/5 rounded-lg space-y-2">
-                            <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">Runtime</div>
-                            <div class="flex justify-between"><span class="text-gray-500">Storage</span><span class="text-white">localStorage</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Open Windows</span><span class="text-green-400" id="settings-open-wins">--</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Saved State</span><span class="text-white" id="settings-state-size">--</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Performance</span><span class="text-green-400" id="sys-diagnostic-power">ECO</span></div>
+
+                <div class="settings-section-label">Modular Workspace</div>
+                <div class="settings-card">
+                    <div class="settings-row">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="layout-grid" class="w-3.5 h-3.5 text-cyan-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">${counts.enabled} of ${counts.total} App Modules Enabled</div>
+                                <div class="settings-row-desc">22 niche, experimental, and entertainment modules are tucked away until you need them.</div>
+                            </div>
                         </div>
-                        <div class="p-3 bg-black/40 border border-white/5 rounded-lg space-y-2">
-                            <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">Hardware</div>
-                            <div class="flex justify-between"><span class="text-gray-500">CPU Cores</span><span class="text-white">${navigator.hardwareConcurrency || '--'}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Device RAM</span><span class="text-white">${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '--'}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Pixel Ratio</span><span class="text-white">${window.devicePixelRatio || '--'}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Online</span><span class="${navigator.onLine ? 'text-green-400' : 'text-red-400'}">${navigator.onLine ? 'YES' : 'NO'}</span></div>
-                        </div>
-                        <div class="p-3 bg-black/40 border border-white/5 rounded-lg space-y-2 col-span-2">
-                            <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">Memory Snapshot</div>
-                            <div id="settings-mem-snapshot" class="text-gray-400">Querying JS heap...</div>
-                        </div>
+                        <button type="button" onclick="os.switchSettingsTab('modules')" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-medium text-white transition hover-target cursor-none shrink-0">Configure</button>
                     </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-mono text-gray-400 uppercase tracking-wider">Hard Factory Format</label>
-                        <p class="text-[10px] text-gray-500 font-mono mb-2">Wipes all saved keys, API configs, and window layouts. Reloads from fresh state.</p>
-                        <button onclick="SystemState.reset()" class="px-4 py-2 bg-red-950 border border-red-500/20 text-red-400 font-semibold text-xs font-mono uppercase tracking-wider rounded hover:bg-red-900/80 transition hover-target cursor-none">Hard Format System</button>
-                        <button onclick="os.sysmonCopyReport && os.sysmonCopyReport()" class="ml-2 px-4 py-2 bg-white/5 border border-white/10 text-gray-300 font-semibold text-xs font-mono uppercase tracking-wider rounded hover:bg-white/10 transition hover-target cursor-none">Copy Diag Report</button>
+                    <div class="settings-row">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="wand-2" class="w-3.5 h-3.5 text-pink-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Desktop Extras &amp; Ambient Toys</div>
+                                <div class="settings-row-desc">Optional Oneko pet, Sakura petals, anime quotes, and companion banter (off by default).</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="os.switchSettingsTab('extras')" class="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-xs font-medium text-gray-200 transition hover-target cursor-none shrink-0">Open Extras</button>
                     </div>
                 </div>
-            `
-        };
+            `;
+        },
+
+        get appearance() {
+            const st = s();
+            const activeTheme = st.active_theme || 'midnight';
+            const wpMode = st.wallpaper_mode === 'gif' ? 'gif' : 'default';
+            const cur = st.cursor_theme || 'aether';
+            const isFxCursor = FX_CURSORS.some(([id]) => id === cur);
+            const nyanStd = st.cursor_nyan_standard === 'on';
+
+            const themeCards = THEMES.map((t) => `
+                <button type="button" onclick="os.applyTheme('${t.id}')" id="theme-btn-${t.id}"
+                    class="theme-btn relative overflow-hidden rounded-xl p-3 text-left border transition-all hover:-translate-y-0.5 hover-target cursor-none ${activeTheme === t.id ? 'theme-active ring-1 ring-white/50 border-white/40' : 'border-white/10 hover:border-white/25'}"
+                    style="background:${t.bg};min-height:66px">
+                    <div class="flex items-center justify-between gap-1.5">
+                        <span class="flex items-center gap-1.5 text-xs font-semibold text-white">
+                            <span class="w-2 h-2 rounded-full shrink-0" style="background:${t.dot};box-shadow:0 0 8px ${t.dot}"></span>
+                            ${esc(t.name)}
+                        </span>
+                        <span class="theme-active-badge text-[8px] font-mono uppercase px-1.5 py-0.5 rounded bg-white/15 text-white ${activeTheme === t.id ? 'opacity-100' : 'opacity-0'}">Active</span>
+                    </div>
+                    <div class="text-[10px] text-white/55 mt-1 truncate">${esc(t.desc)}</div>
+                </button>
+            `).join('');
+
+            const fxButtons = FX_CURSORS.map(([id, label]) => `
+                <button type="button" id="opt-cursor-${id}" onclick="os.setOption('cursor_theme','${id}')"
+                    class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition hover-target cursor-none ${cur === id ? 'bg-white/18 border-white/35 text-white' : 'bg-white/[0.04] border-white/10 text-gray-400 hover:text-white'}">
+                    ${esc(label)}
+                </button>
+            `).join('');
+
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">Appearance</div>
+                    <div class="settings-pane-subtitle">Color themes, accent highlights, backdrop mode, and pointer style.</div>
+                </div>
+
+                <div class="settings-section-label">System Theme</div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="theme-grid" data-search-item="theme midnight aurora synthwave ember ice rose solar hacker neonvoid sakura carbon ocean">
+                    ${themeCards}
+                </div>
+                <div class="mt-2 px-1 flex items-center justify-between text-[11px] text-gray-400">
+                    <span>Active theme: <strong id="active-theme-name" class="text-white">${esc((THEMES.find(t => t.id === activeTheme) || THEMES[0]).name)}</strong></span>
+                    <span class="font-mono text-[10.5px]">Accent <span id="active-theme-accent" style="color:var(--os-accent-custom)">${esc(st.theme_accent || '#ffffff')}</span></span>
+                </div>
+
+                <div class="settings-section-label">Surface &amp; Backdrop</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="accent highlight color picker">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="pipette" class="w-3.5 h-3.5"></i></div>
+                            <div>
+                                <div class="settings-row-title">Custom Accent Color</div>
+                                <div class="settings-row-desc">Override the active theme highlight color across badges and controls.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="opt-color-accent" value="${esc(st.theme_accent || '#ffffff')}" onchange="os.setOption('theme_accent', this.value)"
+                                class="w-8 h-8 rounded-lg bg-transparent border border-white/15 cursor-none hover-target">
+                        </div>
+                    </div>
+
+                    <div class="settings-row" data-search-item="wallpaper background liquid glass dynamic gif">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="image" class="w-3.5 h-3.5"></i></div>
+                            <div>
+                                <div class="settings-row-title">Desktop Wallpaper</div>
+                                <div class="settings-row-desc">Clean Liquid Glass gradient by default, or animated ambient GIF backdrop.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${wpMode === 'gif' ? `<button type="button" onclick="os.fetchWallpaperGif()" class="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] text-gray-200 transition hover-target cursor-none">Shuffle</button>` : ''}
+                            <div class="os-segmented">
+                                <button type="button" id="opt-wp-default" onclick="os.setOption('wallpaper_mode','default')" class="os-seg-btn ${wpMode === 'default' ? 'active' : ''} hover-target cursor-none">Clean Glass</button>
+                                <button type="button" id="opt-wp-gif" onclick="os.setOption('wallpaper_mode','gif')" class="os-seg-btn ${wpMode === 'gif' ? 'active' : ''} hover-target cursor-none">Animated GIF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section-label">Pointer</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="mouse cursor pointer aether minimal crosshair">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="mouse-pointer-2" class="w-3.5 h-3.5"></i></div>
+                            <div>
+                                <div class="settings-row-title">Cursor Style</div>
+                                <div class="settings-row-desc">Precision custom pointer rendered above windows.</div>
+                            </div>
+                        </div>
+                        <div class="os-segmented">
+                            <button type="button" id="opt-cursor-aether" onclick="os.setOption('cursor_theme','aether')" class="os-seg-btn ${cur === 'aether' ? 'active' : ''} hover-target cursor-none">Aether</button>
+                            <button type="button" id="opt-cursor-minimal" onclick="os.setOption('cursor_theme','minimal')" class="os-seg-btn ${cur === 'minimal' ? 'active' : ''} hover-target cursor-none">Minimal</button>
+                            <button type="button" id="opt-cursor-crosshair" onclick="os.setOption('cursor_theme','crosshair')" class="os-seg-btn ${cur === 'crosshair' ? 'active' : ''} hover-target cursor-none">Crosshair</button>
+                        </div>
+                    </div>
+
+                    <details class="group" ${isFxCursor ? 'open' : ''} data-search-item="cursor effects neon comet bubbles sparkle binary nyan">
+                        <summary class="px-3.5 py-2.5 text-[11.5px] text-gray-400 hover:text-white flex items-center justify-between list-none cursor-none hover-target select-none">
+                            <span>Particle &amp; Novelty Cursor Effects ${isFxCursor ? `<strong class="text-emerald-400 ml-1">(${esc(cur)})</strong>` : ''}</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="px-3.5 pb-3.5 pt-1 space-y-2.5 border-t border-white/[0.05] bg-black/20">
+                            <div class="grid grid-cols-3 gap-1.5" id="cursor-theme-grid">${fxButtons}</div>
+                            ${cur === 'nyan' ? `
+                                <div class="flex items-center justify-between pt-1 text-[11px] text-gray-400">
+                                    <span>Show native OS arrow alongside Nyan Cat</span>
+                                    <button type="button" role="switch" aria-checked="${nyanStd}" onclick="os.setOption('cursor_nyan_standard', SystemState.settings.cursor_nyan_standard === 'on' ? 'off' : 'on')"
+                                        class="os-switch hover-target cursor-none" data-on="${nyanStd}"></button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </details>
+                </div>
+            `;
+        },
+
+        get themes() {
+            return this.appearance;
+        },
+
+        get modules() {
+            return renderModulesSection();
+        },
+
+        get extras() {
+            const st = s();
+            const onekoOn = st.cursor_oneko === 'on';
+            const ballOn = st.cursor_oneko_ball === 'on';
+            const sakuraOn = st.sakura_petals === 'on';
+            const sakuraInt = st.sakura_intensity || 'normal';
+            const quotesOn = st.anime_quotes === 'on';
+            const quoteBg = st.quote_bg_mode || 'none';
+            const quotePos = st.quote_position || 'top-left';
+            const companionOn = st.speech_companion === 'on';
+            const emoMode = st.companion_emotion_mode || 'gif';
+            const radioGifOn = st.radio_gif_enabled === 'on';
+            const curSkin = st.cursor_oneko_variant || 'classic';
+
+            const skinOptions = ONEKO_SKINS.map(([val, label]) =>
+                `<option value="${esc(val)}" ${curSkin === val ? 'selected' : ''}>${esc(label)}</option>`
+            ).join('');
+
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">Desktop Extras</div>
+                    <div class="settings-pane-subtitle">Playful overlays and ambient toys. Everything here defaults to off so your workspace stays clean unless you opt in.</div>
+                </div>
+
+                <div class="settings-section-label">Desktop Companions &amp; Ambient FX</div>
+                <div class="settings-card">
+                    <!-- Oneko Pet -->
+                    <div class="settings-row" data-search-item="oneko cat dog pet cursor companion ball">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="cat" class="w-3.5 h-3.5 text-amber-300"></i></div>
+                            <div>
+                                <div class="settings-row-title">Oneko Pixel Pet</div>
+                                <div class="settings-row-desc">Classic retro pixel companion that chases your pointer across the desktop.</div>
+                            </div>
+                        </div>
+                        <button type="button" id="opt-oneko-toggle" role="switch" aria-checked="${onekoOn}"
+                            onclick="os.setOption('cursor_oneko', SystemState.settings.cursor_oneko === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="cursor_oneko" data-on="${onekoOn}"></button>
+                    </div>
+                    <div class="settings-subpanel ${onekoOn ? '' : 'is-collapsed'}" data-subpanel-for="cursor_oneko">
+                        <div class="space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-[11px] text-gray-400">Companion Skin</span>
+                                <div class="flex items-center gap-2">
+                                    <select id="oneko-variant-select" onchange="os.setOption('cursor_oneko_variant', this.value)"
+                                        class="px-2.5 py-1.5 rounded-lg bg-black/50 border border-white/10 text-xs text-white outline-none hover-target cursor-none">
+                                        ${skinOptions}
+                                    </select>
+                                    <button type="button" onclick="window.cursorEngine && window.cursorEngine.showOnekoPicker()"
+                                        class="px-2.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] text-gray-200 transition hover-target cursor-none">Gallery</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                                <div>
+                                    <div class="text-[11.5px] text-gray-200">Interactive Physics Ball</div>
+                                    <div class="text-[10.5px] text-gray-500">Throwable toy ball on the desktop that Oneko chases and fetches.</div>
+                                </div>
+                                <button type="button" role="switch" aria-checked="${ballOn}"
+                                    onclick="os.setOption('cursor_oneko_ball', SystemState.settings.cursor_oneko_ball === 'on' ? 'off' : 'on')"
+                                    class="os-switch hover-target cursor-none" data-setting-switch="cursor_oneko_ball" data-on="${ballOn}"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sakura Petals -->
+                    <div class="settings-row" data-search-item="sakura cherry blossom petals falling atmosphere">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="flower-2" class="w-3.5 h-3.5 text-pink-300"></i></div>
+                            <div>
+                                <div class="settings-row-title">Sakura Blossom Overlay</div>
+                                <div class="settings-row-desc">Gentle falling cherry blossom petals floating behind open windows.</div>
+                            </div>
+                        </div>
+                        <button type="button" role="switch" aria-checked="${sakuraOn}"
+                            onclick="os.setOption('sakura_petals', SystemState.settings.sakura_petals === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="sakura_petals" data-on="${sakuraOn}"></button>
+                    </div>
+                    <div class="settings-subpanel ${sakuraOn ? '' : 'is-collapsed'}" data-subpanel-for="sakura_petals">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-gray-400">Petal Density</span>
+                            <div class="os-segmented">
+                                <button type="button" id="opt-sakura-light" onclick="os.setOption('sakura_intensity','light')" class="os-seg-btn ${sakuraInt === 'light' ? 'active' : ''} hover-target cursor-none">Light</button>
+                                <button type="button" id="opt-sakura-normal" onclick="os.setOption('sakura_intensity','normal')" class="os-seg-btn ${sakuraInt === 'normal' ? 'active' : ''} hover-target cursor-none">Normal</button>
+                                <button type="button" id="opt-sakura-storm" onclick="os.setOption('sakura_intensity','storm')" class="os-seg-btn ${sakuraInt === 'storm' ? 'active' : ''} hover-target cursor-none">Storm</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Anime Quotes -->
+                    <div class="settings-row" data-search-item="desktop anime quotes widget klipy">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="quote" class="w-3.5 h-3.5 text-purple-300"></i></div>
+                            <div>
+                                <div class="settings-row-title">Desktop Quote Widget</div>
+                                <div class="settings-row-desc">Floating anime quote card pinned to a corner of the desktop canvas.</div>
+                            </div>
+                        </div>
+                        <button type="button" role="switch" aria-checked="${quotesOn}"
+                            onclick="os.setOption('anime_quotes', SystemState.settings.anime_quotes === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="anime_quotes" data-on="${quotesOn}"></button>
+                    </div>
+                    <div class="settings-subpanel ${quotesOn ? '' : 'is-collapsed'}" data-subpanel-for="anime_quotes">
+                        <div class="space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-[11px] text-gray-400">Widget Position</span>
+                                <div class="flex items-center gap-2">
+                                    <select id="opt-quote-pos" onchange="os.setOption('quote_position', this.value)"
+                                        class="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-xs text-white outline-none hover-target cursor-none">
+                                        <option value="top-left" ${quotePos === 'top-left' ? 'selected' : ''}>Top Left</option>
+                                        <option value="top-right" ${quotePos === 'top-right' ? 'selected' : ''}>Top Right</option>
+                                        <option value="bottom-left" ${quotePos === 'bottom-left' ? 'selected' : ''}>Bottom Left</option>
+                                        <option value="bottom-right" ${quotePos === 'bottom-right' ? 'selected' : ''}>Bottom Right</option>
+                                        <option value="center" ${quotePos === 'center' ? 'selected' : ''}>Center</option>
+                                    </select>
+                                    <button type="button" onclick="os.fetchAnimeQuote()" class="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] text-gray-200 transition hover-target cursor-none">Next Quote</button>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-[11px] text-gray-400">Card Backdrop</span>
+                                <div class="os-segmented">
+                                    <button type="button" id="opt-qbg-none" onclick="os.setOption('quote_bg_mode','none')" class="os-seg-btn ${quoteBg === 'none' ? 'active' : ''} hover-target cursor-none">Minimal</button>
+                                    <button type="button" id="opt-qbg-gif" onclick="os.setOption('quote_bg_mode','gif')" class="os-seg-btn ${quoteBg === 'gif' ? 'active' : ''} hover-target cursor-none">GIF</button>
+                                    <button type="button" id="opt-qbg-klipy" onclick="os.setOption('quote_bg_mode','klipy')" class="os-seg-btn ${quoteBg === 'klipy' ? 'active' : ''} hover-target cursor-none">Klipy</button>
+                                </div>
+                            </div>
+                            ${quoteBg === 'klipy' ? `
+                                <div class="pt-1">
+                                    <input type="password" id="cfg-klipy-key" value="${esc(st.quote_gif_api_key || '')}" placeholder="Klipy API key..."
+                                        onchange="os.setOption('quote_gif_api_key', this.value.trim())"
+                                        class="w-full px-2.5 py-1.5 rounded-lg bg-black/50 border border-white/10 text-xs text-white font-mono outline-none">
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Companion Personality -->
+                    <div class="settings-row" data-search-item="jarvis companion personality banter emotion oled">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="bot" class="w-3.5 h-3.5 text-cyan-300"></i></div>
+                            <div>
+                                <div class="settings-row-title">Autonomous Companion Banter</div>
+                                <div class="settings-row-desc">Allow Aether AI to make occasional witty remarks on app launches and idle states.</div>
+                            </div>
+                        </div>
+                        <button type="button" role="switch" aria-checked="${companionOn}"
+                            onclick="os.setOption('speech_companion', SystemState.settings.speech_companion === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="speech_companion" data-on="${companionOn}"></button>
+                    </div>
+                    <div class="settings-subpanel ${companionOn ? '' : 'is-collapsed'}" data-subpanel-for="speech_companion">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-gray-400">Chat Avatar Style</span>
+                            <div class="os-segmented">
+                                <button type="button" id="opt-emo-gif" onclick="os.setOption('companion_emotion_mode','gif')" class="os-seg-btn ${emoMode === 'gif' ? 'active' : ''} hover-target cursor-none">Reaction GIF</button>
+                                <button type="button" id="opt-emo-oled" onclick="os.setOption('companion_emotion_mode','emo')" class="os-seg-btn ${emoMode === 'emo' ? 'active' : ''} hover-target cursor-none">OLED Robot Face</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Radio Anime GIF Backdrop -->
+                    <div class="settings-row" data-search-item="radio gif anime visual background">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="disc-3" class="w-3.5 h-3.5 text-emerald-300"></i></div>
+                            <div>
+                                <div class="settings-row-title">Radio Visual GIF Backdrop</div>
+                                <div class="settings-row-desc">Show animated anime visuals behind the Global Radio vinyl deck.</div>
+                            </div>
+                        </div>
+                        <button type="button" role="switch" aria-checked="${radioGifOn}"
+                            onclick="os.setOption('radio_gif_enabled', SystemState.settings.radio_gif_enabled === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="radio_gif_enabled" data-on="${radioGifOn}"></button>
+                    </div>
+                </div>
+            `;
+        },
+
+        get voice() {
+            const st = s();
+            const volPct = Math.round((typeof st.media_tuner_volume === 'number' ? st.media_tuner_volume : 0.7) * 100);
+            const ttsOn = st.speech_synthesis === 'on';
+            const rate = Number(st.speech_rate || 0.92).toFixed(2);
+            const pitch = Number(st.speech_pitch || 0.88).toFixed(2);
+
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">Sound &amp; Voice</div>
+                    <div class="settings-pane-subtitle">System audio output level and browser-native speech synthesis.</div>
+                </div>
+
+                <div class="settings-section-label">Audio Output</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="master volume audio output speaker">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="volume-2" class="w-3.5 h-3.5 text-cyan-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Master Output Volume</div>
+                                <div class="settings-row-desc">Controls Global Radio, ambient streams, and notification chimes.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-44 shrink-0">
+                            <input type="range" min="0" max="100" value="${volPct}"
+                                oninput="os.adjustVolume(this.value/100);const l=document.getElementById('settings-vol-lbl');if(l)l.textContent=this.value+'%';"
+                                class="w-full accent-white cursor-none hover-target">
+                            <span id="settings-vol-lbl" class="text-xs font-mono text-gray-300 w-9 text-right">${volPct}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section-label">Speech Synthesis (TTS)</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="voice alerts speech synthesis tts">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="mic" class="w-3.5 h-3.5 text-emerald-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Spoken Voice Alerts</div>
+                                <div class="settings-row-desc">Read AI companion replies and system notifications aloud using local voices.</div>
+                            </div>
+                        </div>
+                        <button type="button" id="opt-speech-toggle" role="switch" aria-checked="${ttsOn}"
+                            onclick="os.setOption('speech_synthesis', SystemState.settings.speech_synthesis === 'on' ? 'off' : 'on')"
+                            class="os-switch hover-target cursor-none" data-setting-switch="speech_synthesis" data-on="${ttsOn}"></button>
+                    </div>
+
+                    <div class="settings-subpanel ${ttsOn ? '' : 'is-collapsed'}" data-subpanel-for="speech_synthesis">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between text-[10.5px] font-mono text-gray-400">
+                                <span>Engine: <span id="speech-api-support" class="text-gray-300">Checking...</span></span>
+                                <span>Quality: <span id="speech-voice-quality" class="text-emerald-400">Auto</span></span>
+                            </div>
+
+                            <select id="speech-voice-select" onchange="os.setOption('speech_voice', this.value)"
+                                class="w-full px-3 py-2 rounded-lg bg-black/55 border border-white/10 text-xs text-white font-mono outline-none cursor-none hover-target">
+                                <option value="auto-real">Auto · Best Available Local Voice</option>
+                            </select>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-2.5 rounded-lg bg-black/35 border border-white/[0.06]">
+                                    <div class="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
+                                        <span>Rate</span><span id="speech-rate-val" class="text-white">${rate}x</span>
+                                    </div>
+                                    <input id="speech-rate-slider" type="range" min="0.75" max="1.15" step="0.01" value="${rate}"
+                                        oninput="os.setSpeechTuning('speech_rate', this.value)" class="w-full accent-white cursor-none hover-target">
+                                </div>
+                                <div class="p-2.5 rounded-lg bg-black/35 border border-white/[0.06]">
+                                    <div class="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
+                                        <span>Pitch</span><span id="speech-pitch-val" class="text-white">${pitch}</span>
+                                    </div>
+                                    <input id="speech-pitch-slider" type="range" min="0.72" max="1.12" step="0.01" value="${pitch}"
+                                        oninput="os.setSpeechTuning('speech_pitch', this.value)" class="w-full accent-white cursor-none hover-target">
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="os.testSpeechVoice()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-medium text-white transition hover-target cursor-none">Test Voice</button>
+                                <button type="button" onclick="window.speechSynthesis && window.speechSynthesis.cancel()" class="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-xs text-gray-300 transition hover-target cursor-none">Stop</button>
+                            </div>
+
+                            <details class="rounded-lg border border-white/[0.07] bg-black/30 overflow-hidden">
+                                <summary class="px-3 py-2 text-[11px] font-medium text-gray-300 hover:text-white flex items-center justify-between cursor-none hover-target list-none">
+                                    <span>Browse All Installed Voices</span>
+                                    <span id="voice-pack-count" class="text-[10px] font-mono text-gray-500">0 voices</span>
+                                </summary>
+                                <div class="p-2.5 pt-1 space-y-2 border-t border-white/[0.06]">
+                                    <input id="voice-pack-search" type="text" placeholder="Filter by language or name..."
+                                        oninput="os.renderVoicePackGrid()"
+                                        class="w-full px-2.5 py-1.5 bg-black/55 border border-white/10 rounded-lg text-[11px] font-mono text-white outline-none">
+                                    <div id="voice-pack-grid" class="max-h-40 overflow-y-auto space-y-1.5 pr-1"></div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+        },
+
+        get api() {
+            const st = s();
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">Integrations</div>
+                    <div class="settings-pane-subtitle">Optional API credentials stored locally in your browser. Leave blank to use built-in public feeds.</div>
+                </div>
+
+                <div class="settings-section-label">Music &amp; Social Telemetry</div>
+                <div class="settings-card p-4 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" data-search-item="lastfm music scrobble api key username">
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-300 mb-1">Last.fm API Key</label>
+                            <input type="password" id="cfg-lastfm" value="${esc(st.api_lastfm)}" placeholder="32-char API key"
+                                class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-300 mb-1">Last.fm Username</label>
+                            <input type="text" id="cfg-lastfm-user" value="${esc(st.api_lastfm_user)}" placeholder="Username"
+                                class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                        </div>
+                    </div>
+
+                    <div data-search-item="discord lanyard user id presence">
+                        <label class="block text-[11px] font-medium text-gray-300 mb-1">Discord User ID (Lanyard Presence)</label>
+                        <input type="text" id="cfg-discord" value="${esc(st.api_discord)}" placeholder="18-digit Discord snowflake ID"
+                            class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                    </div>
+                </div>
+
+                <div class="settings-section-label">Feeds &amp; Developer</div>
+                <div class="settings-card p-4 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" data-search-item="github username reddit subreddits">
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-300 mb-1">GitHub Username</label>
+                            <input type="text" id="cfg-github" value="${esc(st.api_github)}" placeholder="octocat"
+                                class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-gray-300 mb-1">Custom Subreddits</label>
+                            <input type="text" id="cfg-subreddits" value="${esc(st.api_custom_subreddits)}" placeholder="technology, linux, space"
+                                class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                        </div>
+                    </div>
+                    <div data-search-item="rss xml feed url">
+                        <label class="block text-[11px] font-medium text-gray-300 mb-1">Custom RSS Feed URL</label>
+                        <input type="text" id="cfg-rss" value="${esc(st.api_rss)}" placeholder="https://hnrss.org/frontpage"
+                            class="w-full px-3 py-2 bg-black/45 border border-white/10 rounded-lg text-xs text-white font-mono outline-none focus:border-white/30">
+                    </div>
+                </div>
+
+                <div class="mt-4 flex items-center justify-end gap-2">
+                    <button type="button" onclick="os.saveSettings()" class="px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-gray-200 transition hover-target cursor-none">Save Integrations</button>
+                </div>
+            `;
+        },
+
+        get system() {
+            const counts = countModules();
+            return `
+                <div class="settings-pane-header">
+                    <div class="settings-pane-title">System &amp; Reset</div>
+                    <div class="settings-pane-subtitle">Runtime diagnostics, local storage footprint, and safe workspace recovery.</div>
+                </div>
+
+                <div class="settings-section-label">Runtime Snapshot</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono" data-search-item="diagnostics hardware cpu memory storage">
+                    <div class="settings-card p-3.5 space-y-2">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider">Workspace</div>
+                        <div class="flex justify-between"><span class="text-gray-500">Enabled Modules</span><span class="text-white">${counts.enabled} / ${counts.total}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Open Windows</span><span class="text-emerald-400" id="settings-open-wins">--</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Saved State</span><span class="text-white" id="settings-state-size">--</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Profile</span><span class="text-emerald-400" id="sys-diagnostic-power">ECO</span></div>
+                    </div>
+                    <div class="settings-card p-3.5 space-y-2">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider">Host Environment</div>
+                        <div class="flex justify-between"><span class="text-gray-500">CPU Threads</span><span class="text-white">${navigator.hardwareConcurrency || '--'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Device Memory</span><span class="text-white">${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '--'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Pixel Ratio</span><span class="text-white">${window.devicePixelRatio || 1}x</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Network</span><span class="${navigator.onLine ? 'text-emerald-400' : 'text-red-400'}">${navigator.onLine ? 'Online' : 'Offline'}</span></div>
+                    </div>
+                    <div class="settings-card p-3.5 sm:col-span-2 flex items-center justify-between gap-3">
+                        <div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">JS Heap Telemetry</div>
+                            <div id="settings-mem-snapshot" class="text-gray-300 text-[11px]">Querying heap...</div>
+                        </div>
+                        <button type="button" onclick="os.sysmonCopyReport && os.sysmonCopyReport()" class="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] font-sans font-medium text-gray-200 transition hover-target cursor-none shrink-0">Copy Report</button>
+                    </div>
+                </div>
+
+                <div class="settings-section-label">Recovery &amp; Reset</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="restore clean defaults disable gimmicks modules">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-sky-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Restore Clean Workspace Defaults</div>
+                                <div class="settings-row-desc">Turns off optional modules and desktop toys while keeping your notes, files, and API keys intact.</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="os.restoreCleanDefaults()" class="px-3 py-1.5 rounded-lg bg-white/[0.07] hover:bg-white/14 border border-white/12 text-xs font-medium text-white transition hover-target cursor-none shrink-0">Restore Clean</button>
+                    </div>
+
+                    <div class="settings-row" data-search-item="factory reset wipe format localstorage">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-400"></i></div>
+                            <div>
+                                <div class="settings-row-title text-red-300">Factory Reset AetherOS</div>
+                                <div class="settings-row-desc">Erases all saved settings, virtual files, notes, and API keys from this browser.</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="os.confirmFactoryReset()" class="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-xs font-medium text-red-300 transition hover-target cursor-none shrink-0">Factory Reset</button>
+                    </div>
+                </div>
+            `;
+        }
+    };
+})();

@@ -26,10 +26,7 @@ window.onload = () => {
             window.cmdPalette = window.CommandPalette = new CommandPalette();
 
             window.winManager.init();
-
-            // Init Aether Bridge & Link engines on boot
-            if (window.AetherBridgeAPI) { try { AetherBridgeAPI.init(); } catch(e) {} }
-            if (window.AetherLinkAPI)   { try { AetherLinkAPI.init();   } catch(e) {} }
+            os.syncFeatureGates && os.syncFeatureGates();
 
             // ══════════════════════════════════════════════════════════
             //  APPLE LIQUID GLASS ENGINE — Boot + Physics Interactions
@@ -76,20 +73,24 @@ window.onload = () => {
             })();
 
             const runIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 800));
-            runIdle(() => os.initLanyardPresence());
+            if (os.isModuleEnabled('presence') && SystemState.settings.api_discord) {
+                runIdle(() => os.initLanyardPresence());
+            }
 
             window._aetherIntervals = window._aetherIntervals || [];
             window._aetherIntervals.push(setInterval(() => {
-                if (!document.hidden && SystemState.settings.media_tuner_station === 'lastfm') {
+                if (!document.hidden && os.isModuleEnabled('media') && SystemState.settings.media_tuner_station === 'lastfm' && SystemState.settings.api_lastfm_user) {
                     os.fetchLastFmData();
                 }
                 if (os.sysMonitorCanvas) os.updateTrueSystemStats();
             }, 15000));
 
             window._aetherIntervals.push(setInterval(() => {
-                if (!document.hidden) os.fetchSignals();
+                if (!document.hidden && os.isModuleEnabled('feed')) os.fetchSignals();
             }, 45000));
-            runIdle(() => os.fetchSignals()); 
+            if (os.isModuleEnabled('feed')) {
+                runIdle(() => os.fetchSignals());
+            } 
 
             window._aetherIntervals.push(setInterval(() => {
                 const clock = document.getElementById('sys-clock');

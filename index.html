@@ -99,24 +99,24 @@
                     <span class="text-[10px] hidden sm:inline" style="color:rgba(255,255,255,0.45)" id="top-battery-val">--%</span>
                 </div>
                 <!-- NoSleep -->
-                <button type="button" class="topbar-item gap-1 hover-target cursor-none hidden sm:flex" id="topbar-awake-widget" title="Screen Awake" aria-label="Toggle Screen Awake" onclick="os.toggleWakeLock()">
+                <button type="button" class="topbar-item gap-1 hover-target cursor-none hidden sm:flex" id="topbar-awake-widget" style="display:none" title="Screen Awake" aria-label="Toggle Screen Awake" onclick="os.toggleWakeLock()">
                     <i data-lucide="sun" class="w-3 h-3" style="color:rgba(255,255,255,0.28)" id="top-awake-icon"></i>
                     <span class="text-[9px] hidden md:inline" style="color:rgba(255,255,255,0.25);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em" id="top-awake-status">SLEEP</span>
                 </button>
-                <div class="topbar-sep hidden md:block"></div>
+                <div class="topbar-sep hidden md:block" id="topbar-p2p-sep" style="display:none"></div>
                 <!-- Aether Bridge Indicator -->
-                <div id="ab-topbar-indicator" onclick="os.openWindow('aetherbridge')" class="hover-target hidden md:inline-flex" title="Aether Bridge">
+                <div id="ab-topbar-indicator" onclick="os.openWindow('aetherbridge')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Bridge">
                     <div class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:indicatorPulse 2s infinite"></div>
                     <span id="ab-topbar-label">BRIDGE</span>
                 </div>
                 <!-- Aether Link Indicator -->
-                <div id="al-topbar-indicator" onclick="os.openWindow('aetherlink')" class="hover-target hidden md:inline-flex" title="Aether Link">
+                <div id="al-topbar-indicator" onclick="os.openWindow('aetherlink')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Link">
                     <div class="w-1.5 h-1.5 rounded-full bg-violet-400" style="animation:indicatorPulse 2s infinite"></div>
                     <span id="al-topbar-label">LINKED</span>
                 </div>
                 <div class="topbar-sep"></div>
-                <!-- Mobile Telemetry / Assistant Drawer Toggle -->
-                <button type="button" class="topbar-item lg:hidden" id="mobile-panel-toggle" onclick="os.toggleMobileUtilityPanel()" aria-label="Toggle Telemetry & Assistant Panel" title="Telemetry & Assistant">
+                <!-- Telemetry & Assistant Sidebar Toggle (Desktop & Mobile) -->
+                <button type="button" class="topbar-item" id="mobile-panel-toggle" onclick="os.toggleUtilityPanel()" aria-label="Toggle Telemetry & Assistant Sidebar" title="Telemetry & Assistant Sidebar">
                     <i data-lucide="panel-right" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.72)"></i>
                 </button>
                 <button type="button" class="topbar-item relative" id="topbar-notif-btn" onclick="os.toggleNotificationCenter(event)" aria-label="Notification Center" title="Notification Center">
@@ -139,8 +139,8 @@
 
             <!-- Window Canvas -->
             <main class="flex-1 relative" id="window-canvas">
-                <!-- Desktop Anime Quote Widget — Premium -->
-                <div id="desktop-quote-widget" onclick="os.fetchAnimeQuote()" title="Click to refresh quote" style="position:absolute;top:16px;left:16px;max-width:320px;padding:16px 18px;border-radius:16px;background:rgba(8,8,12,0.72);border:1px solid rgba(255,255,255,0.07);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);display:block;z-index:0;pointer-events:auto;cursor:none;transition:border-color 0.2s,box-shadow 0.2s,top 0.4s,bottom 0.4s,left 0.4s,right 0.4s,transform 0.4s;user-select:text" onmouseenter="this.style.borderColor='rgba(255,255,255,0.14)';this.style.boxShadow='0 10px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.07)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06)'">
+                <!-- Desktop Anime Quote Widget — Opt-in via Settings -> Desktop Extras -->
+                <div id="desktop-quote-widget" onclick="os.fetchAnimeQuote()" title="Click to refresh quote" style="position:absolute;top:16px;left:16px;max-width:320px;padding:16px 18px;border-radius:16px;background:rgba(8,8,12,0.72);border:1px solid rgba(255,255,255,0.07);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);display:none;z-index:0;pointer-events:auto;cursor:none;transition:border-color 0.2s,box-shadow 0.2s,top 0.4s,bottom 0.4s,left 0.4s,right 0.4s,transform 0.4s;user-select:text" onmouseenter="this.style.borderColor='rgba(255,255,255,0.14)';this.style.boxShadow='0 10px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.07)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06)'">
                     <div class="quote-bg-layer" id="quote-bg-layer" style="display:none">
                         <img id="quote-bg-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.55">
                         <div class="quote-bg-overlay" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.65))"></div>
@@ -269,7 +269,7 @@
                 </div>
 
                 <!-- Discord Live Telemetry Sidebar Widget -->
-                <div class="rounded-xl p-3.5 border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] cursor-none hover-target transition-all duration-200 hover:border-white/[0.12] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.03)]" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15))" onclick="os.openWindow('presence')">
+                <div id="sidebar-discord-card" class="rounded-xl p-3.5 border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] cursor-none hover-target transition-all duration-200 hover:border-white/[0.12] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.03)]" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15));display:none" onclick="os.openWindow('presence')">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-mono text-os-accent uppercase flex items-center gap-1.5">
                             <i data-lucide="user" class="w-3 h-3 text-indigo-400/70"></i>Discord Activity
@@ -449,6 +449,9 @@
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeTopBarMenus();os.openWindow('settings')">
                 <span class="flex items-center gap-2"><i data-lucide="settings" class="w-3.5 h-3.5 text-gray-300"></i> System Settings...</span>
             </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeTopBarMenus();os.openSettingsSection('modules')">
+                <span class="flex items-center gap-2"><i data-lucide="blocks" class="w-3.5 h-3.5 text-emerald-400"></i> App Modules &amp; Extras...</span>
+            </button>
             <div class="my-1 border-t border-white/10"></div>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeTopBarMenus();window.CommandPalette && window.CommandPalette.open()">
                 <span class="flex items-center gap-2"><i data-lucide="command" class="w-3.5 h-3.5 text-gray-300"></i> Command Palette</span>
@@ -467,7 +470,7 @@
             <button type="button" class="dock-ctx-item w-full text-left flex items-center gap-2" onclick="location.reload()">
                 <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-gray-300"></i> Reboot System
             </button>
-            <button type="button" class="dock-ctx-item ctx-danger w-full text-left flex items-center gap-2" onclick="os.closeTopBarMenus();SystemState.reset()">
+            <button type="button" class="dock-ctx-item ctx-danger w-full text-left flex items-center gap-2" onclick="os.closeTopBarMenus();os.confirmFactoryReset()">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Factory Reset...
             </button>
         </div>
@@ -515,6 +518,10 @@
                     <button type="button" data-cc-theme="ocean" onclick="os.applyTheme('ocean');os.syncControlCenterUI()" title="Ocean" aria-label="Ocean theme" class="w-7 h-7 rounded-full bg-cyan-500/80 border border-white/20"></button>
                 </div>
             </div>
+            <button type="button" onclick="os.openSettingsSection('modules');os.closeTopbarMenus()" class="w-full p-2.5 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/10 transition flex items-center justify-between text-left">
+                <span class="flex items-center gap-2 text-[11px] font-medium text-gray-200"><i data-lucide="layout-grid" class="w-3.5 h-3.5 text-cyan-400"></i> Manage App Modules &amp; Extras</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
+            </button>
         </div>
     </div>
 

@@ -70,13 +70,27 @@ window.extendOS({
             },
 
     toggleMobileUtilityPanel: (forceState) => {
-                const panel = document.getElementById('utility-sidebar');
+                const panel = document.getElementById('right-utility-panel') || document.getElementById('utility-sidebar');
                 const backdrop = document.getElementById('mobile-panel-backdrop');
                 if (!panel) return;
                 const nextOpen = typeof forceState === 'boolean' ? forceState : !panel.classList.contains('mobile-open');
                 panel.classList.toggle('mobile-open', nextOpen);
-                if (backdrop) backdrop.classList.toggle('visible', nextOpen);
+                if (backdrop) {
+                    backdrop.classList.toggle('active', nextOpen);
+                    backdrop.classList.toggle('visible', nextOpen);
+                }
             },
+
+    toggleUtilityPanel: () => {
+                if (window.innerWidth >= 1024) {
+                    const next = SystemState.settings.desktop_sidebar === 'on' ? 'off' : 'on';
+                    os.setOption('desktop_sidebar', next);
+                } else {
+                    os.toggleMobileUtilityPanel();
+                }
+            },
+
+    closeTopbarMenus: () => os.closeTopBarMenus && os.closeTopBarMenus(),
 
     closeTopBarMenus: () => {
                 ['aether-menu-dropdown','control-center-panel','notification-center'].forEach(id => {
@@ -596,7 +610,177 @@ window.extendOS({
                 }
             },
 
-    openWindow: (id) => window.winManager.open(id),
+    openWindow: (id, opts) => window.winManager.open(id, opts),
+
+    openSettingsSection: (tabId = 'general') => {
+                os._activeSettingsTab = tabId;
+                window.winManager.open('settings', { bypassGate: true });
+                setTimeout(() => os.switchSettingsTab(tabId), 20);
+            },
+
+    isModuleEnabled: (id) => {
+                if (!id) return false;
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                if (reg[id]?.required || id === 'settings' || id === 'about') return true;
+                const map = SystemState.settings && SystemState.settings.enabled_modules;
+                if (map && typeof map[id] === 'boolean') return map[id];
+                return reg[id] ? Boolean(reg[id].defaultEnabled) : true;
+            },
+
+    setModuleEnabled: (id, enabled, opts = {}) => {
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                if (!id || reg[id]?.required || id === 'settings' || id === 'about') return;
+                if (!SystemState.settings.enabled_modules || typeof SystemState.settings.enabled_modules !== 'object') {
+                    SystemState.settings.enabled_modules = SystemState.defaultEnabledModules ? SystemState.defaultEnabledModules() : {};
+                }
+                const next = Boolean(enabled);
+                SystemState.settings.enabled_modules[id] = next;
+
+                // Close window immediately if user disables a currently open module
+                if (!next && SystemState.windows[id] && SystemState.windows[id].isOpen && window.winManager) {
+                    window.winManager.closeWindow(id);
+                }
+
+                SystemState.save();
+                os.syncFeatureGates();
+
+                if (!opts.silent) {
+                    const label = reg[id]?.label || id;
+                    if (window.Notifications) {
+                        window.Notifications.push('APP MODULES', `${label} ${next ? 'enabled' : 'disabled'}`);
+                    }
+                    os.logTerminal(`Modules: ${label} (${id}) ${next ? 'enabled' : 'disabled'}.`);
+                }
+
+                if (os._activeSettingsTab === 'modules') {
+                    os.switchSettingsTab('modules');
+                }
+            },
+
+    toggleModuleEnabled: (id) => {
+                os.setModuleEnabled(id, !os.isModuleEnabled(id));
+            },
+
+    setModulePack: (packId, enabled) => {
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                const targets = Object.values(reg).filter((m) => m.pack === packId && !m.required);
+                targets.forEach((m) => os.setModuleEnabled(m.id, enabled, { silent: true }));
+                const pack = (window.AETHER_MODULE_PACKS || []).find((p) => p.id === packId);
+                if (window.Notifications) {
+                    window.Notifications.push('MODULE PACK', `${pack ? pack.label : packId} ${enabled ? 'enabled' : 'disabled'}`);
+                }
+                if (os._activeSettingsTab === 'modules') {
+                    os.switchSettingsTab('modules');
+                }
+            },
+
+    applyModulePreset: (preset) => {
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                Object.values(reg).forEach((m) => {
+                    if (m.required) return;
+                    const shouldEnable = preset === 'all' ? true : Boolean(m.defaultEnabled);
+                    os.setModuleEnabled(m.id, shouldEnable, { silent: true });
+                });
+                if (window.Notifications) {
+                    window.Notifications.push('APP MODULES', preset === 'all' ? 'All 35 modules enabled' : 'Restored clean 13-app minimal preset');
+                }
+                if (os._activeSettingsTab === 'modules' || os._activeSettingsTab === 'general' || os._activeSettingsTab === 'system') {
+                    os.switchSettingsTab(os._activeSettingsTab);
+                }
+            },
+
+    setSettingsModuleFilter: (filterId) => {
+                window._settingsModulePackFilter = filterId || 'all';
+                if (os._activeSettingsTab === 'modules') {
+                    os.switchSettingsTab('modules');
+                }
+            },
+
+    restoreCleanDefaults: () => {
+                SystemState.settings.wallpaper_mode = 'default';
+                SystemState.settings.anime_quotes = 'off';
+                SystemState.settings.cursor_oneko = 'off';
+                SystemState.settings.cursor_oneko_ball = 'off';
+                SystemState.settings.sakura_petals = 'off';
+                SystemState.settings.radio_gif_enabled = 'off';
+                SystemState.settings.speech_companion = 'off';
+                SystemState.settings.speech_synthesis = 'off';
+                SystemState.settings.desktop_sidebar = 'off';
+                SystemState.settings.cursor_theme = 'aether';
+                os.applyModulePreset('minimal');
+                os.syncSystemPerformanceEngine();
+                os.syncFeatureGates();
+                SystemState.save();
+                if (window.Notifications) {
+                    window.Notifications.push('CLEAN WORKSPACE', 'Optional toys & modules disabled. Notes, files, and API keys preserved.');
+                }
+                if (SystemState.windows.settings?.isOpen) {
+                    os.switchSettingsTab(os._activeSettingsTab || 'system');
+                }
+            },
+
+    confirmFactoryReset: () => {
+                if (window.confirm('Factory reset AetherOS? This will erase all saved settings, virtual files, notes, and API keys.')) {
+                    SystemState.reset();
+                }
+            },
+
+    syncFeatureGates: () => {
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                const allIds = Object.keys(reg);
+                const enabledCount = allIds.filter((id) => os.isModuleEnabled(id)).length;
+
+                const badge = document.getElementById('settings-modules-badge');
+                if (badge) badge.textContent = `${enabledCount}/${allIds.length || 35}`;
+
+                // Topbar module indicators
+                const awakeBtn = document.getElementById('topbar-awake-widget');
+                if (awakeBtn) awakeBtn.style.display = os.isModuleEnabled('nosleep') ? '' : 'none';
+
+                const abInd = document.getElementById('ab-topbar-indicator');
+                const alInd = document.getElementById('al-topbar-indicator');
+                const p2pSep = document.getElementById('topbar-p2p-sep');
+                const abOn = os.isModuleEnabled('aetherbridge');
+                const alOn = os.isModuleEnabled('aetherlink');
+                if (abInd) abInd.style.display = abOn ? '' : 'none';
+                if (alInd) alInd.style.display = alOn ? '' : 'none';
+                if (p2pSep) p2pSep.style.display = (abOn || alOn) ? '' : 'none';
+
+                const weatherWrap = document.getElementById('top-weather-wrap');
+                if (weatherWrap) weatherWrap.style.display = os.isModuleEnabled('weather') ? '' : 'none';
+
+                // Right sidebar visibility & Discord widget
+                document.documentElement.classList.toggle('desktop-sidebar-enabled', SystemState.settings.desktop_sidebar === 'on');
+                const sidebarToggleBtn = document.getElementById('mobile-panel-toggle');
+                if (sidebarToggleBtn) {
+                    sidebarToggleBtn.style.background = SystemState.settings.desktop_sidebar === 'on' ? 'rgba(255,255,255,0.12)' : '';
+                }
+                const discordCard = document.getElementById('sidebar-discord-card');
+                if (discordCard) discordCard.style.display = os.isModuleEnabled('presence') ? '' : 'none';
+
+                // Lazy-initialize optional background services only when enabled
+                if (abOn && !os._abInitialized && window.AetherBridgeAPI && typeof window.AetherBridgeAPI.init === 'function') {
+                    os._abInitialized = true;
+                    try { window.AetherBridgeAPI.init(); } catch (e) {}
+                }
+                if (alOn && !os._alInitialized && window.AetherLinkAPI && typeof window.AetherLinkAPI.init === 'function') {
+                    os._alInitialized = true;
+                    try { window.AetherLinkAPI.init(); } catch (e) {}
+                }
+                if (os.isModuleEnabled('presence') && SystemState.settings.api_discord && !os.lanyardSocket && os.initLanyardPresence) {
+                    try { os.initLanyardPresence(); } catch (e) {}
+                }
+
+                if (window.winManager && window.winManager.dock) {
+                    window.winManager.renderDock();
+                }
+                if (os.finderOpen) {
+                    os.renderFinderGrid(document.getElementById('finder-search-bar')?.value || '');
+                }
+                if (window.cmdPalette && window.cmdPalette.isOpen) {
+                    window.cmdPalette.filter(window.cmdPalette.input?.value || '');
+                }
+            },
 
     getPinnedDock: () => {
                 try { return JSON.parse(localStorage.getItem('AetherOS_PinnedDock') || '[]'); } catch(e) { return []; }
@@ -792,12 +976,21 @@ window.extendOS({
                 const grid = document.getElementById('finder-grid');
                 if (!grid) return;
 
-                const q = filter.toLowerCase();
+                const q = filter.toLowerCase().trim();
                 const categories = {};
+                let hiddenMatches = 0;
+                let totalHidden = 0;
 
-                // Group modules by category
+                // Group enabled modules by category
                 os.finderModules.forEach(mod => {
-                    if (q && !mod.label.toLowerCase().includes(q) && !mod.id.toLowerCase().includes(q) && !mod.category.toLowerCase().includes(q)) return;
+                    const enabled = os.isModuleEnabled ? os.isModuleEnabled(mod.id) : true;
+                    const matches = !q || mod.label.toLowerCase().includes(q) || mod.id.toLowerCase().includes(q) || mod.category.toLowerCase().includes(q);
+                    if (!enabled) {
+                        totalHidden++;
+                        if (q && matches) hiddenMatches++;
+                        return;
+                    }
+                    if (!matches) return;
                     if (!categories[mod.category]) categories[mod.category] = [];
                     categories[mod.category].push(mod);
                 });
@@ -830,7 +1023,15 @@ window.extendOS({
                 });
 
                 if (!html) {
-                    html = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:rgba(255,255,255,0.3);font-size:12px;">No modules match your search</div>';
+                    html = `<div style="grid-column:1/-1;text-align:center;padding:32px 16px;color:rgba(255,255,255,0.45);font-size:12px;">
+                        No active modules match "${os._html ? os._html(filter) : filter}"
+                        ${hiddenMatches > 0 ? `<div style="margin-top:10px;"><button type="button" onclick="os.closeFinder();os.openSettingsSection('modules')" style="padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:#fff;font-size:11px;">${hiddenMatches} disabled module${hiddenMatches === 1 ? '' : 's'} matched — Enable in Settings</button></div>` : ''}
+                    </div>`;
+                } else if (totalHidden > 0) {
+                    html += `<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 4px 2px;font-size:11px;color:rgba(255,255,255,0.38);">
+                        <span>${hiddenMatches > 0 ? `${hiddenMatches} matching optional module${hiddenMatches === 1 ? ' is' : 's are'} disabled` : `${totalHidden} optional modules tucked away`}</span>
+                        <button type="button" onclick="os.closeFinder();os.openSettingsSection('modules')" style="color:rgba(255,255,255,0.72);text-decoration:underline;text-underline-offset:3px;" class="hover-target cursor-none">Manage Modules</button>
+                    </div>`;
                 }
 
                 grid.innerHTML = html;
@@ -937,245 +1138,152 @@ window.extendOS({
                 return new THREE.Vector3(x, y, z);
             },
 
-    switchSettingsTab: (tabId) => {
-                const panel = document.getElementById('settings-panel-content');
+    _activeSettingsTab: 'general',
+
+    _hydrateSettingsTab: (resolvedTab, panel) => {
                 if (!panel) return;
-
-                panel.innerHTML = SettingsTabs[tabId] || '';
-                
-                const buttons = document.querySelectorAll('#settings-tab-list button');
-                buttons.forEach(btn => {
-                    btn.className = "settings-tab w-full text-left px-3 py-2 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all hover-target cursor-none flex items-center gap-2";
-                });
-
-                const tabIndexMap = { api: 0, appearance: 1, themes: 2, system: 3 };
-                const activeBtn = buttons[tabIndexMap[tabId]];
-                if (activeBtn) {
-                    activeBtn.className = "settings-tab active w-full text-left px-3 py-2 rounded bg-white/10 text-white hover-target cursor-none transition-all flex items-center gap-2";
-                }
-
-                if (tabId === 'api') {
-                    const _sv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-                    _sv('set-lastfm-user', SystemState.settings.api_lastfm_user || '');
-                    _sv('set-lastfm-key',  SystemState.settings.api_lastfm || '');
-                    _sv('set-discord',     SystemState.settings.api_discord || '');
-                    _sv('set-github',      SystemState.settings.api_github || '');
-                    _sv('set-rss',         SystemState.settings.api_rss || '');
-                    _sv('set-subreddits',  SystemState.settings.api_custom_subreddits || '');
-                } else if (tabId === 'appearance') {
-                    os.updatePerformanceUIVisuals();
-                    const acc = document.getElementById('opt-color-accent');
-                    if (acc) acc.value = SystemState.settings.theme_accent || '#ffffff';
-                } else if (tabId === 'themes') {
-                    // Highlight active theme
-                    const activeThemeEl = document.getElementById('active-theme-name');
-                    const activeAccentEl = document.getElementById('active-theme-accent');
-                    if (activeThemeEl) activeThemeEl.innerText = SystemState.settings.active_theme || 'Midnight';
-                    if (activeAccentEl) {
-                        activeAccentEl.innerText = SystemState.settings.theme_accent || '#ffffff';
-                        activeAccentEl.style.color = SystemState.settings.theme_accent || '#ffffff';
+                if (resolvedTab === 'voice') {
+                    const support = document.getElementById('speech-api-support');
+                    if (support) {
+                        const ok = os.speechSupported && os.speechSupported();
+                        support.innerText = ok ? 'Browser Native' : 'Unavailable';
+                        support.className = ok ? 'text-emerald-400' : 'text-red-400';
                     }
-                    // Mark active theme button
-                    const curTheme = SystemState.settings.active_theme || 'midnight';
-                    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('theme-active'));
-                    const activeThemeBtn = document.getElementById('theme-btn-' + curTheme);
-                    if (activeThemeBtn) activeThemeBtn.classList.add('theme-active');
-                    lucide.createIcons({ root: panel });
-                } else if (tabId === 'system') {
-                    os.updatePerformanceUIVisuals();
-                    // Populate dynamic values
+                    os.populateSpeechVoiceSelect && os.populateSpeechVoiceSelect();
+                    os.updateSpeechTuningUI && os.updateSpeechTuningUI();
+                } else if (resolvedTab === 'system') {
                     const openWins = document.getElementById('settings-open-wins');
-                    if (openWins) openWins.innerText = Object.values(SystemState.windows).filter(w=>w.isOpen).length;
+                    if (openWins) openWins.innerText = Object.values(SystemState.windows).filter(w => w.isOpen).length;
                     const stateSize = document.getElementById('settings-state-size');
                     if (stateSize) {
                         try {
-                            const s = localStorage.getItem('AetherOS_State') || '';
-                            stateSize.innerText = (s.length / 1024).toFixed(1) + ' KB';
-                        } catch(e) { stateSize.innerText = '--'; }
+                            const raw = localStorage.getItem('AetherOS_State') || '';
+                            stateSize.innerText = (raw.length / 1024).toFixed(1) + ' KB';
+                        } catch (e) { stateSize.innerText = '--'; }
                     }
                     const diagPower = document.getElementById('sys-diagnostic-power');
-                    if (diagPower) diagPower.innerText = SystemState.settings.performance_mode === 'eco' ? 'ECO_BATTERY' : 'MAX_PERF';
+                    if (diagPower) diagPower.innerText = SystemState.settings.performance_mode === 'cinematic' ? 'CINEMATIC' : 'ECO';
                     const memSnap = document.getElementById('settings-mem-snapshot');
                     if (memSnap) {
                         if (performance.memory) {
                             const used = (performance.memory.usedJSHeapSize / 1048576).toFixed(1);
                             const total = (performance.memory.jsHeapSizeLimit / 1048576).toFixed(0);
                             const pct = Math.round((performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100);
-                            memSnap.innerHTML = `<div class="flex justify-between mb-1"><span class="text-gray-500">Heap Used</span><span class="text-white font-bold">${used} MB / ${total} MB</span></div><div class="w-full h-1.5 bg-os-900 rounded overflow-hidden"><div class="h-full bg-white/50 rounded" style="width:${pct}%"></div></div><div class="text-gray-600 mt-1">${pct}% heap utilization</div>`;
+                            memSnap.innerHTML = `${used} MB / ${total} MB (${pct}% JS heap)`;
                         } else {
-                            memSnap.innerHTML = '<span class="text-gray-600">JS heap API unavailable in this browser.</span>';
+                            memSnap.innerHTML = 'Standard browser memory management active';
                         }
                     }
                 }
-                lucide.createIcons({ root: document.getElementById('settings-tab-list') });
+                if (window.lucide) {
+                    lucide.createIcons({ root: panel });
+                    const nav = document.getElementById('settings-tab-list');
+                    if (nav) lucide.createIcons({ root: nav });
+                }
+            },
+
+    switchSettingsTab: (tabId) => {
+                const panel = document.getElementById('settings-panel-content');
+                if (!panel) return;
+
+                const aliasMap = { themes: 'appearance', integrations: 'api' };
+                const resolvedTab = aliasMap[tabId] || (SettingsTabs[tabId] !== undefined ? tabId : 'general');
+                os._activeSettingsTab = resolvedTab;
+
+                const searchInput = document.getElementById('settings-search-input');
+                const clearBtn = document.getElementById('settings-search-clear');
+                if (searchInput && searchInput.value) {
+                    searchInput.value = '';
+                    if (clearBtn) clearBtn.classList.add('hidden');
+                }
+
+                const scrollPrev = panel.scrollTop;
+                panel.innerHTML = SettingsTabs[resolvedTab] || '';
+                panel.scrollTop = 0;
+
+                document.querySelectorAll('#settings-tab-list .settings-nav-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-settings-tab') === resolvedTab);
+                });
+
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+                const allIds = Object.keys(reg);
+                const badge = document.getElementById('settings-modules-badge');
+                if (badge && allIds.length) {
+                    badge.textContent = `${allIds.filter(id => os.isModuleEnabled(id)).length}/${allIds.length}`;
+                }
+
+                os._hydrateSettingsTab(resolvedTab, panel);
+                void scrollPrev;
+            },
+
+    filterSettingsSearch: (rawQuery) => {
+                const panel = document.getElementById('settings-panel-content');
+                const clearBtn = document.getElementById('settings-search-clear');
+                if (!panel) return;
+                const q = String(rawQuery || '').trim().toLowerCase();
+                if (clearBtn) clearBtn.classList.toggle('hidden', !q);
+
+                if (!q) {
+                    os.switchSettingsTab(os._activeSettingsTab || 'general');
+                    return;
+                }
+
+                const sections = [
+                    ['general', 'General'],
+                    ['appearance', 'Appearance'],
+                    ['modules', 'App Modules'],
+                    ['extras', 'Desktop Extras'],
+                    ['voice', 'Sound & Voice'],
+                    ['api', 'Integrations'],
+                    ['system', 'System & Reset']
+                ];
+                const temp = document.createElement('div');
+                let out = `<div class="settings-pane-header"><div class="settings-pane-title">Search Results</div><div class="settings-pane-subtitle">Matching settings for "${os._html ? os._html(rawQuery) : rawQuery}"</div></div>`;
+                let matchCount = 0;
+
+                sections.forEach(([id, title]) => {
+                    temp.innerHTML = id === 'modules' ? SettingsTabs.renderModulesSection('all') : (SettingsTabs[id] || '');
+                    const items = Array.from(temp.querySelectorAll('[data-search-item]')).filter(el => {
+                        const hay = ((el.getAttribute('data-search-item') || '') + ' ' + (el.textContent || '')).toLowerCase();
+                        return hay.includes(q);
+                    });
+                    if (items.length) {
+                        matchCount += items.length;
+                        out += `<div class="settings-section-label">${title}</div><div class="settings-card">${items.map(el => el.outerHTML).join('')}</div>`;
+                    }
+                });
+
+                if (!matchCount) {
+                    out += `<div class="settings-card p-8 text-center text-xs text-gray-400">No settings or modules matched "${os._html ? os._html(rawQuery) : rawQuery}".</div>`;
+                }
+                panel.innerHTML = out;
+                if (window.lucide) lucide.createIcons({ root: panel });
             },
 
     updatePerformanceUIVisuals: () => {
-                const activeModeId = SystemState.settings.performance_mode === 'eco' ? 'opt-perf-eco' : 'opt-perf-cinematic';
-                const activeBtn = document.getElementById(activeModeId);
-                
-                const deactiveModeId = SystemState.settings.performance_mode === 'eco' ? 'opt-perf-cinematic' : 'opt-perf-eco';
-                const deactiveBtn = document.getElementById(deactiveModeId);
-
-                if (activeBtn) activeBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                if (deactiveBtn) deactiveBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-
-                const activeMotionId = SystemState.settings.motion_intensity === 'low' ? 'opt-motion-low' : 'opt-motion-high';
-                const activeMotionBtn = document.getElementById(activeMotionId);
-                
-                const deactiveMotionId = SystemState.settings.motion_intensity === 'low' ? 'opt-motion-high' : 'opt-motion-low';
-                const deactiveMotionBtn = document.getElementById(deactiveMotionId);
-
-                if (activeMotionBtn) activeMotionBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                if (deactiveMotionBtn) deactiveMotionBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-
-                // Wallpaper Engine Buttons
-                const activeWallId = SystemState.settings.wallpaper_mode === 'gif' ? 'opt-wall-gif' : 'opt-wall-default';
-                const activeWallBtn = document.getElementById(activeWallId);
-                
-                const deactiveWallId = SystemState.settings.wallpaper_mode === 'gif' ? 'opt-wall-default' : 'opt-wall-gif';
-                const deactiveWallBtn = document.getElementById(deactiveWallId);
-
-                if (activeWallBtn) activeWallBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                if (deactiveWallBtn) deactiveWallBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-
-                // Anime Quotes Buttons
-                if (document.getElementById('opt-quote-on')) {
-                    const activeQuoteId = SystemState.settings.anime_quotes === 'on' ? 'opt-quote-on' : 'opt-quote-off';
-                    const activeQuoteBtn = document.getElementById(activeQuoteId);
-                    
-                    const deactiveQuoteId = SystemState.settings.anime_quotes === 'on' ? 'opt-quote-off' : 'opt-quote-on';
-                    const deactiveQuoteBtn = document.getElementById(deactiveQuoteId);
-
-                    if (activeQuoteBtn) activeQuoteBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                    if (deactiveQuoteBtn) deactiveQuoteBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                }
-                // Quote Background Buttons
-                if (document.getElementById('opt-quote-bg-none')) {
-                    const bgMode = SystemState.settings.quote_bg_mode || 'none';
-                    ['none','static','gif'].forEach(id => {
-                        const btnId = id === 'none' ? 'opt-quote-bg-none' : id === 'static' ? 'opt-quote-bg-static' : 'opt-quote-bg-gif';
-                        const btn = document.getElementById(btnId);
-                        if (!btn) return;
-                        btn.className = id === bgMode
-                            ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none"
-                            : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    });
-                }
-                // Quote Position Buttons
-                if (document.getElementById('opt-quote-pos-tl')) {
-                    const pos = SystemState.settings.quote_position || 'top-left';
-                    const posMap = { 'top-left':'tl', 'top-right':'tr', 'bottom-left':'bl', 'bottom-right':'br', 'center':'c' };
-                    Object.keys(posMap).forEach(k => {
-                        const btn = document.getElementById('opt-quote-pos-' + posMap[k]);
-                        if (!btn) return;
-                        btn.className = k === pos
-                            ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none min-w-[5rem]"
-                            : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none min-w-[5rem]";
-                    });
-                }
-
-                // Cursor Theme Buttons
-                if (document.getElementById('cursor-theme-grid')) {
-                    const activeCursor = SystemState.settings.cursor_theme || 'aether';
-                    ['aether','minimal','neon','comet','cursorly','ripple','sparkle','binary','crosshair','gold','void','nyan'].forEach(id => {
-                        const btn = document.getElementById('opt-cursor-' + id);
-                        if (!btn) return;
-                        btn.className = id === activeCursor
-                            ? "p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none"
-                            : "p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    });
-                }
-                if (document.getElementById('opt-nyan-standard-on')) {
-                    const on = SystemState.settings.cursor_nyan_standard === 'on';
-                    const onBtn = document.getElementById('opt-nyan-standard-on');
-                    const offBtn = document.getElementById('opt-nyan-standard-off');
-                    if (onBtn) onBtn.className = on ? "flex-1 p-1.5 bg-white/20 text-white border border-white/30 text-[10px] font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-1.5 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    if (offBtn) offBtn.className = !on ? "flex-1 p-1.5 bg-white/20 text-white border border-white/30 text-[10px] font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-1.5 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                }
-
-                if (document.getElementById('opt-oneko-on')) {
-                    const on = SystemState.settings.cursor_oneko === 'on';
-                    const onBtn = document.getElementById('opt-oneko-on');
-                    const offBtn = document.getElementById('opt-oneko-off');
-                    if (onBtn) onBtn.className = on ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    if (offBtn) offBtn.className = !on ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    const ballOn = SystemState.settings.cursor_oneko_ball === 'on';
-                    const ballOnBtn = document.getElementById('opt-oneko-ball-on');
-                    const ballOffBtn = document.getElementById('opt-oneko-ball-off');
-                    if (ballOnBtn) ballOnBtn.className = ballOn ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    if (ballOffBtn) ballOffBtn.className = !ballOn ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    const activeVariant = SystemState.settings.cursor_oneko_variant || 'classic';
-                    ['classic','dog','tora','maia','vaporwave'].forEach(v => {
-                        const btn = document.getElementById('opt-oneko-variant-' + v);
-                        if (!btn) return;
-                        btn.className = v === activeVariant
-                            ? "p-2 bg-white/20 text-white border border-white/30 text-[10px] font-mono uppercase rounded transition hover-target cursor-none"
-                            : "p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    });
-                    const variantSelect = document.getElementById('oneko-variant-select');
-                    if (variantSelect) variantSelect.value = activeVariant;
-                }
-                if (document.getElementById('opt-sakura-on')) {
-                    const sakuraOn = SystemState.settings.sakura_petals === 'on';
-                    const onBtn = document.getElementById('opt-sakura-on');
-                    const offBtn = document.getElementById('opt-sakura-off');
-                    if (onBtn) onBtn.className = sakuraOn ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    if (offBtn) offBtn.className = !sakuraOn ? "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none" : "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    const activeSakura = SystemState.settings.sakura_intensity || 'normal';
-                    ['light','normal','storm'].forEach(v => {
-                        const btn = document.getElementById('opt-sakura-' + v);
-                        if (!btn) return;
-                        btn.className = v === activeSakura
-                            ? "p-2 bg-white/20 text-white border border-white/30 text-[10px] font-mono uppercase rounded transition hover-target cursor-none"
-                            : "p-2 bg-white/5 border border-white/10 text-[10px] font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    });
-                }
-
-                // Speech Synthesis API Buttons
-                if (document.getElementById('opt-speech-on')) {
-                    const activeSpeechId = SystemState.settings.speech_synthesis === 'on' ? 'opt-speech-on' : 'opt-speech-off';
-                    const activeSpeechBtn = document.getElementById(activeSpeechId);
-                    const deactiveSpeechId = SystemState.settings.speech_synthesis === 'on' ? 'opt-speech-off' : 'opt-speech-on';
-                    const deactiveSpeechBtn = document.getElementById(deactiveSpeechId);
-                    if (activeSpeechBtn) activeSpeechBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                    if (deactiveSpeechBtn) deactiveSpeechBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                    const support = document.getElementById('speech-api-support');
-                    if (support) {
-                        support.innerText = os.speechSupported && os.speechSupported() ? 'SUPPORTED' : 'UNAVAILABLE';
-                        support.className = os.speechSupported && os.speechSupported() ? 'text-green-400' : 'text-red-400';
+                const panel = document.getElementById('settings-panel-content');
+                const searchInput = document.getElementById('settings-search-input');
+                if (panel && SystemState.windows.settings?.isOpen) {
+                    if (searchInput && searchInput.value.trim()) {
+                        os.filterSettingsSearch(searchInput.value);
+                    } else {
+                        const prevScroll = panel.scrollTop;
+                        const tab = os._activeSettingsTab || 'general';
+                        panel.innerHTML = SettingsTabs[tab] || '';
+                        os._hydrateSettingsTab(tab, panel);
+                        panel.scrollTop = prevScroll;
                     }
-                    os.populateSpeechVoiceSelect && os.populateSpeechVoiceSelect();
-                    os.updateSpeechTuningUI && os.updateSpeechTuningUI();
                 }
-                // Aether Companion Chatter buttons
-                if (document.getElementById('opt-companion-on')) {
-                    const activeCompanionId = SystemState.settings.speech_companion === 'on' ? 'opt-companion-on' : 'opt-companion-off';
-                    const activeCompanionBtn = document.getElementById(activeCompanionId);
-                    const deactiveCompanionId = SystemState.settings.speech_companion === 'on' ? 'opt-companion-off' : 'opt-companion-on';
-                    const deactiveCompanionBtn = document.getElementById(deactiveCompanionId);
-                    if (activeCompanionBtn) activeCompanionBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                    if (deactiveCompanionBtn) deactiveCompanionBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                }
-                // Aether Avatar Emotion Mode buttons
-                if (document.getElementById('opt-emo-gif')) {
-                    const activeEmoId = (SystemState.settings.companion_emotion_mode || 'gif') === 'emo' ? 'opt-emo-oled' : 'opt-emo-gif';
-                    const activeEmoBtn = document.getElementById(activeEmoId);
-                    const deactiveEmoId = (SystemState.settings.companion_emotion_mode || 'gif') === 'emo' ? 'opt-emo-gif' : 'opt-emo-oled';
-                    const deactiveEmoBtn = document.getElementById(deactiveEmoId);
-                    if (activeEmoBtn) activeEmoBtn.className = "flex-1 p-2 bg-white/20 text-white border border-white/30 text-xs font-mono uppercase rounded transition hover-target cursor-none";
-                    if (deactiveEmoBtn) deactiveEmoBtn.className = "flex-1 p-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded text-gray-400 transition hover-target cursor-none";
-                }
+                os.syncControlCenterUI && os.syncControlCenterUI();
             },
 
     setOption: (key, val) => {
                 SystemState.settings[key] = val;
                 SystemState.save();
                 os.syncSystemPerformanceEngine();
-                os.logTerminal(`State mutation: appearance.${key} set to '${val}'`);
-                if (key === 'performance_mode' || key === 'motion_intensity' || key === 'wallpaper_mode' || key === 'anime_quotes' || key === 'quote_bg_mode' || key === 'quote_position' || key === 'speech_synthesis' || key === 'speech_companion' || key === 'cursor_theme' || key === 'cursor_oneko' || key === 'cursor_oneko_variant' || key === 'cursor_oneko_ball' || key === 'sakura_petals' || key === 'sakura_intensity' || key === 'cursor_nyan_standard' || key === 'companion_emotion_mode') {
-                    os.updatePerformanceUIVisuals();
-                }
+                os.syncFeatureGates && os.syncFeatureGates();
+                os.logTerminal(`State mutation: settings.${key} set to '${val}'`);
+                os.updatePerformanceUIVisuals();
                 if (key === 'cursor_theme') {
                     if (window.cursorEngine) window.cursorEngine.applyTheme(val);
                     Notifications.push('CURSOR ENGINE', `Mouse theme set to ${val}`);
@@ -1544,7 +1652,8 @@ window.extendOS({
 
     syncOnekoBall: () => {
                 if (!os.onekoBallEngine) os.onekoBallEngine = new OnekoBallEngine();
-                os.onekoBallEngine.setEnabled(SystemState.settings.cursor_oneko_ball === 'on');
+                const shouldShowBall = SystemState.settings.cursor_oneko === 'on' && SystemState.settings.cursor_oneko_ball === 'on';
+                os.onekoBallEngine.setEnabled(shouldShowBall);
             },
 
     sakuraInstance: null,
@@ -1619,6 +1728,7 @@ window.extendOS({
                     const quoteWidget = document.getElementById('desktop-quote-widget');
                     if (quoteWidget) {
                         quoteWidget.classList.remove('hidden');
+                        quoteWidget.style.display = 'block';
                         if (quoteWidget.dataset.loaded !== 'true') {
                             os.fetchAnimeQuote();
                         }
@@ -1629,6 +1739,7 @@ window.extendOS({
                     const quoteWidget = document.getElementById('desktop-quote-widget');
                     if (quoteWidget) {
                         quoteWidget.classList.add('hidden');
+                        quoteWidget.style.display = 'none';
                     }
                 }
             },
@@ -1922,32 +2033,39 @@ window.extendOS({
             },
 
     saveSettings: () => {
-                SystemState.settings.api_lastfm_user = (document.getElementById('set-lastfm-user')?.value || '').trim();
-                SystemState.settings.api_lastfm = (document.getElementById('set-lastfm-key')?.value || '').trim();
-                SystemState.settings.api_discord = (document.getElementById('set-discord')?.value || '').trim();
-                SystemState.settings.api_github = (document.getElementById('set-github')?.value || '').trim();
-                SystemState.settings.api_rss = (document.getElementById('set-rss')?.value || '').trim();
-                SystemState.settings.api_custom_subreddits = (document.getElementById('set-subreddits')?.value || '').trim();
-                SystemState.settings.quote_gif_api_key = (document.getElementById('set-quote-gif-key')?.value || '').trim();
-                SystemState.save();
-                
-                os.logTerminal(`State saved. Connected User: "${SystemState.settings.api_lastfm_user || 'none'}"`);
-                os.renderMediaDashboard();
-                const runIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 800));
-            runIdle(() => os.initLanyardPresence()); 
-                if (SystemState.windows.memes && SystemState.windows.memes.isOpen) os.renderMemeButtons();
+                const readVal = (...ids) => {
+                    for (const id of ids) {
+                        const el = document.getElementById(id);
+                        if (el && typeof el.value === 'string') return el.value.trim();
+                    }
+                    return null;
+                };
+                const lfmUser = readVal('cfg-lastfm-user', 'set-lastfm-user');
+                const lfmKey = readVal('cfg-lastfm', 'set-lastfm-key');
+                const discord = readVal('cfg-discord', 'set-discord');
+                const github = readVal('cfg-github', 'set-github');
+                const rss = readVal('cfg-rss', 'set-rss');
+                const subs = readVal('cfg-subreddits', 'set-subreddits');
+                const klipy = readVal('cfg-klipy-key', 'set-quote-gif-key');
 
-                const btn = document.querySelector('#settings-panel-content button');
-                if (btn) {
-                const oldText = btn.innerText;
-                btn.innerText = 'STATE SYNCED ✓';
-                btn.classList.remove('bg-white');
-                btn.classList.add('bg-green-500', 'text-black');
-                setTimeout(() => {
-                    btn.innerText = oldText;
-                    btn.classList.remove('bg-green-500', 'text-black');
-                    btn.classList.add('bg-white');
-                }, 2000);
+                if (lfmUser !== null) SystemState.settings.api_lastfm_user = lfmUser;
+                if (lfmKey !== null) SystemState.settings.api_lastfm = lfmKey;
+                if (discord !== null) SystemState.settings.api_discord = discord;
+                if (github !== null) SystemState.settings.api_github = github;
+                if (rss !== null) SystemState.settings.api_rss = rss;
+                if (subs !== null) SystemState.settings.api_custom_subreddits = subs;
+                if (klipy !== null) SystemState.settings.quote_gif_api_key = klipy;
+                SystemState.save();
+
+                os.logTerminal(`Integrations saved. Last.fm user: "${SystemState.settings.api_lastfm_user || 'none'}"`);
+                if (os.isModuleEnabled('media')) os.renderMediaDashboard();
+                if (os.isModuleEnabled('presence') && SystemState.settings.api_discord) {
+                    const runIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 800));
+                    runIdle(() => os.initLanyardPresence());
+                }
+                if (SystemState.windows.memes && SystemState.windows.memes.isOpen) os.renderMemeButtons();
+                if (window.Notifications) {
+                    window.Notifications.push('INTEGRATIONS', 'API credentials saved locally.');
                 }
             }
 });
