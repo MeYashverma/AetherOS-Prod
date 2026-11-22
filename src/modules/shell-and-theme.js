@@ -682,7 +682,9 @@ window.extendOS({
                     os.setModuleEnabled(m.id, shouldEnable, { silent: true });
                 });
                 if (window.Notifications) {
-                    window.Notifications.push('APP MODULES', preset === 'all' ? 'All 35 modules enabled' : 'Restored clean 13-app minimal preset');
+                    const total = Object.keys(reg).length;
+                    const minCount = Object.values(reg).filter(m => m.required || m.defaultEnabled).length;
+                    window.Notifications.push('APP MODULES', preset === 'all' ? `All ${total} modules enabled` : `Restored clean ${minCount}-app minimal preset`);
                 }
                 if (os._activeSettingsTab === 'modules' || os._activeSettingsTab === 'general' || os._activeSettingsTab === 'system') {
                     os.switchSettingsTab(os._activeSettingsTab);
@@ -783,7 +785,13 @@ window.extendOS({
             },
 
     getPinnedDock: () => {
-                try { return JSON.parse(localStorage.getItem('AetherOS_PinnedDock') || '[]'); } catch(e) { return []; }
+                try {
+                    const raw = localStorage.getItem('AetherOS_PinnedDock');
+                    if (raw === null) {
+                        return ['filemanager', 'earthpulse', 'ossradar', 'wayback', 'photopea', 'whiteboard', 'winamp', 'photobooth', 'synthstudio', 'terminal'];
+                    }
+                    return JSON.parse(raw) || [];
+                } catch(e) { return []; }
             },
 
     savePinnedDock: (pins) => {
@@ -884,8 +892,29 @@ window.extendOS({
     finderOpen: false,
 
     finderModules: [
-                { id: 'about',          label: 'About AetherOS',        icon: 'info',         category: 'System' },
-                { id: 'settings',       label: 'System Config',         icon: 'sliders',      category: 'System' },
+                { id: 'about',          label: 'About This Mac',        icon: 'info',         category: 'System' },
+                { id: 'settings',       label: 'System Settings',       icon: 'sliders',      category: 'System' },
+                { id: 'earthpulse',     label: 'Earth Pulse Radar',     icon: 'globe-2',      category: 'Exploration' },
+                { id: 'ossradar',       label: 'Open-Source Radar',     icon: 'git-branch',   category: 'Intelligence' },
+                { id: 'wayback',        label: 'Archive & DOS Vault',   icon: 'history',      category: 'Exploration' },
+                { id: 'photopea',       label: 'Photopea Studio',       icon: 'layers',       category: 'Content' },
+                { id: 'whiteboard',     label: 'OpenCanvas Board',      icon: 'pen-tool',     category: 'Content' },
+                { id: 'winamp',         label: 'Webamp + SomaFM',       icon: 'disc-3',       category: 'Media' },
+                { id: 'photobooth',     label: 'Photo Booth',           icon: 'aperture',     category: 'Media' },
+                { id: 'calculator',     label: 'Calculator',            icon: 'calculator',   category: 'System' },
+                { id: 'synthstudio',    label: 'GaragePad Studio',      icon: 'music',        category: 'Media' },
+                { id: 'voicememos',     label: 'Voice Memos',           icon: 'mic',          category: 'Media' },
+                { id: 'clockapp',       label: 'Clock',                 icon: 'clock',        category: 'System' },
+                { id: 'stickies',       label: 'Stickies',              icon: 'sticky-note',  category: 'Content' },
+                { id: 'focus',          label: 'Focus & Soundscapes',   icon: 'timer',        category: 'System' },
+                { id: 'devpad',         label: 'Markdown & Dev Studio', icon: 'code-2',       category: 'Intelligence' },
+                { id: 'kanban',         label: 'Project Board',         icon: 'kanban',       category: 'Content' },
+                { id: 'clipboard',      label: 'Clipboard & Snippets',  icon: 'clipboard-list', category: 'System' },
+                { id: 'capture',        label: 'Capture & Sketch Studio', icon: 'video',      category: 'Media' },
+                { id: 'imagelab',       label: 'Image, WebP & QR Lab',  icon: 'image-plus',   category: 'Media' },
+                { id: 'codeplay',       label: 'Live Code Sandbox',     icon: 'play-square',  category: 'Intelligence' },
+                { id: 'apiclient',      label: 'HTTP & REST API Client',icon: 'send',         category: 'Network' },
+                { id: 'datatools',      label: 'Diff, CSV & Cron Lab',  icon: 'file-diff',    category: 'Intelligence' },
                 { id: 'terminal',       label: 'Data Stream',           icon: 'terminal',     category: 'System' },
                 { id: 'sysmon',         label: 'System Diagnostics',    icon: 'cpu',          category: 'System' },
                 { id: 'nosleep',       label: 'NoSleep Screen Lock',    icon: 'sun',          category: 'System' },
@@ -1703,15 +1732,57 @@ window.extendOS({
                     os.applyTheme('midnight');
                 }
 
-                if (SystemState.settings.wallpaper_mode === 'gif') {
-                    const wallEl = document.getElementById('gif-wallpaper');
-                    if (wallEl && wallEl.classList.contains('hidden')) {
+                const wpMode = SystemState.settings.wallpaper_mode || 'default';
+                const gifEl = document.getElementById('gif-wallpaper');
+                const lgWall = document.getElementById('lg-wallpaper');
+
+                if (wpMode === 'gif') {
+                    if (gifEl && gifEl.classList.contains('hidden')) {
                         os.fetchWallpaperGif();
                     }
-                } else {
-                    const wallEl = document.getElementById('gif-wallpaper');
-                    if (wallEl) {
-                        wallEl.classList.add('hidden');
+                } else if (gifEl) {
+                    gifEl.classList.add('hidden');
+                }
+
+                if (lgWall) {
+                    lgWall.style.filter = '';
+                    lgWall.style.backgroundSize = '';
+                    lgWall.style.backgroundPosition = '';
+                    if (wpMode === 'mesh') {
+                        const c1 = SystemState.settings.wallpaper_mesh_c1 || '#4f46e5';
+                        const c2 = SystemState.settings.wallpaper_mesh_c2 || '#ec4899';
+                        const c3 = SystemState.settings.wallpaper_mesh_c3 || '#14b8a6';
+                        lgWall.style.background = `radial-gradient(ellipse 80% 65% at 18% 20%, ${c1}cc 0%, transparent 58%), radial-gradient(ellipse 75% 60% at 82% 28%, ${c2}b8 0%, transparent 55%), radial-gradient(ellipse 75% 70% at 50% 82%, ${c3}b0 0%, transparent 60%), linear-gradient(135deg, #070812 0%, #0d1020 100%)`;
+                    } else if (wpMode === 'dynamic') {
+                        const hr = new Date().getHours();
+                        if (hr >= 5 && hr < 9) {
+                            // Dawn
+                            lgWall.style.background = 'radial-gradient(ellipse 85% 60% at 50% 90%, rgba(251,146,60,0.62) 0%, transparent 60%), radial-gradient(ellipse 75% 55% at 25% 25%, rgba(168,85,247,0.5) 0%, transparent 55%), linear-gradient(180deg, #0f172a 0%, #31102f 55%, #431407 100%)';
+                        } else if (hr >= 9 && hr < 17) {
+                            // Crisp Daylight Sky
+                            lgWall.style.background = 'radial-gradient(ellipse 80% 60% at 25% 20%, rgba(56,189,248,0.65) 0%, transparent 58%), radial-gradient(ellipse 70% 60% at 80% 70%, rgba(20,184,166,0.48) 0%, transparent 55%), linear-gradient(160deg, #082f49 0%, #0f172a 70%, #020617 100%)';
+                        } else if (hr >= 17 && hr < 21) {
+                            // Golden Dusk
+                            lgWall.style.background = 'radial-gradient(ellipse 85% 55% at 75% 80%, rgba(244,63,94,0.60) 0%, transparent 58%), radial-gradient(ellipse 75% 60% at 20% 25%, rgba(99,102,241,0.55) 0%, transparent 55%), linear-gradient(165deg, #090d1f 0%, #2a0f2d 60%, #3b0d11 100%)';
+                        } else {
+                            // Deep Midnight
+                            lgWall.style.background = 'radial-gradient(ellipse 75% 55% at 30% 20%, rgba(79,70,229,0.55) 0%, transparent 58%), radial-gradient(ellipse 65% 55% at 78% 75%, rgba(14,165,233,0.38) 0%, transparent 55%), linear-gradient(145deg, #03040a 0%, #080d1f 65%, #040711 100%)';
+                        }
+                    } else if (wpMode === 'custom') {
+                        const applyCustomUrl = (url) => {
+                            if (!url || !lgWall) return;
+                            const dim = Math.min(85, Math.max(0, Number(SystemState.settings.wallpaper_dim ?? 25))) / 100;
+                            const blur = Math.min(24, Math.max(0, Number(SystemState.settings.wallpaper_blur ?? 0)));
+                            lgWall.style.background = `linear-gradient(rgba(4,6,12,${dim}), rgba(4,6,12,${dim})), url("${url.replace(/"/g, '\\"')}") center / cover no-repeat`;
+                            lgWall.style.filter = blur > 0 ? `blur(${blur}px)` : '';
+                        };
+                        if (SystemState.settings.wallpaper_custom_url) {
+                            applyCustomUrl(SystemState.settings.wallpaper_custom_url);
+                        } else if (window.AetherVFS) {
+                            window.AetherVFS.getMeta('custom_wallpaper').then((dataUrl) => {
+                                if (dataUrl && SystemState.settings.wallpaper_mode === 'custom') applyCustomUrl(dataUrl);
+                            });
+                        }
                     }
                 }
 
@@ -1742,6 +1813,42 @@ window.extendOS({
                         quoteWidget.style.display = 'none';
                     }
                 }
+            },
+
+    uploadCustomWallpaper: () => {
+                let inp = document.getElementById('custom-wallpaper-file-input');
+                if (!inp) {
+                    inp = document.createElement('input');
+                    inp.type = 'file';
+                    inp.accept = 'image/*';
+                    inp.id = 'custom-wallpaper-file-input';
+                    inp.style.display = 'none';
+                    inp.onchange = (e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                            const dataUrl = String(reader.result || '');
+                            if (window.AetherVFS) await window.AetherVFS.setMeta('custom_wallpaper', dataUrl);
+                            SystemState.settings.wallpaper_custom_url = '';
+                            os.setOption('wallpaper_mode', 'custom');
+                            window.Notifications && window.Notifications.push('WALLPAPER STUDIO', `Applied "${file.name}"`);
+                        };
+                        reader.readAsDataURL(file);
+                        inp.value = '';
+                    };
+                    document.body.appendChild(inp);
+                }
+                inp.click();
+            },
+
+    randomizeMeshWallpaper: () => {
+                const palette = ['#4f46e5', '#ec4899', '#14b8a6', '#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6'];
+                const pick = () => palette[Math.floor(Math.random() * palette.length)];
+                SystemState.settings.wallpaper_mesh_c1 = pick();
+                SystemState.settings.wallpaper_mesh_c2 = pick();
+                SystemState.settings.wallpaper_mesh_c3 = pick();
+                os.setOption('wallpaper_mode', 'mesh');
             },
 
     fetchWallpaperGif: async () => {

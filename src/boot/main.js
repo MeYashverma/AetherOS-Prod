@@ -23,10 +23,23 @@ window.onload = () => {
             window.bgEngine = new BackgroundEngine();
             window.cursorEngine = new CursorEngine();
             window.winManager = new WindowManager();
-            window.cmdPalette = window.CommandPalette = new CommandPalette();
+            const CmdPaletteCtor = window.CommandPaletteClass || window.CommandPalette;
+            window.cmdPalette = window.CommandPalette = new CmdPaletteCtor();
 
             window.winManager.init();
             os.syncFeatureGates && os.syncFeatureGates();
+            window.AetherVFS && window.AetherVFS.init && window.AetherVFS.init();
+            os.syncVirtualSpaces && os.syncVirtualSpaces();
+            os.focusSyncTopbarPill && os.focusSyncTopbarPill();
+
+            const bootSplash = document.getElementById('apple-boot-splash');
+            if (bootSplash) {
+                setTimeout(() => {
+                    bootSplash.style.opacity = '0';
+                    bootSplash.style.pointerEvents = 'none';
+                    setTimeout(() => bootSplash.remove(), 460);
+                }, 720);
+            }
 
             // ══════════════════════════════════════════════════════════
             //  APPLE LIQUID GLASS ENGINE — Boot + Physics Interactions

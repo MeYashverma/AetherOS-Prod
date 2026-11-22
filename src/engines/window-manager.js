@@ -148,17 +148,26 @@ class WindowManager {
                             <i data-lucide="${winData.icon}" style="width:13px;height:13px;color:rgba(255,255,255,0.45);flex-shrink:0"></i>
                             <span style="font:500 12px/1 'Inter',sans-serif;letter-spacing:-0.02em;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.4)">${window.escapeAetherHtml(winData.title)}</span>
                         </div>
-                        <!-- Right spacer -->
-                        <div style="width:56px"></div>
+                        <!-- Right Window Controls: Quick Snap & Always-on-Top Pin -->
+                        <div class="flex items-center justify-end gap-1 win-header-tools" style="width:68px;position:relative;z-index:2">
+                            <button type="button" class="win-hdr-action win-btn-snap-l hover-target cursor-none" title="Snap Left 50% (Alt+←)" aria-label="Snap Left"><i data-lucide="panel-left" style="width:11px;height:11px"></i></button>
+                            <button type="button" class="win-hdr-action win-btn-snap-r hover-target cursor-none" title="Snap Right 50% (Alt+→)" aria-label="Snap Right"><i data-lucide="panel-right" style="width:11px;height:11px"></i></button>
+                            <button type="button" class="win-hdr-action win-btn-pin ${winData.pinned ? 'pinned' : ''} hover-target cursor-none" title="Always on Top across Spaces" aria-label="Pin Always on Top"><i data-lucide="pin" style="width:11px;height:11px"></i></button>
+                        </div>
                     </div>
                     <div class="flex-1 relative overflow-hidden" style="background:rgba(5,5,10,0.92)">
                         ${WindowContents[winData.content] || ''}
                     </div>
-                    <div class="window-resizer hover-target"></div>
+                    <div class="win-resize-edge win-resize-e" data-resize="e"></div>
+                    <div class="win-resize-edge win-resize-s" data-resize="s"></div>
+                    <div class="win-resize-edge win-resize-w" data-resize="w"></div>
+                    <div class="win-resize-edge win-resize-sw" data-resize="sw"></div>
+                    <div class="window-resizer hover-target" data-resize="se"></div>
                 `;
 
                 this.canvas.appendChild(el);
                 this.DOMWindows[winData.id] = el;
+                if (winData.pinned) el.style.zIndex = 5000 + (winData.zIndex || 1);
 
                 el.addEventListener('mousedown', () => this.bringToFront(winData.id), {passive: true});
                 el.querySelector('.win-btn-close').addEventListener('click', (e) => {
@@ -173,47 +182,74 @@ class WindowManager {
                     e.stopPropagation();
                     this.toggleMaximizeWindow(winData.id);
                 });
+                el.querySelector('.win-btn-snap-l').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.WindowSnapManager && WindowSnapManager.snapWindow(winData.id, 'left');
+                });
+                el.querySelector('.win-btn-snap-r').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.WindowSnapManager && WindowSnapManager.snapWindow(winData.id, 'right');
+                });
+                el.querySelector('.win-btn-pin').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.togglePinWindow(winData.id);
+                });
                 el.querySelector('.window-header').addEventListener('dblclick', (e) => {
                     if (e.target.closest('button')) return;
                     this.toggleMaximizeWindow(winData.id);
                 });
 
-                // Window Resizing Logic
-                const resizer = el.querySelector('.window-resizer');
-                let isResizing = false;
-                let startX, startY, startWidth, startHeight;
+                // Multi-Edge & Corner Window Resizing Logic (e, s, w, sw, se)
+                el.querySelectorAll('[data-resize]').forEach((handle) => {
+                    handle.addEventListener('mousedown', (e) => {
+                        const dir = handle.getAttribute('data-resize') || 'se';
+                        const startX = e.clientX;
+                        const startY = e.clientY;
+                        const startWidth = parseInt(document.defaultView.getComputedStyle(el).width, 10) || winData.width || 640;
+                        const startHeight = parseInt(document.defaultView.getComputedStyle(el).height, 10) || winData.height || 460;
+                        const startWinX = Number(gsap.getProperty(el, 'x')) || winData.x || 0;
 
-                resizer.addEventListener('mousedown', (e) => {
-                    isResizing = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = parseInt(document.defaultView.getComputedStyle(el).width, 10);
-                    startHeight = parseInt(document.defaultView.getComputedStyle(el).height, 10);
-                    
-                    e.stopPropagation(); // Prevent drag from triggering
-                    document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'none');
-                    
-                    const doDrag = (dragEvent) => {
-                        if (!isResizing) return;
-                        const newWidth = Math.max(300, startWidth + (dragEvent.clientX - startX));
-                        const newHeight = Math.max(200, startHeight + (dragEvent.clientY - startY));
-                        el.style.width = `${newWidth}px`;
-                        el.style.height = `${newHeight}px`;
-                    };
-                    
-                    const stopDrag = () => {
-                        isResizing = false;
-                        document.removeEventListener('mousemove', doDrag);
-                        document.removeEventListener('mouseup', stopDrag);
-                        document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'auto');
-                        
-                        SystemState.windows[winData.id].width = parseInt(el.style.width, 10);
-                        SystemState.windows[winData.id].height = parseInt(el.style.height, 10);
-                        SystemState.save();
-                    };
-                    
-                    document.addEventListener('mousemove', doDrag);
-                    document.addEventListener('mouseup', stopDrag);
+                        e.stopPropagation();
+                        e.preventDefault();
+                        document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'none');
+
+                        const doDrag = (dragEvent) => {
+                            const dx = dragEvent.clientX - startX;
+                            const dy = dragEvent.clientY - startY;
+
+                            if (dir.includes('e')) {
+                                el.style.width = `${Math.max(320, startWidth + dx)}px`;
+                            }
+                            if (dir.includes('s')) {
+                                el.style.height = `${Math.max(220, startHeight + dy)}px`;
+                            }
+                            if (dir.includes('w')) {
+                                const nextW = Math.max(320, startWidth - dx);
+                                const actualDelta = startWidth - nextW;
+                                el.style.width = `${nextW}px`;
+                                gsap.set(el, { x: startWinX + actualDelta });
+                            }
+                        };
+
+                        const stopDrag = () => {
+                            document.removeEventListener('mousemove', doDrag);
+                            document.removeEventListener('mouseup', stopDrag);
+                            document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'auto');
+
+                            SystemState.windows[winData.id].width = parseInt(el.style.width, 10);
+                            SystemState.windows[winData.id].height = parseInt(el.style.height, 10);
+                            SystemState.windows[winData.id].x = Number(gsap.getProperty(el, 'x')) || SystemState.windows[winData.id].x;
+                            delete SystemState.windows[winData.id]._snappedZone;
+                            SystemState.save();
+                            try {
+                                const d = window.Draggable && Draggable.get(el);
+                                if (d && d.update) d.update();
+                            } catch (_) {}
+                        };
+
+                        document.addEventListener('mousemove', doDrag);
+                        document.addEventListener('mouseup', stopDrag);
+                    });
                 });
 
                 Draggable.create(el, {
@@ -233,7 +269,16 @@ class WindowManager {
                         });
                         el.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.10), 0 8px 16px rgba(0,0,0,0.4), 0 32px 80px rgba(0,0,0,0.65), 0 60px 120px rgba(0,0,0,0.4)';
                     },
+                    onDrag: function() {
+                        if (window.WindowSnapManager) {
+                            window.WindowSnapManager.onWindowDragMove(winData.id, this.pointerEvent);
+                        }
+                    },
                     onDragEnd: function() {
+                        el.style.boxShadow = '';
+                        if (window.WindowSnapManager && window.WindowSnapManager.onWindowDragEnd(winData.id)) {
+                            return;
+                        }
                         SystemState.windows[winData.id].x = this.x;
                         SystemState.windows[winData.id].y = this.y;
                         SystemState.save();
@@ -242,8 +287,7 @@ class WindowManager {
                             scale: 1,
                             duration: 0.35,
                             ease: 'back.out(1.2)',
-                            overwrite: true,
-                            onComplete: () => { el.style.boxShadow = ''; }
+                            overwrite: true
                         });
                     }
                 });
@@ -322,7 +366,66 @@ class WindowManager {
                 } else if (winData.id === 'aetherlink') {
                     if (window.AetherLinkAPI) AetherLinkAPI.init();
                     if (window.lucide) setTimeout(() => lucide.createIcons(), 60);
+                } else if (winData.id === 'focus') {
+                    os.initFocusStudio && os.initFocusStudio();
+                } else if (winData.id === 'devpad') {
+                    os.initDevPad && os.initDevPad();
+                } else if (winData.id === 'kanban') {
+                    os.initKanban && os.initKanban();
+                } else if (winData.id === 'clipboard') {
+                    os.initClipboardManager && os.initClipboardManager();
+                } else if (winData.id === 'capture') {
+                    os.initCaptureStudio && os.initCaptureStudio();
+                } else if (winData.id === 'imagelab') {
+                    os.initImageLab && os.initImageLab();
+                } else if (winData.id === 'codeplay') {
+                    os.initCodePlay && os.initCodePlay();
+                } else if (winData.id === 'apiclient') {
+                    os.initApiClient && os.initApiClient();
+                } else if (winData.id === 'datatools') {
+                    os.initDataTools && os.initDataTools();
+                } else if (winData.id === 'photobooth') {
+                    os.initPhotoBooth && os.initPhotoBooth();
+                } else if (winData.id === 'calculator') {
+                    os.initCalculator && os.initCalculator();
+                } else if (winData.id === 'synthstudio') {
+                    os.initSynthStudio && os.initSynthStudio();
+                } else if (winData.id === 'voicememos') {
+                    os.initVoiceMemos && os.initVoiceMemos();
+                } else if (winData.id === 'clockapp') {
+                    os.initClockApp && os.initClockApp();
+                } else if (winData.id === 'stickies') {
+                    os.initStickies && os.initStickies();
+                } else if (winData.id === 'earthpulse') {
+                    os.initEarthPulse && os.initEarthPulse();
+                } else if (winData.id === 'wayback') {
+                    os.initWayback && os.initWayback();
+                } else if (winData.id === 'ossradar') {
+                    os.initOssRadar && os.initOssRadar();
+                } else if (winData.id === 'photopea') {
+                    os.initPhotopea && os.initPhotopea();
+                } else if (winData.id === 'whiteboard') {
+                    os.initWhiteboard && os.initWhiteboard();
+                } else if (winData.id === 'winamp') {
+                    os.initWinamp && os.initWinamp();
                 }
+            }
+
+            togglePinWindow(id) {
+                const winData = SystemState.windows[id];
+                if (!winData) return false;
+                winData.pinned = !winData.pinned;
+                const el = this.DOMWindows[id];
+                if (el) {
+                    const btn = el.querySelector('.win-btn-pin');
+                    if (btn) btn.classList.toggle('pinned', winData.pinned);
+                    el.style.zIndex = (winData.pinned ? 5000 : 0) + (winData.zIndex || SystemState.activeZIndex);
+                }
+                SystemState.save();
+                if (window.Notifications) {
+                    window.Notifications.push('WINDOW PIN', winData.pinned ? `"${winData.title}" pinned Always-on-Top across Spaces` : `"${winData.title}" unpinned`);
+                }
+                return winData.pinned;
             }
 
             bringToFront(id) {
@@ -331,7 +434,7 @@ class WindowManager {
                 SystemState.windows[id].zIndex = SystemState.activeZIndex;
                 const el = this.DOMWindows[id];
                 if (el) {
-                    el.style.zIndex = SystemState.activeZIndex;
+                    el.style.zIndex = (SystemState.windows[id].pinned ? 5000 : 0) + SystemState.activeZIndex;
                 }
                 SystemState.save();
                 this.updateTopBarAppInfo();
@@ -425,6 +528,12 @@ class WindowManager {
                 if (id === 'ytchtv' && os.killYtchtv) os.killYtchtv();
                 if (id === 'entityscanner' && os.killEntityScanner) os.killEntityScanner();
                 if (id === 'wikiboard' && os.killWikiBoard) os.killWikiBoard();
+                if (id === 'photobooth' && os.killPhotoBooth) os.killPhotoBooth();
+                if (id === 'synthstudio' && os.killSynthStudio) os.killSynthStudio();
+                if (id === 'voicememos' && os.killVoiceMemos) os.killVoiceMemos();
+                if (id === 'earthpulse' && os.killEarthPulse) os.killEarthPulse();
+                if (id === 'wayback' && os.killWayback) os.killWayback();
+                if (id === 'winamp' && os.killWinamp) os.killWinamp();
                 if (id === 'filemanager' && os.killFileManager) os.killFileManager();
                 if (id === 'aetherlink' && window.AetherLinkAPI && typeof window.AetherLinkAPI.suspendUI === 'function') {
                     window.AetherLinkAPI.suspendUI();
@@ -1337,7 +1446,11 @@ class WindowManager {
                 if (os.companion && os.companion.observeEvent) {
                     os.companion.observeEvent('window_open', { id });
                 }
+                const activeSpace = Number(SystemState.settings.active_space || 1);
                 if (SystemState.windows[id].isOpen && !this._genieAnims[id]?.closing) {
+                    if (Number(SystemState.windows[id].space || 1) !== activeSpace && os.switchSpace) {
+                        os.switchSpace(Number(SystemState.windows[id].space || 1));
+                    }
                     if (SystemState.windows[id].isMinimized) {
                         this.restoreWindow(id);
                     } else {
@@ -1346,12 +1459,14 @@ class WindowManager {
                 } else {
                     SystemState.windows[id].isOpen = true;
                     SystemState.windows[id].isMinimized = false;
+                    SystemState.windows[id].space = activeSpace;
                     SystemState.activeZIndex++;
                     SystemState.windows[id].zIndex = SystemState.activeZIndex;
                     SystemState.save();
                     this.updateTopBarAppInfo();
                     this.renderDock();
                     this.createWindowDOM(SystemState.windows[id]);
+                    os.syncVirtualSpaces && os.syncVirtualSpaces();
                 }
             }
         }

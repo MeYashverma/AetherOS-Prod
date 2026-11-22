@@ -226,6 +226,22 @@
                         <button type="button" role="switch" aria-checked="${awakeOn}" onclick="os.toggleWakeLock()"
                             class="os-switch hover-target cursor-none" data-setting-switch="screen_awake_enabled" data-on="${awakeOn}"></button>
                     </div>
+
+                    <div class="settings-row" data-search-item="lock screen pin password privacy security">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="lock" class="w-3.5 h-3.5 text-violet-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Lock Screen &amp; Optional PIN</div>
+                                <div class="settings-row-desc">Press <kbd class="px-1 py-0.5 rounded bg-white/10 text-[10px] font-mono">⌘L</kbd> anytime to lock your workspace behind Liquid Glass.</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <input type="password" value="${esc(st.lock_pin || '')}" placeholder="Optional PIN"
+                                onchange="SystemState.settings.lock_pin = this.value.trim(); SystemState.save();"
+                                class="w-24 px-2 py-1 rounded-lg bg-black/45 border border-white/10 text-[11px] text-white font-mono outline-none focus:border-white/30">
+                            <button type="button" onclick="os.lockScreen && os.lockScreen()" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-[11px] font-medium text-white transition hover-target cursor-none">Lock Now</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-section-label">Modular Workspace</div>
@@ -257,7 +273,7 @@
         get appearance() {
             const st = s();
             const activeTheme = st.active_theme || 'midnight';
-            const wpMode = st.wallpaper_mode === 'gif' ? 'gif' : 'default';
+            const wpMode = ['default', 'custom', 'mesh', 'dynamic', 'gif'].includes(st.wallpaper_mode) ? st.wallpaper_mode : 'default';
             const cur = st.cursor_theme || 'aether';
             const isFxCursor = FX_CURSORS.some(([id]) => id === cur);
             const nyanStd = st.cursor_nyan_standard === 'on';
@@ -315,21 +331,58 @@
                         </div>
                     </div>
 
-                    <div class="settings-row" data-search-item="wallpaper background liquid glass dynamic gif">
+                    <div class="settings-row flex-wrap" data-search-item="wallpaper background liquid glass custom image mesh gradient dynamic sky gif">
                         <div class="settings-row-main">
-                            <div class="settings-row-icon"><i data-lucide="image" class="w-3.5 h-3.5"></i></div>
+                            <div class="settings-row-icon"><i data-lucide="image" class="w-3.5 h-3.5 text-sky-400"></i></div>
                             <div>
-                                <div class="settings-row-title">Desktop Wallpaper</div>
-                                <div class="settings-row-desc">Clean Liquid Glass gradient by default, or animated ambient GIF backdrop.</div>
+                                <div class="settings-row-title">Desktop Wallpaper Studio</div>
+                                <div class="settings-row-desc">Liquid Glass gradient, custom local/URL wallpaper, 3-color mesh, time-of-day sky, or GIF.</div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            ${wpMode === 'gif' ? `<button type="button" onclick="os.fetchWallpaperGif()" class="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] text-gray-200 transition hover-target cursor-none">Shuffle</button>` : ''}
-                            <div class="os-segmented">
-                                <button type="button" id="opt-wp-default" onclick="os.setOption('wallpaper_mode','default')" class="os-seg-btn ${wpMode === 'default' ? 'active' : ''} hover-target cursor-none">Clean Glass</button>
-                                <button type="button" id="opt-wp-gif" onclick="os.setOption('wallpaper_mode','gif')" class="os-seg-btn ${wpMode === 'gif' ? 'active' : ''} hover-target cursor-none">Animated GIF</button>
-                            </div>
+                        <div class="os-segmented flex-wrap">
+                            <button type="button" id="opt-wp-default" onclick="os.setOption('wallpaper_mode','default')" class="os-seg-btn ${wpMode === 'default' ? 'active' : ''} hover-target cursor-none">Glass</button>
+                            <button type="button" id="opt-wp-custom" onclick="os.setOption('wallpaper_mode','custom')" class="os-seg-btn ${wpMode === 'custom' ? 'active' : ''} hover-target cursor-none">Custom</button>
+                            <button type="button" id="opt-wp-mesh" onclick="os.setOption('wallpaper_mode','mesh')" class="os-seg-btn ${wpMode === 'mesh' ? 'active' : ''} hover-target cursor-none">Mesh</button>
+                            <button type="button" id="opt-wp-dynamic" onclick="os.setOption('wallpaper_mode','dynamic')" class="os-seg-btn ${wpMode === 'dynamic' ? 'active' : ''} hover-target cursor-none">Sky</button>
+                            <button type="button" id="opt-wp-gif" onclick="os.setOption('wallpaper_mode','gif')" class="os-seg-btn ${wpMode === 'gif' ? 'active' : ''} hover-target cursor-none">GIF</button>
                         </div>
+                        ${wpMode === 'custom' ? `
+                            <div class="w-full pt-2.5 mt-1 border-t border-white/[0.06] space-y-2.5">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" onclick="os.uploadCustomWallpaper()" class="px-3 py-1.5 rounded-lg bg-white/12 hover:bg-white/20 border border-white/20 text-[11px] font-medium text-white transition hover-target cursor-none flex items-center gap-1.5">
+                                        <i data-lucide="upload" class="w-3 h-3"></i> Upload Image
+                                    </button>
+                                    <input type="text" value="${esc(st.wallpaper_custom_url || '')}" placeholder="Or paste HTTPS image URL..."
+                                        onchange="SystemState.settings.wallpaper_custom_url = this.value.trim(); os.setOption('wallpaper_mode','custom');"
+                                        class="flex-1 min-w-[180px] px-2.5 py-1.5 rounded-lg bg-black/45 border border-white/10 text-[11px] text-white font-mono outline-none focus:border-white/30">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 text-[10.5px] text-gray-400">
+                                    <label class="flex items-center justify-between gap-2">
+                                        <span>Dim (${Number(st.wallpaper_dim ?? 25)}%)</span>
+                                        <input type="range" min="0" max="75" value="${Number(st.wallpaper_dim ?? 25)}" oninput="SystemState.settings.wallpaper_dim = Number(this.value); SystemState.save(); os.syncSystemPerformanceEngine();" class="w-24 accent-sky-400">
+                                    </label>
+                                    <label class="flex items-center justify-between gap-2">
+                                        <span>Blur (${Number(st.wallpaper_blur ?? 0)}px)</span>
+                                        <input type="range" min="0" max="20" value="${Number(st.wallpaper_blur ?? 0)}" oninput="SystemState.settings.wallpaper_blur = Number(this.value); SystemState.save(); os.syncSystemPerformanceEngine();" class="w-24 accent-sky-400">
+                                    </label>
+                                </div>
+                            </div>
+                        ` : wpMode === 'mesh' ? `
+                            <div class="w-full pt-2.5 mt-1 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 text-[11px] text-gray-300">
+                                    <span>Mesh Colors:</span>
+                                    <input type="color" value="${esc(st.wallpaper_mesh_c1 || '#4f46e5')}" onchange="SystemState.settings.wallpaper_mesh_c1 = this.value; os.setOption('wallpaper_mode','mesh');" class="w-7 h-7 rounded bg-transparent border border-white/15">
+                                    <input type="color" value="${esc(st.wallpaper_mesh_c2 || '#ec4899')}" onchange="SystemState.settings.wallpaper_mesh_c2 = this.value; os.setOption('wallpaper_mode','mesh');" class="w-7 h-7 rounded bg-transparent border border-white/15">
+                                    <input type="color" value="${esc(st.wallpaper_mesh_c3 || '#14b8a6')}" onchange="SystemState.settings.wallpaper_mesh_c3 = this.value; os.setOption('wallpaper_mode','mesh');" class="w-7 h-7 rounded bg-transparent border border-white/15">
+                                </div>
+                                <button type="button" onclick="os.randomizeMeshWallpaper()" class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 border border-white/12 text-[11px] text-white transition hover-target cursor-none">Randomize Mesh</button>
+                            </div>
+                        ` : wpMode === 'gif' ? `
+                            <div class="w-full pt-2 mt-1 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-400">
+                                <span>Ambient animated GIF wallpaper</span>
+                                <button type="button" onclick="os.fetchWallpaperGif()" class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 border border-white/12 text-white transition hover-target cursor-none">Shuffle GIF</button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
 
@@ -739,6 +792,34 @@
                             <div id="settings-mem-snapshot" class="text-gray-300 text-[11px]">Querying heap...</div>
                         </div>
                         <button type="button" onclick="os.sysmonCopyReport && os.sysmonCopyReport()" class="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-[11px] font-sans font-medium text-gray-200 transition hover-target cursor-none shrink-0">Copy Report</button>
+                    </div>
+                </div>
+
+                <div class="settings-section-label">Portability &amp; Offline App</div>
+                <div class="settings-card">
+                    <div class="settings-row" data-search-item="backup restore export import snapshot aether encrypted aes">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="archive" class="w-3.5 h-3.5 text-emerald-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Workspace Snapshot (.aether.json)</div>
+                                <div class="settings-row-desc">Export or restore settings, notes, Dev Studio tabs, and uploaded files (supports AES-256 encryption).</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" onclick="window.AetherBackup && AetherBackup.triggerImportUI()" class="px-2.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 border border-white/10 text-xs font-medium text-gray-200 transition hover-target cursor-none">Import</button>
+                            <button type="button" onclick="window.AetherBackup && AetherBackup.triggerExportUI()" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 text-xs font-medium text-emerald-200 transition hover-target cursor-none">Export</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-row" data-search-item="pwa install standalone desktop offline service worker">
+                        <div class="settings-row-main">
+                            <div class="settings-row-icon"><i data-lucide="monitor-down" class="w-3.5 h-3.5 text-sky-400"></i></div>
+                            <div>
+                                <div class="settings-row-title">Install Standalone Desktop App (PWA)</div>
+                                <div class="settings-row-desc">Run AetherOS in its own borderless OS window with offline shell caching.</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.AetherBackup && AetherBackup.installPWA()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-medium text-white transition hover-target cursor-none shrink-0">Install App</button>
                     </div>
                 </div>
 

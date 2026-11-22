@@ -32,11 +32,25 @@ window.extendOS({
                 (os._terminalIntervals||[]).forEach(clearInterval); os._terminalIntervals = [];
                 root.dataset.ready = '1';
                 const cliInput = document.getElementById('terminal-cli');
+                os._terminalHistory = os._terminalHistory || [];
+                os._terminalHistIdx = -1;
                 if (cliInput) {
                     cliInput.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter' && cliInput.value.trim() !== '') {
-                            os.terminalRunCommand(cliInput.value.trim());
+                            const val = cliInput.value.trim();
+                            os._terminalHistory.unshift(val);
+                            if (os._terminalHistory.length > 50) os._terminalHistory.pop();
+                            os._terminalHistIdx = -1;
+                            os.terminalRunCommand(val);
                             cliInput.value = '';
+                        } else if (e.key === 'ArrowUp' && os._terminalHistory.length) {
+                            e.preventDefault();
+                            os._terminalHistIdx = Math.min(os._terminalHistory.length - 1, os._terminalHistIdx + 1);
+                            cliInput.value = os._terminalHistory[os._terminalHistIdx] || '';
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            os._terminalHistIdx = Math.max(-1, os._terminalHistIdx - 1);
+                            cliInput.value = os._terminalHistIdx >= 0 ? (os._terminalHistory[os._terminalHistIdx] || '') : '';
                         }
                     });
                 }
@@ -83,24 +97,113 @@ window.extendOS({
             },
 
     terminalRunCommand: (cmd) => {
-                const c=String(cmd||'').trim().toLowerCase();
-                os.logTerminal('EXEC: '+cmd);
-                if(c==='clear'){ const f=document.getElementById('terminal-feed'); if(f)f.innerHTML=''; return; }
-                if(c==='help') os.logTerminal('CMDS: help, scan, weather, iss, apis, matrix, clear, open <app>');
-                else if(c==='scan') { os.packetVizRender && os.openWindow('packetviz'); os.logTerminal('Launching packet visual cortex...'); }
-                else if(c==='weather') os.openWindow('weather');
-                else if(c==='iss') os.openWindow('iss');
-                else if(c==='apis') os.openWindow('apistatus');
-                else if(c==='matrix') { os._terminalStats.entropy = 9.99; os.logTerminal('MATRIX INTENSITY BOOSTED // entropy maxed'); }
-                else if(c.startsWith('wiki ')) {
-                    const query = cmd.substring(5).trim();
+                const raw = String(cmd || '').trim();
+                const c = raw.toLowerCase();
+                os.logTerminal('EXEC: ' + raw);
+                if (c === 'clear') { const f = document.getElementById('terminal-feed'); if (f) f.innerHTML = ''; return; }
+                if (c === 'help') {
+                    os.logTerminal('SHELL: neofetch | ls [path] | cat <file> | ps | kill <app> | open <app>');
+                    os.logTerminal('WM:    space <1-3> | snap <left|right|max|split> | theme <name> | lock | backup');
+                    os.logTerminal('TOOLS: curl <url> | qr <url/text> | calc <expr> | date | uptime | clear');
+                } else if (c === 'neofetch' || c === 'sysinfo') {
+                    const reg = window.AETHER_MODULE_REGISTRY || {};
+                    const totalMods = Object.keys(reg).length;
+                    const enabledMods = Object.keys(reg).filter((id) => os.isModuleEnabled && os.isModuleEnabled(id)).length;
+                    const openWins = Object.values(SystemState.windows || {}).filter((w) => w.isOpen).length;
+                    const upSec = Math.floor(performance.now() / 1000);
+                    [
+                        '   /\\      AetherOS Liquid Glass v2.0',
+                        '  /  \\     --------------------------',
+                        ` / /\\ \\    Theme:   ${SystemState.settings.active_theme || 'midnight'} (${SystemState.settings.performance_mode || 'eco'})`,
+                        `/ ____ \\   Space:   Workspace 0${SystemState.settings.active_space || 1} (${openWins} open windows)`,
+                        `/_/    \\_\\ Modules: ${enabledMods}/${totalMods} active`,
+                        `           Host:    ${navigator.hardwareConcurrency || '?'} threads · ${navigator.deviceMemory ? navigator.deviceMemory + ' GB RAM' : 'Web Runtime'} · up ${Math.floor(upSec / 60)}m ${upSec % 60}s`
+                    ].forEach((line) => os.logTerminal(line));
+                } else if (c === 'ls' || c.startsWith('ls ')) {
+                    const targetPath = raw.slice(2).trim() || '/Archive';
+                    const items = os.fmChildrenForPath ? os.fmChildrenForPath(targetPath) : [];
+                    if (!items.length) os.logTerminal(`(empty or unknown path: ${targetPath})`);
+                    else os.logTerminal(items.map((n) => n.kind === 'folder' ? `[DIR] ${n.name}/` : `${n.name} (${n.size || n.kind})`).join('  ·  '));
+                } else if (c.startsWith('cat ')) {
+                    const q = raw.slice(4).trim().toLowerCase();
+                    const found = os.fmFlatten && os.fmFlatten().find((n) => n.kind !== 'folder' && (n.name || '').toLowerCase().includes(q));
+                    if (!found) os.logTerminal(`cat: no file matching "${q}"`);
+                    else String(found.content || '(binary / image asset)').split('\n').slice(0, 18).forEach((ln) => os.logTerminal(ln));
+                } else if (c === 'ps' || c === 'top') {
+                    const open = Object.values(SystemState.windows || {}).filter((w) => w.isOpen);
+                    if (!open.length) os.logTerminal('No active user windows.');
+                    else open.forEach((w) => os.logTerminal(`[${w.id}] Space:${w.space || 1}  ${Math.round(w.width)}x${Math.round(w.height)}  "${w.title}"`));
+                } else if (c.startsWith('kill ')) {
+                    const id = c.slice(5).trim();
+                    if (window.winManager && SystemState.windows[id]?.isOpen) { window.winManager.closeWindow(id); os.logTerminal(`Terminated window [${id}].`); }
+                    else os.logTerminal(`kill: window [${id}] is not open.`);
+                } else if (c.startsWith('space ')) {
+                    const n = Number(c.slice(6).trim());
+                    if (os.switchSpace && n >= 1 && n <= 3) { os.switchSpace(n); os.logTerminal(`Switched to Workspace 0${n}.`); }
+                    else os.logTerminal('Usage: space <1|2|3>');
+                } else if (c.startsWith('snap ')) {
+                    const mode = c.slice(5).trim();
+                    if (mode === 'split') { os.tileSideBySide && os.tileSideBySide(); os.logTerminal('Tiled top 2 windows 50/50.'); }
+                    else {
+                        const z = mode === 'max' ? 'maximize' : mode;
+                        os.snapActiveWindow && os.snapActiveWindow(z);
+                        os.logTerminal(`Snapped active window -> ${z}`);
+                    }
+                } else if (c.startsWith('theme ')) {
+                    const t = c.slice(6).trim();
+                    os.applyTheme && os.applyTheme(t);
+                    os.logTerminal(`Applied theme: ${t}`);
+                } else if (c.startsWith('calc ')) {
+                    const expr = raw.slice(5).trim();
+                    if (/^[0-9+\-*/%.()\s]+$/.test(expr)) {
+                        try { os.logTerminal('= ' + Function(`"use strict";return (${expr})`)()); } catch (e) { os.logTerminal('Math error'); }
+                    } else os.logTerminal('Usage: calc 480 * 1.18');
+                } else if (c === 'date') os.logTerminal(new Date().toString());
+                else if (c === 'whoami') os.logTerminal('operator@aetheros-workstation');
+                else if (c === 'uptime') { const s = Math.floor(performance.now() / 1000); os.logTerminal(`Session uptime: ${Math.floor(s / 60)}m ${s % 60}s`); }
+                else if (c === 'lock') { os.lockScreen && os.lockScreen(); }
+                else if (c === 'backup') { window.AetherBackup && AetherBackup.triggerExportUI(); }
+                else if (c === 'scan') { os.packetVizRender && os.openWindow('packetviz'); os.logTerminal('Launching packet visual cortex...'); }
+                else if (c === 'weather') os.openWindow('weather');
+                else if (c === 'iss') os.openWindow('iss');
+                else if (c === 'apis') os.openWindow('apistatus');
+                else if (c === 'matrix') { os._terminalStats.entropy = 9.99; os.logTerminal('MATRIX INTENSITY BOOSTED // entropy maxed'); }
+                else if (c.startsWith('wiki ')) {
+                    const query = raw.substring(5).trim();
                     os.openWindow('wikiboard');
                     setTimeout(() => {
                         if (os.wikiboard.engine) os.wikiboard.engine.searchAndSpawn(query);
                     }, 800);
                     os.logTerminal('Launching WikiBoard exploration for [' + query + ']...');
                 }
-                else if(c.startsWith('open ')) os.openWindow(c.replace('open ','').trim());
+                else if (c.startsWith('curl ')) {
+                    const url = raw.slice(5).trim();
+                    os.openWindow('apiclient');
+                    setTimeout(() => {
+                        const uEl = document.getElementById('apic-url');
+                        if (uEl) uEl.value = url;
+                        os.apiClientSend && os.apiClientSend();
+                    }, 40);
+                    os.logTerminal(`HTTP GET ${url} -> opened in HTTP API Client`);
+                }
+                else if (c.startsWith('qr ')) {
+                    const text = raw.slice(3).trim();
+                    os.openWindow('imagelab');
+                    setTimeout(() => {
+                        os.imageLabSetMode && os.imageLabSetMode('qr');
+                        const qEl = document.getElementById('qr-input-text');
+                        if (qEl) qEl.value = text;
+                        os.qrRender && os.qrRender();
+                    }, 40);
+                    os.logTerminal(`Generated offline ISO-18004 QR for "${text}"`);
+                }
+                else if (c.startsWith('open ')) {
+                    const appId = c.replace('open ', '').trim();
+                    if (SystemState.windows[appId]) {
+                        if (os.isModuleEnabled && !os.isModuleEnabled(appId)) os.setModuleEnabled(appId, true, { silent: true });
+                        os.openWindow(appId);
+                    } else os.logTerminal(`Unknown module "${appId}".`);
+                }
                 else os.logTerminal('Unknown opcode. Type help.');
             },
 

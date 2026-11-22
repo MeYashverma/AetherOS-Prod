@@ -966,3 +966,348 @@
                 padding-left: 14px;
             }
         }
+
+        /* ════════════════════════════════════════════════════════════════
+           OS UPGRADES: VIRTUAL SPACES, SNAP ZONES, MISSION CONTROL, LOCK & VFS
+           ════════════════════════════════════════════════════════════════ */
+        .space-pill-btn {
+            position: relative;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.42);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.16s ease, color 0.16s ease;
+        }
+        .space-pill-btn:hover {
+            color: rgba(255, 255, 255, 0.88);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .space-pill-btn.active {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        }
+        .space-pill-btn.has-windows::after,
+        .space-pill-btn[data-has-wins="true"]::after {
+            content: '';
+            position: absolute;
+            bottom: 1.5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.85);
+        }
+
+        #window-snap-preview {
+            display: none;
+            position: fixed;
+            z-index: 9400;
+            pointer-events: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(99, 102, 241, 0.14));
+            border: 1.5px solid rgba(125, 211, 252, 0.48);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: left 0.14s cubic-bezier(0.2, 0.9, 0.3, 1),
+                        top 0.14s cubic-bezier(0.2, 0.9, 0.3, 1),
+                        width 0.14s cubic-bezier(0.2, 0.9, 0.3, 1),
+                        height 0.14s cubic-bezier(0.2, 0.9, 0.3, 1),
+                        opacity 0.14s ease;
+        }
+
+        #mission-control-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9600;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 56px 24px 32px;
+            background: rgba(5, 7, 14, 0.78);
+            backdrop-filter: blur(26px) saturate(140%);
+            -webkit-backdrop-filter: blur(26px) saturate(140%);
+            overflow-y: auto;
+        }
+        .mc-space-btn {
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.65);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.16s ease;
+        }
+        .mc-space-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .mc-space-btn.active {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+        .mc-card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+        .mc-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.075);
+            border-color: rgba(255, 255, 255, 0.24);
+        }
+
+        #lock-screen-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9850;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse 75% 60% at 50% 35%, rgba(56, 189, 248, 0.14), rgba(4, 6, 14, 0.88) 70%);
+            backdrop-filter: blur(32px) saturate(150%);
+            -webkit-backdrop-filter: blur(32px) saturate(150%);
+        }
+        @keyframes lockShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-5px); }
+        }
+        .lock-shake {
+            animation: lockShake 0.34s ease;
+        }
+
+        #vfs-drop-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9750;
+            align-items: center;
+            justify-content: center;
+            background: rgba(4, 8, 16, 0.68);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            pointer-events: none;
+        }
+        #vfs-drop-overlay.active {
+            display: flex;
+        }
+        .vfs-drop-card {
+            padding: 28px 36px;
+            border-radius: 22px;
+            text-align: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1.5px dashed rgba(52, 211, 153, 0.55);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+        }
+
+        #calendar-popover {
+            display: none;
+            position: fixed;
+            top: 44px;
+            right: 10px;
+            width: 310px;
+            max-width: calc(100vw - 20px);
+            padding: 14px;
+            border-radius: 18px;
+            z-index: 9500;
+            background: rgba(10, 12, 20, 0.86);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(28px) saturate(160%);
+            -webkit-backdrop-filter: blur(28px) saturate(160%);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        #desktop-context-menu {
+            display: none;
+            position: fixed;
+            width: 238px;
+            padding: 6px;
+            border-radius: 15px;
+            z-index: 9550;
+            background: rgba(10, 12, 20, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(26px) saturate(155%);
+            -webkit-backdrop-filter: blur(26px) saturate(155%);
+            box-shadow: 0 20px 52px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
+
+        /* Window Header Quick Snap & Pin Controls + Multi-Edge Resizing */
+        .win-hdr-action {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.42);
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .win-hdr-action:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+        .win-btn-pin.pinned {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.16);
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+        .window-pinned {
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(56, 189, 248, 0.42) !important;
+        }
+        .win-resize-edge {
+            position: absolute;
+            z-index: 25;
+        }
+        .win-resize-e { top: 36px; right: 0; width: 6px; bottom: 14px; cursor: ew-resize; }
+        .win-resize-w { top: 36px; left: 0; width: 6px; bottom: 14px; cursor: ew-resize; }
+        .win-resize-s { left: 14px; right: 14px; bottom: 0; height: 6px; cursor: ns-resize; }
+        .win-resize-sw { left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; }
+
+        #app-switcher-hud {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9850;
+            align-items: center;
+            justify-content: center;
+            background: rgba(4, 6, 12, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        #app-switcher-hud.active {
+            display: flex;
+        }
+        .app-switcher-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            max-width: 90vw;
+            overflow-x: auto;
+            border-radius: 22px;
+            background: rgba(12, 15, 24, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        }
+        .app-switcher-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 92px;
+            padding: 12px 10px;
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.65);
+            border: 1px solid transparent;
+            transition: all 0.14s ease;
+        }
+        .app-switcher-item.selected,
+        .app-switcher-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.11);
+            border-color: rgba(255, 255, 255, 0.24);
+            transform: translateY(-2px);
+        }
+        .app-switcher-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+        .app-switcher-lbl {
+            font-size: 10.5px;
+            font-weight: 500;
+            max-width: 84px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Native macOS Calculator Keypad & Apple Boot Splash */
+        .calc-btn {
+            height: 54px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+            font-weight: 500;
+            transition: filter 0.12s ease, transform 0.08s ease;
+        }
+        .calc-btn:active { transform: scale(0.94); filter: brightness(1.28); }
+        .calc-btn-fn { background: #a5a5a5; color: #000000; font-size: 18px; }
+        .calc-btn-num { background: #333336; color: #ffffff; }
+        .calc-btn-op { background: #ff9f0a; color: #ffffff; font-size: 24px; }
+        .calc-btn-op.armed { background: #ffffff; color: #ff9f0a; }
+        .calc-btn-sci {
+            border-radius: 9999px;
+            background: #242428;
+            color: #e5e7eb;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s ease;
+        }
+        .calc-btn-sci:hover { background: #34343a; }
+
+        #apple-boot-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 34px;
+            transition: opacity 0.45s ease;
+        }
+        .apple-boot-bar-track {
+            width: 176px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+        }
+        .apple-boot-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: #ffffff;
+            animation: apple-boot-load 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes apple-boot-load {
+            0% { width: 8%; }
+            100% { width: 100%; }
+        }
+
+
