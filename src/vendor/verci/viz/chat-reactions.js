@@ -1,6 +1,5 @@
 // Decorative reactions, not lyric replacements or singer metadata.
-import { attachAutomaticSticker } from '../providers/automatic-stickers.js?v=stickersapi-29';
-import { moodMedia, renderMediaImage } from '../providers/stickersapi.js';
+import { attachAutomaticSticker } from '../providers/automatic-stickers.js?v=stickersapi-31';
 import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
 export function lyricReaction(text,index,seed='') {
   const info=analyzeLyric(text);if(!info)return null;
@@ -46,7 +45,7 @@ export function addChatReaction(viz, bubble, text, index) {
   }
   const reaction=viz.reactionPlan?.[index] ?? (viz.ctx.lyrics?.lines ? null : lyricReaction(text,index,viz.ctx.song.title));
   if(!reaction) return;
-  // Keep the sticker/emote inside its lyric bubble, above the message time.
+  // Keep the sticker inside its lyric bubble, above the message time.
   const insertMedia=el=>{const time=bubble.querySelector(':scope > time');if(time)time.before(el);else bubble.append(el);};
   if(options.emojis?.()!==false && reaction.emoji) {
     const emoji=document.createElement('span'); emoji.className='chat-emoji';
@@ -63,25 +62,10 @@ export function addChatReaction(viz, bubble, text, index) {
   }
   if(!gifsEnabled || !reaction.gif) return;
   const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; insertMedia(slot);
-  if(['auto','stickerapi'].includes(options.stickerSource?.() || '')){
-    const controller=new AbortController(),job={element:slot,controller};
-    viz.stickerJobs ||= new Set();viz.stickerJobs.add(job);
-    moodMedia('emote',reaction.mood,hash(`${viz.ctx.song.title}:${index}`),reduced).then(async item=>{
-      if(!item||controller.signal.aborted||!slot.isConnected)return false;
-      if(await renderMediaImage(slot,item,controller.signal)){
-        if(!controller.signal.aborted&&slot.isConnected){slot.hidden=false;return true;}
-      }
-      return false;
-    }).then(loaded=>{if(!loaded&&!controller.signal.aborted&&slot.isConnected)attachLegacyGif();})
-      .catch(()=>{if(!controller.signal.aborted&&slot.isConnected)attachLegacyGif();})
-      .finally(()=>viz.stickerJobs?.delete(job));
-    return;
-  }
   attachLegacyGif();
   function attachLegacyGif(){
-    // Initial bubble construction happens before insertion into the chat DOM.
-    // Async fallback callers already verify isConnected; do not skip explicit
-    // Discord/Sticker.ly/local modes here or their legacy GIFs disappear.
+    // Initial bubble construction happens before insertion into the chat DOM;
+    // the fetch resolves after the bubble is inserted, or safely skips it.
     viz.reactionAbort ||= new AbortController();
     // Fixed reaction category only: no title, artist, lyric text or API key leaves the app.
     // Deduplicate concurrent requests when TTML reconstructs bubbles during seeks.

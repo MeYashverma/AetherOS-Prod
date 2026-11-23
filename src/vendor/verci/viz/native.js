@@ -5,13 +5,13 @@ import { splitChatAsides } from './chat-asides.js';
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
 // A cached provider module would still inject the old sticker credit.
-import { cleanupStickerJobs } from '../providers/automatic-stickers.js?v=stickersapi-29';
-import { cleanMedia, mediaURL, renderMediaImage } from '../providers/stickersapi.js';
+import { cleanupStickerJobs } from '../providers/automatic-stickers.js?v=stickersapi-31';
+import { cleanMedia, mediaURL, renderMediaImage } from '../providers/stickersapi.js?v=stickersapi-31';
 import { ChatInteractions } from './chat-interactions.js';
 import { listenerReplyFor, listenerTiming } from './listener-replies.js';
 import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
-import { addChatReaction } from './chat-reactions.js?v=stickersapi-29';
+import { addChatReaction } from './chat-reactions.js?v=stickersapi-31';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */

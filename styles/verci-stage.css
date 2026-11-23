@@ -343,10 +343,23 @@
 .verci-stage .nd-wa .chat-gif img{display:block;width:100%;max-height:30cqw;object-fit:cover}
 @media(prefers-reduced-motion:reduce){.verci-stage .nd-wa .chat-gif{display:none!important}}
 
+/* Automatic stickers in every non-chat lyric style, including Classic Scroll.
+   Keep them outside the visualizer's DOM so a scene rebuild/seek does not
+   change lyric geometry or intercept lyric controls. The chat uses its bubble. */
+.verci-stage .lyric-api-reactions{position:absolute;top:clamp(10px,2cqh,24px);right:clamp(10px,2cqw,24px);z-index:6;display:flex;align-items:flex-start;pointer-events:none;filter:drop-shadow(0 5px 12px #000b)}
+.verci-stage .lyric-api-reactions[hidden],.verci-stage .lyric-api-reactions [hidden]{display:none!important}
+.verci-stage .lyric-api-sticker{width:clamp(46px,10cqw,82px);aspect-ratio:1;display:grid;place-items:center;position:relative}
+.verci-stage .lyric-api-fallback{grid-area:1/1;font:clamp(30px,6cqw,52px)/1 "Apple Color Emoji","Segoe UI Emoji",system-ui}
+.verci-stage .lyric-api-image{display:block;grid-area:1/1;width:100%;height:100%;object-fit:contain}
+/* Hide automatic emote markup from older cached renderers. Manual picker and
+   local media bubbles use separate classes and remain available. */
+.verci-stage .lyric-api-emote,.verci-stage .nd-wa .chat-sticker .chat-emote,.verci-stage .nd-wa .chat-gif .chat-stickersapi-image{display:none!important}
+.verci-stage .nd-wa .chat-gif:has(.chat-stickersapi-image){display:none!important}
+
 /* Emoji-only fallback. Cached renderers can still insert an old caption or
    provider credit, so hide both even before their module finishes updating. */
-.verci-stage .nd-wa .chat-sticker{width:42cqw;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:1cqw;padding:3cqw 2cqw;margin:2cqw auto 1cqw;transform:rotate(-5deg);filter:drop-shadow(0 1cqw 1cqw #0005)}
-.verci-stage .nd-wa .chat-sticker>span{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:19cqw;line-height:1.2;filter:drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff)}
+.verci-stage .nd-wa .chat-sticker{width:42cqw;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:1cqw;padding:3cqw 2cqw;margin:2cqw auto 1cqw;transform:rotate(-5deg);filter:drop-shadow(0 1cqw 1cqw #0005);position:relative}
+.verci-stage .nd-wa .chat-sticker>span:first-child{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:19cqw;line-height:1.2;filter:drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff)}
 .verci-stage .nd-wa .chat-sticker>strong,.verci-stage .nd-wa .chat-sticker>.chat-sticker-credit{display:none!important}
 
 /* Short lines keep the same typography and bubble shape as every other lyric. */
@@ -389,11 +402,9 @@
 
 /* StickersAPI previews and Sticker.ly PNG/WebP assets retain their cutout silhouette. */
 .verci-stage .nd-wa .chat-sticker.has-stickersapi-image,.verci-stage .nd-wa .chat-sticker.has-stickerly-image{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
-.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span{display:none}
+.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span:first-child{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image[hidden]{display:none}
-.verci-stage .nd-wa .chat-gif .chat-stickersapi-image{display:block;max-width:100%;max-height:35cqw;object-fit:contain}
-.verci-stage .nd-wa .chat-gif .chat-stickersapi-image[hidden]{display:none}
 .verci-stage .nd-wa footer .chat-media-launch{width:8cqw;height:9cqw;flex:none;display:grid;place-items:center;border:0;padding:0;background:none;color:#409cff;cursor:pointer;border-radius:50%}
 .verci-stage .nd-wa footer .chat-media-launch:hover{background:#ffffff16}
 .verci-stage .nd-wa footer .chat-media-launch:focus-visible{outline:.6cqw solid #78d9bb;outline-offset:.4cqw}
@@ -403,13 +414,13 @@
 .verci-stage .nd-wa .chat-local-media-preview span{font-size:3cqw;color:#c5d9d4;padding:2cqw;text-align:center}
 .verci-stage .nd-wa .chat-local-media-image{display:block;max-width:100%;width:auto;max-height:42cqw;object-fit:contain;border-radius:1.5cqw}
 .verci-stage .nd-wa .chat-local-media-image[hidden]{display:none}
-.verci-stage .nd-wa .chat-sticker.has-stickerly-image>span{display:none}
+.verci-stage .nd-wa .chat-sticker.has-stickerly-image>span:first-child{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image[hidden]{display:none}
 
 /* Discord's official catalogue includes vector Lottie animations and raster stickers. */
 .verci-stage .nd-wa .chat-sticker.has-discord-sticker{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
-.verci-stage .nd-wa .chat-sticker.has-discord-sticker>span{display:none}
+.verci-stage .nd-wa .chat-sticker.has-discord-sticker>span:first-child{display:none}
 .verci-stage .nd-wa .chat-discord-media{width:100%;max-width:42cqw}
 .verci-stage .nd-wa .chat-discord-media[hidden]{display:none}
 .verci-stage .nd-wa .chat-discord-image{display:block;width:100%;max-height:42cqw;object-fit:contain}

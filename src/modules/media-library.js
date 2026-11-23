@@ -1,6 +1,6 @@
 // One public, keyless media picker for Finder and the Music Theater chat.
 // Only validated StickersAPI IDs (never raw third-party image URLs) are saved.
-import { cleanMedia, mediaURL } from '../vendor/verci/providers/stickersapi.js';
+import { cleanMedia, mediaURL } from '../vendor/verci/providers/stickersapi.js?v=stickersapi-31';
 import { openMediaPicker } from '../vendor/verci/viz/stickersapi-picker.js';
 
 const keyFor = kind => kind === 'pfp' ? 'chat_media_avatar' : kind === 'banner' ? 'chat_media_banner' : null;

@@ -1,10 +1,11 @@
 import { resolveSingerNames } from '../vendor/verci/singer-names.js';
 // AetherOS adapter for the audited Verci-2 renderers and real playback engines.
 import { discordCatalogue, renderDiscordSticker } from '../vendor/verci/providers/discord-stickers.js';
-import { listMedia, renderMediaImage } from '../vendor/verci/providers/stickersapi.js';
+import { listMedia, renderMediaImage } from '../vendor/verci/providers/stickersapi.js?v=stickersapi-31';
 import { STICKER_MOODS, customStickers, cleanSticker } from '../vendor/verci/providers/stickerly.js';
 import { REACTION_DICTIONARY_STATS } from '../vendor/verci/viz/reaction-dictionary.js';
-import { STYLES } from '../vendor/verci/viz/index.js?v=stickersapi-29';
+import { STYLES } from '../vendor/verci/viz/index.js?v=stickersapi-31';
+import { LyricMedia } from '../vendor/verci/viz/lyric-media.js?v=stickersapi-31';
 import { frameState, esc } from '../vendor/verci/viz/core.js';
 import { parseTTML } from '../vendor/verci/ttml.js';
 import { findCommunityTTML } from '../vendor/verci/providers/ttml-community.js';
@@ -17,7 +18,7 @@ import { lrclibFind, youtubeId } from '../vendor/verci/services.js';
 const os = window.os;
 // SystemState.load replaces the settings object during boot/restore. Never retain that stale object.
 const settings = new Proxy({}, { get: (_, k) => window.SystemState.settings[k], set: (_, k, v) => { window.SystemState.settings[k] = v; return true; } });
-const state = { song: null, lyrics: null, source: '', status: 'Search your music, follow Last.fm, or open a full podcast episode.', style: settings.verci_style || 'ship', offset: 0, generation: 0, results: [], recent: [], candidates: [], candidate: 0, view: 'music', follow: false, raf: 0, viz: null, abort: null };
+const state = { song: null, lyrics: null, source: '', status: 'Search your music, follow Last.fm, or open a full podcast episode.', style: settings.verci_style || 'ship', offset: 0, generation: 0, results: [], recent: [], candidates: [], candidate: 0, view: 'music', follow: false, raf: 0, viz: null, lyricMedia: null, abort: null };
 const $ = id => document.getElementById(id);
 const fmt = n => `${Math.floor((n || 0) / 60)}:${String(Math.floor((n || 0) % 60)).padStart(2, '0')}`;
 const host = document.createElement('div');
@@ -43,7 +44,11 @@ const videoResize = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(s
 window.addEventListener('resize', syncVideoDock);
 document.addEventListener('scroll', syncVideoDock, true);
 function status(text) { state.status = text; if ($('music-status')) $('music-status').textContent = text; }
-function stopStage() { cancelAnimationFrame(state.raf); state.raf = 0; state.viz?.destroy(); state.viz = null; }
+function stopStage() {
+  cancelAnimationFrame(state.raf); state.raf = 0;
+  state.lyricMedia?.destroy(); state.lyricMedia = null;
+  state.viz?.destroy(); state.viz = null;
+}
 function visible() { const w = window.SystemState.windows.media; return w?.isOpen && !w.isMinimized && !document.hidden; }
 function mountStage() {
   stopStage();
@@ -58,14 +63,33 @@ function mountStage() {
     const resolved = resolveSingerNames(L, state.song, saved);
     L.speakers = resolved.names; L.inferredSpeakers = resolved.inferred;
   }
+  const opts = {
+    hometown: () => true, emojis: () => settings.chat_emojis !== false,
+    gifs: () => settings.chat_gifs !== false, stickers: () => settings.chat_stickers !== false,
+    lyricMediaEnabled: () => settings.lyrics_api_media !== false,
+    stickerSource: () => settings.chat_sticker_source || 'auto',
+    customStickers: () => settings.chat_stickerly_custom || [],
+    avatar: () => settings.chat_media_avatar, banner: () => settings.chat_media_banner,
+    density: () => settings.chat_reaction_density || 'balanced',
+    listenerReplies: () => settings.chat_listener_replies !== false,
+    textReactions: () => settings.chat_text_reactions !== false
+  };
   if (state.style === 'scroll') {
     const scroll = document.createElement('div'); scroll.className = 'music-scroll'; root.append(scroll);
     L.lines.forEach((l, i) => { const row = document.createElement('button'); row.type = 'button'; row.textContent = l.text || '•••'; row.onclick = () => player.seek(Math.max(0, l.t - state.offset)); row.dataset.line = i; scroll.append(row); });
   } else {
     const style = STYLES.find(s => s.id === state.style) || STYLES[0];
-    try { state.viz = new style.make(root, { song: state.song, lyrics: L, theme: { hi: '#fff', sec: '#ffffff57', scale: 1 }, duration: () => player.duration, seek: t => player.seek(Math.max(0,t-state.offset)), opts: { hometown: () => true, emojis: () => settings.chat_emojis !== false, gifs: () => settings.chat_gifs !== false, stickers: () => settings.chat_stickers !== false, stickerSource: () => settings.chat_sticker_source || 'auto', customStickers: () => settings.chat_stickerly_custom || [], avatar: () => settings.chat_media_avatar, banner: () => settings.chat_media_banner, density: () => settings.chat_reaction_density || 'balanced', listenerReplies: () => settings.chat_listener_replies !== false, textReactions: () => settings.chat_text_reactions !== false } }).mount(); }
+    try { state.viz = new style.make(root, { song: state.song, lyrics: L, theme: { hi: '#fff', sec: '#ffffff57', scale: 1 }, duration: () => player.duration, seek: t => player.seek(Math.max(0,t-state.offset)), opts }).mount(); }
     catch (e) { status(`Scene unavailable: ${e.message}. Try Classic Scroll.`); return; }
   }
+  state.lyricMedia = new LyricMedia(root, { song: state.song, lyrics: L, style: state.style, opts });
+  if (state.style === 'native-messages' && state.lyricMedia.enabled && state.viz) {
+    // Share the exact sparse cue plan with chat, including its GIF preference.
+    state.viz.reactionPlan = state.lyricMedia.plan;
+    state.viz.reactionDensity = state.lyricMedia.density;
+    state.viz.reactionMedia = `${opts.stickers()}:${opts.gifs() && !state.lyricMedia.reduced}`;
+  }
+  state.lyricMedia.update(frameState(L, player.time + state.offset)); // start warming before the first frame
   let previous = performance.now(), active = -2;
   const tick = now => {
     state.raf = 0;
@@ -73,6 +97,7 @@ function mountStage() {
     const t = player.time + state.offset, S = frameState(L, t);
     try {
       state.viz?.frame(S, Math.min(0.05, (now - previous) / 1000));
+      state.lyricMedia?.update(S);
       if (state.style === 'scroll' && active !== S.idx) {
         root.querySelectorAll('[data-line]').forEach(r => r.classList.toggle('active', +r.dataset.line === S.idx));
         const row = root.querySelector(`[data-line="${S.idx}"]`);
@@ -116,9 +141,9 @@ function render() {
     <div class="music-toolbar"><form id="music-search-form"><input id="music-query" aria-label="Search music or podcasts" placeholder="${state.view === 'podcasts' ? 'Search podcast episodes…' : 'Song, artist, or YouTube link…'}" required><button>Search</button></form><button id="music-follow" aria-pressed="${state.follow}">${state.follow ? 'Following Last.fm' : 'Follow Last.fm'}</button></div>
     <p id="music-status" role="status">${esc(state.status)}</p>
     ${state.view === 'stats' ? '<div id="music-stats"></div>' : `<div class="music-body"><aside><div id="music-video-slot" class="music-video-slot" hidden></div><div class="music-now"><small>NOW PLAYING ${s?.isLoved ? '♥' : ''}</small><h2>${esc(s?.title || 'Find your next song')}</h2><p>${esc(s?.artist || 'Full tracks, never preview clips.')}</p></div><div id="music-results">${rows(state.results, 'result')}</div><h3>Recent listening</h3><div id="music-recent">${rows([...state.recent, ...window.SystemState.history].slice(0, 30), 'recent')}</div></aside>
-    <main><div class="music-scene-tools"><select id="music-style" aria-label="Lyrics style"><option value="scroll">Classic Scroll</option>${STYLES.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join('')}</select><span id="music-sync">${state.lyrics ? state.lyrics.estimated ? 'Estimated lines & words' : state.lyrics.format === 'TTML' ? `TTML · ${state.lyrics.speakers.length ? state.lyrics.speakers.length + ' voices' : 'no singer tags'} · ${state.lyrics.source || 'imported'} · ${state.lyrics.wordLevel ? 'word sync' : 'estimated words'}` : state.lyrics.wordLevel ? 'Word-synced LRC' : 'Line-synced · estimated words' : 'No lyrics'}</span><button type="button" id="music-media-picker" title="Browse StickersAPI media" aria-label="Browse stickers, emotes and profiles">✦ Media</button><button id="music-fullscreen" title="Fullscreen lyrics">⛶</button></div><div id="music-stage" class="verci-stage"></div><div class="music-lyrics-tools"><button id="music-earlier">−0.5s</button><span id="music-offset">${state.offset.toFixed(1)}s</span><button id="music-later">+0.5s</button><label>Import lyrics<input id="music-lrc" type="file" accept=".lrc,.txt,.ttml,.xml" hidden></label></div></main></div>`}
+    <main><div class="music-scene-tools"><select id="music-style" aria-label="Lyrics style"><option value="scroll">Classic Scroll</option>${STYLES.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join('')}</select><span id="music-sync">${state.lyrics ? state.lyrics.estimated ? 'Estimated lines & words' : state.lyrics.format === 'TTML' ? `TTML · ${state.lyrics.speakers.length ? state.lyrics.speakers.length + ' voices' : 'no singer tags'} · ${state.lyrics.source || 'imported'} · ${state.lyrics.wordLevel ? 'word sync' : 'estimated words'}` : state.lyrics.wordLevel ? 'Word-synced LRC' : 'Line-synced · estimated words' : 'No lyrics'}</span><label class="music-lyric-api-toggle" title="Show automatic StickersAPI stickers during lyrics (all styles)"><input id="music-lyric-media" type="checkbox" ${settings.lyrics_api_media !== false ? 'checked' : ''}> StickersAPI lyrics</label><button type="button" id="music-media-picker" title="Browse StickersAPI media" aria-label="Browse stickers, emotes and profiles">✦ Media</button><button id="music-fullscreen" title="Fullscreen lyrics">⛶</button></div><div id="music-stage" class="verci-stage"></div><div class="music-lyrics-tools"><button id="music-earlier">−0.5s</button><span id="music-offset">${state.offset.toFixed(1)}s</span><button id="music-later">+0.5s</button><label>Import lyrics<input id="music-lrc" type="file" accept=".lrc,.txt,.ttml,.xml" hidden></label></div></main></div>`}
     <footer><button id="music-play">${player.playing ? 'Pause' : 'Play'}</button><span id="music-clock">${fmt(player.time)} / ${fmt(player.duration)}</span><input id="music-seek" type="range" min="0" max="${player.duration || 1}" value="${player.time}" step="0.1" aria-label="Playback position"><label>Volume <input id="music-volume" type="range" min="0" max="1" step="0.01" value="${player.volume}" aria-label="Volume"></label></footer>
-    <details><summary>Source & connection</summary><div id="music-singer-names"></div><div class="music-chat-options"><label><input id="music-chat-emojis" type="checkbox" ${settings.chat_emojis !== false ? 'checked' : ''}> Automatic message reactions (device emoji style)</label><label><input id="music-chat-gifs" type="checkbox" ${settings.chat_gifs !== false ? 'checked' : ''}> Contextual emotes / GIFs · automatic fallback</label><label><input id="music-chat-stickers" type="checkbox" ${settings.chat_stickers !== false ? 'checked' : ''}> Sticker reactions in lyric bubbles (StickersAPI first)</label><label><input id="music-chat-text" type="checkbox" ${settings.chat_text_reactions !== false ? 'checked' : ''}> Text / emoticon reactions</label><label><input id="music-chat-listener" type="checkbox" ${settings.chat_listener_replies !== false ? 'checked' : ''}> Fictional listener replies · not lyrics</label><label>Sticker source <select id="music-sticker-source" aria-label="Sticker source"><option value="auto">Automatic · StickersAPI → Discord → Sticker.ly → local</option><option value="stickerapi">StickersAPI + existing fallbacks</option><option value="discord">Discord API + local fallback</option><option value="stickerly">Sticker.ly + local fallback</option><option value="local">Local stickers (GIF toggle separate)</option></select></label><label>Reaction level <select id="music-chat-density" aria-label="Chat reaction level"><option value="subtle">Subtle</option><option value="balanced">Balanced</option><option value="expressive">Expressive</option></select></label><small class="music-reaction-stats">${REACTION_DICTIONARY_STATS.moods} moods · ${REACTION_DICTIONARY_STATS.phrases} lyric cues · ${REACTION_DICTIONARY_STATS.emoji} emoji · ${REACTION_DICTIONARY_STATS.stickerCaptions} sticker captions · on-device matching</small></div><div class="music-stickerly-library"><button type="button" id="music-stickersapi-test">Test StickersAPI</button><span id="music-stickersapi-status" role="status" aria-live="polite"></span><button type="button" id="music-sticker-api-test">Test Discord sticker API</button><span id="music-sticker-api-status" role="status" aria-live="polite"></span><p>Automatic mode tries StickersAPI mood-matched stickers and emotes, then Discord, Sticker.ly and the built-in local reactions. GIF reactions retain their previous fallback. Only mood labels—not lyrics, song titles or private replies—are searched. No API key is needed. Choose a public Telegram set, profile picture or banner in the media library below.</p><button type="button" id="music-open-media-library">Browse stickers, emotes, Telegram sets &amp; profile media</button><p>Sticker.ly: featured Hearts pack by Killthislove. In Sticker.ly-only mode, other moods use local stickers unless you add matching images. <a href="https://sticker.ly/" target="_blank" rel="noopener noreferrer">Browse Sticker.ly ↗</a></p><form id="music-stickerly-add"><input id="music-stickerly-url" type="url" placeholder="https://stickerly.pstatic.net/sticker_pack/…/image.png" aria-label="Direct Sticker.ly image URL" required><input id="music-stickerly-name" placeholder="Sticker name / creator" aria-label="Sticker name or creator" maxlength="80"><select id="music-stickerly-mood" aria-label="Sticker lyric mood">${STICKER_MOODS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select><button>Add sticker</button></form><p>Use a direct image URL, not a pack/share page. Add only content you have permission to use. Images load from Sticker.ly's CDN; lyrics are not sent.</p><div id="music-stickerly-saved">${customStickers(settings.chat_stickerly_custom).map((s,i)=>`<div><span>${esc(s.name)} · ${esc(s.mood)}</span><button type="button" data-remove-sticker="${i}" aria-label="Remove sticker ${esc(s.name)}">Remove</button></div>`).join('')}</div></div><p>Playback: ${esc(state.source || 'none')}. Public search services and embeds may be unavailable or blocked. No preview is substituted.</p><form id="music-override"><input id="music-link" placeholder="Paste a YouTube URL / video ID" aria-label="YouTube playback override" required><button>Play full video</button></form><form id="music-lastfm"><input id="music-lfm-user" placeholder="Last.fm username" aria-label="Last.fm username" value="${esc(settings.api_lastfm_user || '')}" required><input id="music-lfm-key" type="password" placeholder="Last.fm API key (Settings → APIs)" aria-label="Last.fm API key"><button>Save Last.fm</button></form><p>Last.fm supplies track identity, not audio or an external playback clock. Following starts the matching recording from its beginning; lyric timing follows this local player. Browser autoplay may require pressing Play.</p></details>
+    <details><summary>Source & connection</summary><div id="music-singer-names"></div><div class="music-chat-options"><label><input id="music-chat-emojis" type="checkbox" ${settings.chat_emojis !== false ? 'checked' : ''}> Automatic message reactions (device emoji style)</label><label><input id="music-chat-gifs" type="checkbox" ${settings.chat_gifs !== false ? 'checked' : ''}> Contextual GIF reactions (automatic)</label><label><input id="music-chat-stickers" type="checkbox" ${settings.chat_stickers !== false ? 'checked' : ''}> Sticker reactions in chat lyric bubbles</label><label><input id="music-chat-text" type="checkbox" ${settings.chat_text_reactions !== false ? 'checked' : ''}> Text / emoticon reactions</label><label><input id="music-chat-listener" type="checkbox" ${settings.chat_listener_replies !== false ? 'checked' : ''}> Fictional listener replies · not lyrics</label><label>Sticker source <select id="music-sticker-source" aria-label="Sticker source"><option value="auto">Automatic · StickersAPI → Discord → Sticker.ly → local</option><option value="stickerapi">StickersAPI + existing fallbacks</option><option value="discord">Discord API + local fallback</option><option value="stickerly">Sticker.ly + local fallback</option><option value="local">Local stickers (GIF toggle separate)</option></select></label><label>Reaction level <select id="music-chat-density" aria-label="Chat reaction level"><option value="subtle">Subtle</option><option value="balanced">Balanced</option><option value="expressive">Expressive</option></select></label><small class="music-reaction-stats">${REACTION_DICTIONARY_STATS.moods} moods · ${REACTION_DICTIONARY_STATS.phrases} lyric cues · ${REACTION_DICTIONARY_STATS.emoji} emoji · ${REACTION_DICTIONARY_STATS.stickerCaptions} sticker captions · on-device matching</small></div><div class="music-stickerly-library"><button type="button" id="music-stickersapi-test">Test StickersAPI stickers &amp; emotes</button><span id="music-stickersapi-status" role="status" aria-live="polite"></span><button type="button" id="music-sticker-api-test">Test Discord sticker API</button><span id="music-sticker-api-status" role="status" aria-live="polite"></span><p>Turn on <b>StickersAPI lyrics</b> above to show mood-matched stickers in every lyric style. Nearby sticker previews preload while lyrics play; chat stickers stay inside their lyric bubbles without captions. No emotes are added automatically: browse and select them in the manual media library or picker instead. Turning the switch off stops automatic StickersAPI searches, not manual browsing or existing Discord/Sticker.ly/local sticker and GIF fallbacks. The chat sticker/GIF switches and source choice still apply in chat. Only mood labels—not lyrics, song titles or private replies—are searched automatically. No API key is needed. The connection test checks both sticker and manual emote previews.</p><button type="button" id="music-open-media-library">Browse stickers, emotes, Telegram sets &amp; profile media</button><p>Sticker.ly: featured Hearts pack by Killthislove. In Sticker.ly-only mode, other moods use local stickers unless you add matching images. <a href="https://sticker.ly/" target="_blank" rel="noopener noreferrer">Browse Sticker.ly ↗</a></p><form id="music-stickerly-add"><input id="music-stickerly-url" type="url" placeholder="https://stickerly.pstatic.net/sticker_pack/…/image.png" aria-label="Direct Sticker.ly image URL" required><input id="music-stickerly-name" placeholder="Sticker name / creator" aria-label="Sticker name or creator" maxlength="80"><select id="music-stickerly-mood" aria-label="Sticker lyric mood">${STICKER_MOODS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select><button>Add sticker</button></form><p>Use a direct image URL, not a pack/share page. Add only content you have permission to use. Images load from Sticker.ly's CDN; lyrics are not sent.</p><div id="music-stickerly-saved">${customStickers(settings.chat_stickerly_custom).map((s,i)=>`<div><span>${esc(s.name)} · ${esc(s.mood)}</span><button type="button" data-remove-sticker="${i}" aria-label="Remove sticker ${esc(s.name)}">Remove</button></div>`).join('')}</div></div><p>Playback: ${esc(state.source || 'none')}. Public search services and embeds may be unavailable or blocked. No preview is substituted.</p><form id="music-override"><input id="music-link" placeholder="Paste a YouTube URL / video ID" aria-label="YouTube playback override" required><button>Play full video</button></form><form id="music-lastfm"><input id="music-lfm-user" placeholder="Last.fm username" aria-label="Last.fm username" value="${esc(settings.api_lastfm_user || '')}" required><input id="music-lfm-key" type="password" placeholder="Last.fm API key (Settings → APIs)" aria-label="Last.fm API key"><button>Save Last.fm</button></form><p>Last.fm supplies track identity, not audio or an external playback clock. Following starts the matching recording from its beginning; lyric timing follows this local player. Browser autoplay may require pressing Play.</p></details>
   </div>`;
   root.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { state.view = b.dataset.view; if (state.view === 'podcasts') state.follow = false; state.results = []; ++searchGeneration; render(); });
   for (const [id, key] of [['music-chat-emojis', 'chat_emojis'], ['music-chat-gifs', 'chat_gifs'], ['music-chat-stickers', 'chat_stickers'], ['music-chat-text', 'chat_text_reactions'], ['music-chat-listener', 'chat_listener_replies']]) {
@@ -145,22 +170,30 @@ function render() {
   }
   $('music-stickersapi-test').onclick = async () => {
     const button = $('music-stickersapi-test'), output = $('music-stickersapi-status');
-    button.disabled = true; output.textContent = ' Checking StickersAPI…';
+    button.disabled = true;
+    const results = [], previews = [];
     try {
-      const result = await listMedia('stickers', { query: 'happy' });
-      if (!output.isConnected) return;
-      const sample = result.items.find(item => !item.animated && item.name.toLowerCase().includes('happy')) || result.items[0];
-      if (!sample) { output.textContent = ' Catalogue connected, but no usable stickers were returned. Local reactions remain available.'; return; }
-      output.textContent = ` Catalogue connected · ${result.items.length} stickers. Testing an image in this browser…`;
-      const preview = document.createElement('span'); preview.className = 'music-stickersapi-sample'; output.append(preview);
-      const ok = await renderMediaImage(preview, sample);
-      if (!output.isConnected) { preview.remove(); return; }
-      output.textContent = ok
-        ? ` Connected · ${result.items.length} stickers · sample image loaded in this browser. `
-        : ' Catalogue connected, but the sample image failed to load. Discord, Sticker.ly and local reactions remain available.';
-      if (ok) output.append(preview);
-    } catch (error) {
-      if (output.isConnected) output.textContent = ` Unavailable: ${error.message}. Discord, Sticker.ly and local reactions remain available.`;
+      for (const [type, label] of [['stickers', 'Sticker'], ['emotes', 'Emote']]) {
+        output.textContent = ` Testing StickersAPI ${label.toLowerCase()} search…`;
+        try {
+          const result = await listMedia(type, { query: 'happy' });
+          if (!output.isConnected) return;
+          const sample = result.items.find(item => !item.animated && item.name.toLowerCase().includes('happy')) || result.items[0];
+          if (!sample) { results.push(`${label} catalogue returned no matching media`); continue; }
+          output.textContent = ` Testing ${label.toLowerCase()} sample image in this browser…`;
+          const preview = document.createElement('span'); preview.className = 'music-stickersapi-sample';
+          preview.setAttribute('aria-label', `${label} sample`); output.append(preview);
+          const ok = await renderMediaImage(preview, sample);
+          preview.remove();
+          if (!output.isConnected) return;
+          results.push(`${label} sample image ${ok ? 'loaded' : 'failed to load'}`);
+          if (ok) previews.push(preview);
+        } catch (error) { results.push(`${label} unavailable: ${error.message}`); }
+      }
+      if (output.isConnected) {
+        output.textContent = ` ${results.join(' · ')}. Unavailable images retain local/fallback reactions. `;
+        output.append(...previews);
+      }
     } finally { button.disabled = false; }
   };
   $('music-open-media-library').onclick = () => window.AetherMedia?.openPicker();
@@ -211,6 +244,10 @@ function render() {
   if (state.view === 'stats') { $('music-stats').innerHTML = os.getLastFmMetricsLayout(); os.initLastFmMetricsSubView(); return; }
   $('music-style').value = state.style;
   $('music-style').onchange = e => { state.style = e.target.value; settings.verci_style = state.style; window.SystemState.save(); mountStage(); };
+  $('music-lyric-media').onchange = e => {
+    settings.lyrics_api_media = e.target.checked;
+    window.SystemState.save(); mountStage();
+  };
   $('music-media-picker').onclick = () => window.AetherMedia?.openPicker();
   $('music-fullscreen').onclick = () => { const p = $('music-stage'); if (document.fullscreenElement) document.exitFullscreen?.(); else p.requestFullscreen?.().catch(e => status(e.message)); };
   for (const [id, delta] of [['music-earlier', -0.5], ['music-later', 0.5]]) $(id).onclick = () => { state.offset += delta; $('music-offset').textContent = `${state.offset.toFixed(1)}s`; };

@@ -36,7 +36,10 @@ export function cleanMedia(item) {
 export function normalizeMedia(kind, raw) {
   if (!raw || typeof raw !== 'object') return null;
   const type = String(raw.type || '').toLowerCase();
+  // FFZ does not include a type in its normalized listings; its proxy still
+  // serves an image. Reject explicit unsupported types without dropping FFZ.
   if (kind === 'sticker' && !TYPES.has(type)) return null;
+  if (kind === 'emote' && !TYPES.has(type) && !(raw.source === 'ffz' && !raw.type)) return null;
   const item = {
     kind, name: raw.name || (kind === 'telegram' ? raw.emoji : ''),
     animated: kind === 'sticker' ? ['gif', 'apng'].includes(type)
@@ -88,23 +91,24 @@ export async function listMedia(type, { query = '', source = 'all', set = 'UtyaD
 }
 
 const MOODS = {
-  heartbreak: ['broken heart', 'sad'], sad: ['sad', 'sad'], love: ['love', 'heart'],
-  dance: ['dance', 'dance'], joy: ['happy', 'happy'], humor: ['laugh', 'laugh'],
-  anger: ['angry', 'angry'], dream: ['sleep', 'sleep'], rain: ['rain', 'rain'],
-  night: ['night', 'night'], fire: ['fire', 'fire'], surprise: ['surprised', 'wow'],
-  confidence: ['confident', 'cool'], money: ['money', 'money'], longing: ['miss you', 'sad']
+  heartbreak: 'broken heart', sad: 'sad', love: 'love',
+  dance: 'dance', joy: 'happy', humor: 'laugh',
+  anger: 'angry', dream: 'sleep', rain: 'rain',
+  night: 'night', fire: 'fire', surprise: 'surprised',
+  confidence: 'confident', money: 'money', longing: 'miss you'
 };
 const cache = new Map(), pending = new Map(), cooldown = new Map();
+// Automatic mood matching is sticker-only. Manual emotes still use listMedia.
 // Moods are local classification labels, never raw lyric text. Cache/inflight
 // deduplication prevents one network request per chat bubble or seek.
 export async function moodMedia(kind, mood, seed = 0, reduced = false, fetchImpl = fetch) {
-  if (!['sticker', 'emote'].includes(kind) || !/^[a-z]{2,24}$/.test(mood)) return null;
-  const term = MOODS[mood]?.[kind === 'sticker' ? 0 : 1] || mood;
+  if (kind !== 'sticker' || !/^[a-z]{2,24}$/.test(mood)) return null;
+  const term = MOODS[mood] || mood;
   const key = `${kind}:${term}`;
   if (Date.now() < (cooldown.get(key) || 0)) return null;
   let entry = cache.get(key);
   if (!entry || entry.until < Date.now()) {
-    if (!pending.has(key)) pending.set(key, listMedia(kind === 'sticker' ? 'stickers' : 'emotes', { query: term }, fetchImpl)
+    if (!pending.has(key)) pending.set(key, listMedia('stickers', { query: term }, fetchImpl)
       .then(result => { cache.set(key, { items: result.items, until: Date.now() + 600000 }); return result.items; })
       .catch(() => { cooldown.set(key, Date.now() + 60000); return []; })
       .finally(() => pending.delete(key)));

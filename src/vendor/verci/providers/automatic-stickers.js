@@ -1,14 +1,18 @@
 import { discordCatalogue, pickDiscordSticker, renderDiscordSticker } from './discord-stickers.js';
 import { attachStickerly } from './stickerly.js';
-import { moodMedia, renderMediaImage } from './stickersapi.js';
+import { moodMedia, renderMediaImage } from './stickersapi.js?v=stickersapi-31';
+
+export function automaticMediaAllowed() {
+ const connection=globalThis.navigator?.connection;
+ return !connection?.saveData && !/(^|-)2g$/.test(connection?.effectiveType||'');
+}
 
 export function cleanupStickerJobs(viz,all=false){
  for(const job of viz.stickerJobs||[])if(all||!job.element.isConnected){job.controller.abort();viz.stickerJobs.delete(job);}
 }
 export function attachAutomaticSticker(viz,sticker,reaction,options,index,seed,reduced){
  const source=options.stickerSource?.() || 'local';
- const connection=globalThis.navigator?.connection;
- if(source==='local'||connection?.saveData||/(^|-)2g$/.test(connection?.effectiveType||''))return;
+ if(source==='local'||!automaticMediaAllowed())return;
  const fallback=()=>attachStickerly(sticker,reaction,{...options,stickerSource:()=>['auto','stickerapi','stickerly'].includes(source)?'stickerly':'local'},index,seed,reduced);
  if(source==='stickerly'){fallback();return;}
  const controller=new AbortController();const job={element:sticker,controller};
@@ -25,7 +29,7 @@ export function attachAutomaticSticker(viz,sticker,reaction,options,index,seed,r
   media.remove();return false;
  };
  (async()=>{
-  if(source==='auto'||source==='stickerapi'){
+  if(options.lyricMediaEnabled?.()!==false && (source==='auto'||source==='stickerapi')){
    const item=await moodMedia('sticker',reaction.mood,seed+index,reduced);
    if(!active())return;
    if(item&&await renderMediaImage(sticker,item,controller.signal)&&active()){
