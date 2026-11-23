@@ -11,8 +11,12 @@ export class ChatInteractions {
  attach(bubble,index){
   bubble.dataset.messageIndex=index;const auto=bubble.querySelector('.chat-emoji');
   bubble.dataset.autoReaction=auto?.textContent || '';auto?.remove();
-  const action=this.button('⌄','chat-message-actions',()=>this.open(index));
-  action.setAttribute('aria-label','React or reply to this lyric');bubble.append(action);
+  bubble.tabIndex=0;
+  bubble.setAttribute('aria-label','Lyric message; right-click or hold to react or reply');
+  bubble.addEventListener('keydown',e=>{
+   if(e.target!==bubble)return;
+   if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){e.preventDefault();this.open(index);}
+  });
   bubble.addEventListener('contextmenu',e=>{if(e.target.closest('.chat-quote,.chat-reply-count'))return;e.preventDefault();this.open(index);});
   let timer,startX=0,startY=0;
   const clear=()=>{clearTimeout(timer);this.timers.delete(timer);};
@@ -73,7 +77,7 @@ export class ChatInteractions {
   if(record.reaction!==undefined || this.viz.ph.querySelector(`[data-message-index="${index}"]`)?.dataset.autoReaction)panel.append(this.button('Remove reaction','chat-menu-action',()=>{record.reaction='';this.refresh(index);this.close();}));
  }
  openThread(index,focusInput=false){
-  const panel=this.shell('Lyric replies');panel.append(this.quote(index));
+  const panel=this.shell('Lyric replies');
   const hint=document.createElement('small');hint.className='chat-local-note';hint.textContent='Local notes · not lyrics · not sent to anyone';panel.append(hint);
   const list=document.createElement('div');list.className='chat-local-thread';list.setAttribute('role','log');list.setAttribute('aria-live','polite');
   const draw=()=>{

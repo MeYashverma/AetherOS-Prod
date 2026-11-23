@@ -9,7 +9,8 @@ const L=parseLRC('[00:00]I love you\n[00:04]Hello world\n[00:08]Another line');
 const ctx={lyrics:L,song:{title:'Song',artist:'Singer',artwork:''},opts:{gifs:()=>false,stickers:()=>false}};
 let viz=new Messages(root,ctx).mount();
 const bubble=viz.bubble(1,L.lines[1]);viz.inner.append(bubble);
-bubble.querySelector('.chat-message-actions').click();
+assert.equal(bubble.querySelector('.chat-message-actions'),null);
+bubble.dispatchEvent(new dom.window.MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
 assert.ok(viz.ph.querySelector('[role=dialog]'));
 const find=(selector,text)=>[...viz.ph.querySelectorAll(selector)].find(e=>e.textContent===text);
 find('.chat-picker-emoji','❤️').click();
@@ -21,6 +22,7 @@ assert.equal(viz.ph.querySelectorAll('.chat-picker-emoji').length,24);
 find('.chat-menu-action','Remove reaction').click();assert.equal(bubble.querySelector('.chat-reaction-pill'),null);
 bubble.dispatchEvent(new dom.window.MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
 find('.chat-menu-action','Reply').click();
+assert.equal(viz.ph.querySelector('.chat-selected-lyric'),null,'reply thread does not repeat quoted lyrics');
 const textarea=viz.ph.querySelector('textarea');
 assert.equal(document.activeElement,textarea);
 textarea.value='<img src=x onerror=alert(1)> hello';
@@ -45,3 +47,15 @@ const L2=parseLRC('[00:00]Hello world');viz=new Messages(root,{...ctx,lyrics:L2}
 const fresh=viz.bubble(0,L2.lines[0]);assert.equal(fresh.querySelector('.chat-reply-count'),null);
 viz.destroy();
 console.log('Message-attached picker, expanded emoji set, remove reaction, local replies, counts, threads, Escape and rebuild persistence verified.');
+
+// No visible dropdown; keyboard context menu and touch-style hold remain available.
+viz=new Messages(root,ctx).mount();
+const keyboardBubble=viz.bubble(0,L.lines[0]);viz.inner.append(keyboardBubble);
+keyboardBubble.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'F10',shiftKey:true,bubbles:true,cancelable:true}));
+assert.ok(viz.ph.querySelector('[role=dialog]'),'Shift+F10 opens the context menu');
+viz.chatInteractions.close();
+const hold=new dom.window.Event('pointerdown',{bubbles:true});
+Object.assign(hold,{button:0,clientX:10,clientY:10});keyboardBubble.dispatchEvent(hold);
+await new Promise(resolve=>setTimeout(resolve,480));
+assert.ok(viz.ph.querySelector('[role=dialog]'),'holding a lyric opens the context menu');
+viz.destroy();
