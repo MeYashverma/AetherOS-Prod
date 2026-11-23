@@ -389,8 +389,22 @@
 .verci-stage .nd-wa .chat-reply-form button{align-self:flex-end;background:#07836c;padding:2cqw 5cqw}
 .verci-stage .nd-wa .chat-reply-form button:disabled{opacity:.4;cursor:default}
 
-/* Real Sticker.ly PNG/WebP assets retain their transparent sticker silhouette. */
-.verci-stage .nd-wa .chat-sticker.has-stickerly-image{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
+/* StickersAPI previews and Sticker.ly PNG/WebP assets retain their cutout silhouette. */
+.verci-stage .nd-wa .chat-sticker.has-stickersapi-image,.verci-stage .nd-wa .chat-sticker.has-stickerly-image{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
+.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span,.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>strong{display:none}
+.verci-stage .nd-wa .chat-sticker .chat-stickersapi-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
+.verci-stage .nd-wa .chat-sticker .chat-stickersapi-image[hidden]{display:none}
+.verci-stage .nd-wa .chat-gif .chat-stickersapi-image{display:block;max-width:100%;max-height:35cqw;object-fit:contain}
+.verci-stage .nd-wa .chat-gif .chat-stickersapi-image[hidden]{display:none}
+.verci-stage .nd-wa footer .chat-media-launch{width:8cqw;height:9cqw;flex:none;display:grid;place-items:center;border:0;padding:0;background:none;color:#409cff;cursor:pointer;border-radius:50%}
+.verci-stage .nd-wa footer .chat-media-launch:hover{background:#ffffff16}
+.verci-stage .nd-wa footer .chat-media-launch:focus-visible{outline:.6cqw solid #78d9bb;outline-offset:.4cqw}
+.verci-stage .nd-wa .chat-local-media{width:fit-content;min-width:26cqw;max-width:58cqw;padding:2cqw 2cqw 1.4cqw}
+.verci-stage .nd-wa .chat-local-media>small{display:block;color:#b9e6d7;font-size:2.8cqw;margin:0 0 1cqw}
+.verci-stage .nd-wa .chat-local-media-preview{min-width:18cqw;min-height:15cqw;display:grid;place-items:center;overflow:hidden}
+.verci-stage .nd-wa .chat-local-media-preview span{font-size:3cqw;color:#c5d9d4;padding:2cqw;text-align:center}
+.verci-stage .nd-wa .chat-local-media-image{display:block;max-width:100%;width:auto;max-height:42cqw;object-fit:contain;border-radius:1.5cqw}
+.verci-stage .nd-wa .chat-local-media-image[hidden]{display:none}
 .verci-stage .nd-wa .chat-sticker.has-stickerly-image>span,.verci-stage .nd-wa .chat-sticker.has-stickerly-image>strong{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image[hidden]{display:none}
@@ -423,6 +437,9 @@
 .verci-stage .nd-wa header{display:flex;flex-direction:row;align-items:center;gap:1.6cqw;padding:0 2.6cqw;background:#1f2c34;flex:none;height:14.4cqw;border-bottom:0.5px solid rgba(255,255,255,.06);box-sizing:border-box}
 .verci-stage .nd-wa header .chat-avatar{position:relative;display:grid;place-items:center;width:8cqw;height:8cqw;flex:none;border-radius:50%;overflow:hidden;order:1}
 .verci-stage .nd-wa header .chat-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.verci-stage .nd-wa header.has-chat-banner{background-size:cover;background-position:center}
+.verci-stage .nd-wa header.has-chat-banner .chat-contact :is(b,small){color:#f1fffa;text-shadow:0 1px 4px #000,0 1px 12px #000}
+.verci-stage .nd-wa header.has-chat-banner svg{filter:drop-shadow(0 1px 3px #000)}
 .verci-stage .nd-wa header .chat-contact{flex:1 1 auto;min-width:0;order:2;line-height:1.2}
 .verci-stage .nd-wa header .nav-trailing{display:flex;align-items:center;gap:1.6cqw;flex:none;margin-left:auto;order:3}
 .verci-stage .nd-wa header .bk{order:0}

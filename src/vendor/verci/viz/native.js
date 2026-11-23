@@ -5,11 +5,12 @@ import { splitChatAsides } from './chat-asides.js';
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
 import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
+import { cleanMedia, mediaURL, renderMediaImage } from '../providers/stickersapi.js';
 import { ChatInteractions } from './chat-interactions.js';
 import { listenerReplyFor, listenerTiming } from './listener-replies.js';
 import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
-import { addChatReaction } from './chat-reactions.js?v=gif-media-only-5';
+import { addChatReaction } from './chat-reactions.js?v=stickersapi-26';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */
@@ -172,7 +173,7 @@ export class Messages extends Phone {
       <div class="chat-contact"><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <div class="nav-trailing"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></div></header>
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
-      <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
+      <footer><button type="button" class="chat-media-launch" aria-label="Add sticker or emote to lyric chat" title="Browse stickers and emotes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/></svg></button><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
       <div class="kbw"><div class="kb">${KB}</div></div>
       <div class="phone-home" aria-hidden="true"><span class="home-indicator"></span></div>`;
     this.inner = this.ph.querySelector(".inner"); this.sub = this.ph.querySelector("header small"); this.rows = []; this.typing = null;
@@ -217,6 +218,28 @@ export class Messages extends Phone {
     this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
     this.predictionText = ""; this.shown = ""; this.kbo = false;
     this.clock = this.ph.querySelector(".chat-clock");
+    this.ph.querySelector('.chat-media-launch').onclick=()=>{
+      this.chatInteractions ||= new ChatInteractions(this);
+      const index=this.rows[0]?.index ?? L.lines.findIndex(line=>line.text);
+      if(index>=0)this.chatInteractions.openMedia(index);
+    };
+    this.applyProfileMedia();
+  }
+  applyProfileMedia() {
+    const header=this.ph.querySelector('header.chat-topbar'), avatar=header?.querySelector('.chat-avatar');
+    if(!header||!avatar)return;
+    avatar.querySelector('.chat-custom-avatar')?.remove();
+    const reduced=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const chosen=cleanMedia(this.ctx.opts?.avatar?.());
+    if(chosen?.kind==='pfp' && (!reduced||!chosen.animated)){
+      const img=document.createElement('img');img.className='chat-custom-avatar';img.alt='';
+      img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();
+      img.src=mediaURL(chosen);avatar.append(img);
+    }
+    const banner=cleanMedia(this.ctx.opts?.banner?.());
+    const url=banner?.kind==='banner' && (!reduced||!banner.animated)?mediaURL(banner):null;
+    header.classList.toggle('has-chat-banner',!!url);
+    header.style.backgroundImage=url?`linear-gradient(#10212dbb,#10212dcc),url("${url}")`:'';
   }
   atLatest() {
     const thread = this.thread;
@@ -299,6 +322,36 @@ export class Messages extends Phone {
     reply.hidden=true;
     reply.append(body,time);if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(reply); return reply;
   }
+  manualMediaBubble(index,item,number){
+    const b=document.createElement('div');b.className='b out in tail chat-local-media';
+    b.setAttribute('aria-label',`Your local ${item.kind}: ${item.name} (not a lyric)`);
+    const label=document.createElement('small');label.textContent='You · local media';
+    const preview=document.createElement('div');preview.className='chat-local-media-preview';
+    const placeholder=document.createElement('span');placeholder.textContent='Loading media…';preview.append(placeholder);
+    const time=document.createElement('time');time.textContent=messageTime(this.ctx.lyrics,`manual:${index}:media:${number}`);
+    b.append(label,preview,time);
+    const controller=new AbortController(),job={element:b,controller};
+    this.stickerJobs ||= new Set();this.stickerJobs.add(job);
+    renderMediaImage(preview,item,controller.signal,'chat-local-media-image').then(ok=>{
+      if(ok && b.isConnected)placeholder.remove();
+      else if(!controller.signal.aborted && b.isConnected)placeholder.textContent='Image unavailable';
+    }).finally(()=>this.stickerJobs?.delete(job));
+    return b;
+  }
+  refreshManualMedia(index){
+    const row=this.rows.find(r=>r.index===index);
+    if(!row)return;
+    const items=this.chatInteractions?.record(index).media || [];
+    row.media ||= [];
+    while(row.media.length>items.length)row.media.pop().remove();
+    cleanupStickerJobs(this);
+    let anchor=row.media.at(-1)||row.reply||row.parts.at(-1)?.el;
+    for(let i=row.media.length;i<items.length;i++){
+      const b=this.manualMediaBubble(index,items[i],i);
+      anchor.after(b);anchor=b;row.media.push(b);
+    }
+    this.scrollToLatest();
+  }
   listenerFrame(t) {
     let active=null;
     for(const row of this.rows){
@@ -330,8 +383,9 @@ export class Messages extends Phone {
       while (this.rows.length && this.rows[0].index > S.idx) {
         const row = this.rows.shift();
         row.parts.forEach(part => part.el.remove());
-        row.reply?.remove();
+        row.reply?.remove();row.media?.forEach(media=>media.remove());
       }
+      cleanupStickerJobs(this);
     }
     this.typing?.remove(); this.typing = null;
     if (!S.line || S.idx < 0) { this.scrollToLatest(); return; }
@@ -347,7 +401,9 @@ export class Messages extends Phone {
       const row = this.lyricBubbles(i, line);
       for (const part of row.parts) this.inner.append(part.el);
       const reply = this.appendListener(i, line, row.el);
-      this.rows.unshift({ ...row, index: i, line, reply });
+      const media=(this.chatInteractions?.record(i).media || []).map((item,n)=>this.manualMediaBubble(i,item,n));
+      this.inner.append(...media);
+      this.rows.unshift({ ...row, index: i, line, reply, media });
       const animate = i === S.idx && !S.jump && i === last + 1;
       if (animate) requestAnimationFrame(() => {
         for (const part of row.parts) if (part.el.isConnected) {

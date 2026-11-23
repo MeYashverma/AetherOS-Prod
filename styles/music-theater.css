@@ -48,6 +48,7 @@
 .music-body .verci-stage{border-radius:14px;margin:0 12px;width:calc(100% - 24px);background:radial-gradient(ellipse at 50% 48%,#1d2030 0%,#0b0d13 68%)}
 .music-scene-tools{min-height:48px}
 .music-scene-tools select{padding:8px 10px}
+.music-scene-tools #music-media-picker{font-size:11px;white-space:nowrap}
 .music-app > footer{min-height:62px;flex-wrap:nowrap}
 .music-app > footer > button{flex-shrink:0}
 .music-app > footer label{white-space:nowrap;flex-shrink:0}
@@ -84,3 +85,61 @@
 .music-stickerly-library select{background:#1b1d28;border:1px solid #ffffff24;color:#eee;border-radius:7px;padding:6px}
 #music-stickerly-saved>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}
 #music-stickerly-saved>div>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Finder library is an app-wide launch point; the same picker serves lyric chat. */
+.aether-media-library{height:100%;overflow-y:auto;padding:clamp(18px,4vw,40px);background:radial-gradient(ellipse at 85% 0%,#16605245,transparent 50%),#0b1119;color:#f3f8f6;font:13px/1.5 Inter,system-ui,sans-serif;scrollbar-width:thin}
+.aether-media-library *{box-sizing:border-box}
+.aether-library-eyebrow{font-size:10px;letter-spacing:.19em;color:#71e2bb;font-weight:700}
+.aether-media-library h1{font-size:clamp(24px,4vw,36px);letter-spacing:-.05em;line-height:1.1;margin:8px 0}
+.aether-media-library h2{font-size:17px;letter-spacing:-.03em;margin:0 0 5px}
+.aether-library-lead{max-width:570px;color:#b9c9c7;margin:0 0 26px}
+.aether-library-categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.aether-media-library button{cursor:pointer;border:1px solid #ffffff27;background:#ffffff0c;color:#eefaf6;border-radius:12px;font:inherit;padding:10px 12px}
+.aether-media-library button:hover{border-color:#78eac0;background:#78eac024}
+.aether-media-library button:focus-visible{outline:2px solid #81f5cf;outline-offset:2px}
+.aether-library-categories button{text-align:left;display:flex;flex-direction:column;gap:5px;min-height:82px}
+.aether-library-categories strong{font-size:14px}
+.aether-library-categories span,.aether-library-profiles p,.aether-library-footnote{color:#9fb8ae;font-size:11px}
+.aether-library-profiles{margin-top:30px;padding-top:18px;border-top:1px solid #ffffff22}
+.aether-library-profiles p{max-width:630px;margin:0 0 15px}
+.aether-library-profile-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.aether-library-profile-cards>div{display:flex;align-items:center;gap:9px;min-width:0;min-height:74px;border:1px solid #ffffff22;border-radius:12px;background:#0003;padding:10px}
+.aether-library-profile-cards strong{font-size:11px;flex:0 1 120px}
+.aether-library-profile-cards img{max-width:68px;width:auto;height:47px;object-fit:contain;border-radius:6px}
+.aether-library-profile-cards span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b3c8bf;font-size:11px}
+.aether-library-profile-cards button{margin-left:auto;flex:none;padding:6px 9px;font-size:11px}
+.aether-library-footnote{margin:24px 0 0}
+
+/* Shared desktop + music-chat StickersAPI browser. Always a modal, never an
+   embedded remote page; its images come only from validated preview endpoints. */
+.aether-media-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:clamp(8px,2vw,24px);background:#050711dc;backdrop-filter:blur(12px);color:#f2f5f6;font:13px/1.4 Inter,system-ui,sans-serif}
+.aether-media-picker,.aether-media-picker *{box-sizing:border-box}
+.aether-media-picker{width:min(760px,100%);max-height:calc(100dvh - 20px);min-height:min(420px,90dvh);display:flex;flex-direction:column;gap:12px;padding:clamp(14px,2.5vw,24px);border:1px solid #ffffff26;border-radius:20px;background:linear-gradient(135deg,#202d36,#0d161e 78%);box-shadow:0 35px 100px #000b;overflow:hidden}
+.aether-media-picker header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none}
+.aether-media-picker h2{margin:0;font-size:clamp(18px,3vw,25px);letter-spacing:-.04em}
+.aether-media-picker button,.aether-media-picker a{font:inherit;color:#edf6f3;cursor:pointer}
+.aether-media-picker button{border:1px solid #ffffff25;border-radius:10px;background:#ffffff0b;padding:8px 11px}
+.aether-media-picker button:hover,.aether-media-picker button[aria-selected=true]{border-color:#71e9c0;background:#71e9c02a}
+.aether-media-picker button:disabled{opacity:.42;cursor:default}
+.aether-media-picker :is(button,input,select,a):focus-visible{outline:2px solid #78efc3;outline-offset:2px}
+.aether-media-picker .aether-media-close{font-size:25px;line-height:1;padding:1px 10px}
+.aether-media-intro{color:#aac0ba;font-size:11px;margin:0;flex:none}
+.aether-media-tabs{display:flex;gap:7px;overflow-x:auto;flex:none;padding:2px 0;scrollbar-width:thin}
+.aether-media-tabs button{white-space:nowrap;flex:none;font-size:12px}
+.aether-media-search{display:flex;gap:8px;flex:none;min-width:0}
+.aether-media-search input{min-width:0;flex:1;background:#091319;border:1px solid #ffffff38;border-radius:10px;padding:9px 11px;color:#fff;font:inherit}
+.aether-media-search select{max-width:135px;border:1px solid #ffffff38;border-radius:10px;background:#091319;color:#fff;padding:7px;font:inherit}
+.aether-media-search-button,.aether-media-use{background:#07856e!important;border-color:#26ab8e!important}
+.aether-media-status{min-height:1.2em;margin:0;color:#b3ccc2;font-size:11px;flex:none}
+.aether-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));grid-auto-rows:max-content;align-content:start;gap:9px;min-height:110px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;flex:1}
+.aether-media-item{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;min-width:0;min-height:112px;padding:8px!important;overflow:hidden}
+.aether-media-item img{display:block;max-width:100%;width:auto;height:76px;object-fit:contain}
+.aether-media-item span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.aether-media-pages{display:flex;justify-content:center;gap:10px;flex:none}
+.aether-media-details{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding-top:8px;border-top:1px solid #ffffff20;flex:none}
+.aether-media-details>span{flex:1 1 100%;font-size:11px;color:#d6ede4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aether-media-details input{min-width:100px;flex:1 1 140px;background:#0a1319;color:#d5eade;border:1px solid #ffffff38;border-radius:8px;padding:8px}
+.aether-media-details a{border:1px solid #ffffff25;border-radius:9px;padding:8px 11px;text-decoration:none}
+.aether-media-picker [hidden]{display:none!important}
+@media(max-width:480px){.aether-media-picker{gap:8px;padding:12px;border-radius:14px}.aether-media-intro{font-size:10px}.aether-media-tabs button{font-size:11px;padding:6px 8px}.aether-media-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px}.aether-media-item{min-height:90px}.aether-media-item img{height:60px}.aether-media-search select{max-width:85px}.aether-media-search-button{padding:7px!important}}
+@media(prefers-reduced-motion:reduce){.aether-media-overlay{backdrop-filter:none}}
