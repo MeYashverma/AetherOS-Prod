@@ -29,4 +29,6 @@ assert.ok(!readFileSync('src/vendor/verci/viz/chat-reactions.js','utf8').include
 viz.destroy();
 console.log('Short lyric bubbles, text reactions, quoted replies, seek and off switches verified.');
 
-assert.ok(readFileSync('styles/verci-stage.css','utf8').includes('.chat-gif>:not(img){display:none!important}'), 'cached GIF captions are hidden too');
+const chatCss=readFileSync('styles/verci-stage.css','utf8');
+assert.ok(chatCss.includes('.chat-gif>:not(img){display:none!important}'), 'cached GIF captions are hidden too');
+assert.match(chatCss,/\.chat-sticker>strong,\.verci-stage \.nd-wa \.chat-sticker>\.chat-sticker-credit\{display:none!important\}/,'cached sticker captions and provider credits are hidden too');

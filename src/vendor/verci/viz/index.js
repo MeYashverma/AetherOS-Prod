@@ -3,7 +3,7 @@
 import { Visual, Fisheye, FisheyeVisual, Ship } from './type.js';
 import { Codestyle, CodestyleVisual, Branches, Web, Constellation } from './scenes.js';
 // Version this import so cached previews load the current chat renderer.
-import { Notifications, Money, Messages, MapStyle } from './native.js?v=stickersapi-28';
+import { Notifications, Money, Messages, MapStyle } from './native.js?v=stickersapi-29';
 import { Kinetic, Collage, Y2K, Cinema } from './art.js';
 
 export const STYLES = [

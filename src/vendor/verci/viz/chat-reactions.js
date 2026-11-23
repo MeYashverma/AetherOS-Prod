@@ -1,5 +1,5 @@
 // Decorative reactions, not lyric replacements or singer metadata.
-import { attachAutomaticSticker } from '../providers/automatic-stickers.js';
+import { attachAutomaticSticker } from '../providers/automatic-stickers.js?v=stickersapi-29';
 import { moodMedia, renderMediaImage } from '../providers/stickersapi.js';
 import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
 export function lyricReaction(text,index,seed='') {
@@ -56,9 +56,9 @@ export function addChatReaction(viz, bubble, text, index) {
   if(stickersEnabled && reaction.sticker) {
     const sticker=document.createElement('div');sticker.className='chat-sticker';
     sticker.dataset.mood=reaction.sticker.mood;sticker.setAttribute('aria-label','Decorative reaction sticker');
+    // The emoji is an offline/loading fallback, not a caption under the image.
     const icon=document.createElement('span');icon.textContent=reaction.sticker.emoji;
-    const caption=document.createElement('strong');caption.textContent=reaction.sticker.caption;
-    sticker.append(icon,caption);insertMedia(sticker);
+    sticker.append(icon);insertMedia(sticker);
     attachAutomaticSticker(viz,sticker,reaction.sticker,options,index,hash(viz.ctx.song.title || ''),reduced);
   }
   if(!gifsEnabled || !reaction.gif) return;
