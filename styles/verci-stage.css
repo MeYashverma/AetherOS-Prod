@@ -394,6 +394,7 @@
 .verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span,.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>strong{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image[hidden]{display:none}
+.verci-stage .nd-wa .chat-sticker .chat-sticker-credit{align-self:flex-end;padding:2px 5px;border-radius:99px;background:#18352dcc;color:#c9f6dd;font:600 clamp(10px,2.8cqw,12px)/1.2 Inter,system-ui,sans-serif;white-space:nowrap}
 .verci-stage .nd-wa .chat-gif .chat-stickersapi-image{display:block;max-width:100%;max-height:35cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-gif .chat-stickersapi-image[hidden]{display:none}
 .verci-stage .nd-wa footer .chat-media-launch{width:8cqw;height:9cqw;flex:none;display:grid;place-items:center;border:0;padding:0;background:none;color:#409cff;cursor:pointer;border-radius:50%}

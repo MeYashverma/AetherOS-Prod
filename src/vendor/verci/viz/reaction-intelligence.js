@@ -31,10 +31,11 @@ export function analyzeLyric(text, previous='') {
  scored.sort((a,b)=>b.score-a.score);
  return scored.length?{...scored[0],confidence:Math.min(.98,.5+scored[0].score*.1),mixed:scored.length>1 && scored[1].score>=scored[0].score*.8}:null;
 }
-export function buildReactionPlan(lyrics,seed='',density='balanced') {
+export function buildReactionPlan(lyrics,seed='',density='balanced',media={}) {
  const limits={subtle:{emoji:4,media:12,seconds:35},balanced:{emoji:2,media:8,seconds:24},expressive:{emoji:1,media:5,seconds:16}};
  const cfg=limits[density]||limits.balanced;
- let lastEmoji=-99,lastMedia=-99,lastTime=-999,lastMood='',lastGlyph='';
+ const allowSticker=media?.stickers!==false,allowGif=media?.gifs!==false;
+ let lastEmoji=-99,lastMedia=-99,lastTime=-999,lastMood='',lastGlyph='',placedMedia=false;
  return lyrics.lines.map((line,i)=>{
   const previous=lyrics.lines[i-1];
   const info=analyzeLyric(line.text, previous && previous.speaker===line.speaker?previous.text:'');
@@ -45,11 +46,13 @@ export function buildReactionPlan(lyrics,seed='',density='balanced') {
    const choices=info.emojis.filter(e=>e!==lastGlyph);emoji=(choices.length?choices:info.emojis)[n%(choices.length||info.emojis.length)];lastGlyph=emoji;lastEmoji=i;
   }
   let gif=null,sticker=null;
-  if(i-lastMedia>=cfg.media && line.t-lastTime>=cfg.seconds && n%3!==0 && !(info.mixed && info.score<3)) {
-   // Interleave static sticker and animated GIF slots; don't repeat the same mood back-to-back.
+  if(i-lastMedia>=cfg.media && line.t-lastTime>=cfg.seconds && (!placedMedia || n%3!==0) && !(info.mixed && info.score<3)) {
+   // Short songs may have only one slot: prioritize the enabled sticker source
+   // there. Respect a GIF-only preference; later slots keep the sparse mix.
    if(info.mood!==lastMood || i-lastMedia>=cfg.media*2) {
-    if(n%2===0 && info.gif) gif=info.gif;else sticker={emoji:info.emojis[n%info.emojis.length],caption:(info.captions || [info.caption])[(n>>>8)%(info.captions?.length || 1)],mood:info.mood};
-    lastMedia=i;lastTime=line.t;lastMood=info.mood;
+    if(allowGif && info.gif && (!allowSticker || (placedMedia && n%2===0))) gif=info.gif;
+    else if(allowSticker) sticker={emoji:info.emojis[n%info.emojis.length],caption:(info.captions || [info.caption])[(n>>>8)%(info.captions?.length || 1)],mood:info.mood};
+    if(gif||sticker){placedMedia=true;lastMedia=i;lastTime=line.t;lastMood=info.mood;}
    }
   }
   return {...info,emoji,gif,sticker};

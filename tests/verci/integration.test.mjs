@@ -55,6 +55,33 @@ await import('../../src/modules/music-theater.js');
 globalThis.setInterval = originalInterval;
 assert.equal(document.querySelectorAll('#music-style option').length,18);
 assert.ok(document.getElementById('music-search-form'));
+// The connection button must test an actual image, not equate JSON search with
+// a working WhatsApp sticker preview. The browser image events are mocked here.
+const offlineFetch = globalThis.fetch;
+const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+await flush(); // jsdom's queued window load event triggers one last adapter render
+const stickerButton = document.getElementById('music-stickersapi-test');
+const stickerStatus = document.getElementById('music-stickersapi-status');
+assert.match(document.getElementById('music-chat-stickers').parentElement.textContent,/StickersAPI first/);
+globalThis.fetch = async url => {
+ assert.match(url, /stickerapi\.sbs\/api\/search\?q=happy/);
+ return {ok:true,json:async()=>({items:[{slug:'4210-steam-happy',name:'steam happy?',type:'png'}]})};
+};
+stickerButton.click(); await flush();
+let sample = stickerStatus.querySelector('.music-stickersapi-sample img');
+assert.equal(sample?.src,'https://stickerapi.sbs/api/sticker/4210-steam-happy/preview');
+assert.match(stickerStatus.textContent,/Testing an image/);
+sample.onload(); await flush();
+assert.match(stickerStatus.textContent,/sample image loaded in this browser/);
+assert.ok(stickerStatus.contains(sample),'loaded sample remains visible beside the status');
+stickerButton.click(); await flush();
+sample = stickerStatus.querySelector('.music-stickersapi-sample img');
+sample.onerror(); await flush();
+assert.match(stickerStatus.textContent,/sample image failed to load/);
+assert.equal(stickerStatus.querySelector('img'),null,'a failed image is removed');
+globalThis.fetch = offlineFetch;
+stickerButton.click(); await flush();
+assert.match(stickerStatus.textContent,/Unavailable/);
 const P = dom.window.AetherMusic.player;
 await P.load({engine:'audio',url:'https://example.test/full.mp3'});
 P.audio.currentTime = 42;
