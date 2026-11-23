@@ -87,8 +87,13 @@ assert.doesNotMatch(frameCSS, /\.phone(?:\.nd-wa|\.nd-ios)?\{[^}]*border-radius:
 assert.match(frameCSS, /\.nd-wa \.sb\{[^}]*height:15\.9cqw/, '62pt status bar');
 assert.match(frameCSS, /header \.nav-actions\{height:11\.3cqw/, '44pt action row');
 assert.match(frameCSS, /header \.nav-title\{height:15\.6cqw/, '61pt title row');
+assert.match(frameCSS, /header:has\(> \.bk\)\{display:grid;[^}]*grid-template-rows:11\.3cqw 15\.6cqw/, 'cached flat header DOM still lays out in action/title rows');
+assert.match(frameCSS, /\.nd-wa \.b\{[^}]*font-size:4\.1cqw/, 'message text scales with the phone instead of inheriting the desktop font');
+assert.match(frameCSS, /\.nd-wa \.b\.in\.tail::before\{[^}]*clip-path:/, 'incoming bubbles retain a shaped tail');
+assert.match(frameCSS, /\.nd-wa \.kr i:not\(\.sp\):not\(\.space\)\.down::after\{[^}]*top:-1cqw/, 'pressed key stays below the suggestions');
 assert.match(frameCSS, /\.nd-wa footer\{height:15\.9cqw/, '62pt composer');
 assert.match(frameCSS, /\.nd-wa \.phone-home\{height:8\.7cqw/, '34pt home safe area');
+assert.match(frameCSS, /\.phone\.nd-wa:not\(:has\(> \.phone-home\)\)\{padding-bottom:8\.7cqw/, 'cached renderers without a home element still reserve its safe area');
 const Messages = STYLES.find(style => style.id === 'native-messages').make;
 const chat = new Messages(document.getElementById('stage'), {song:{title:'Test',artist:'Artist'},lyrics:L}).mount();
 assert.ok(chat.ph.querySelector('header > .nav-actions'), 'navigation actions have their own row');

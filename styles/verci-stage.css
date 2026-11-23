@@ -154,7 +154,7 @@
 .verci-stage .nd-wa .thread{flex:1;position:relative;overflow:hidden;background-color:#0b141a;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='0.8'%3E%3Cpath d='M20 30c8-4 14 6 8 12M40 50c6 5 12-3 6-9M80 20c4 8-5 12-10 6M120 40c5 6-4 10-9 5M150 60c7 4-2 11-8 6M30 90c8 3-2 10-8 5M70 100c5 7-6 10-10 4M110 80c6 5-3 11-8 5M140 110c7 3-1 10-7 5M20 140c6 6-4 11-9 5M60 150c5 6-5 9-9 3M100 140c6 4-2 10-8 5M150 150c5 5-4 9-8 4'/%3E%3Ccircle cx='90' cy='90' r='1.2' fill='%23ffffff' fill-opacity='0.02'/%3E%3C/g%3E%3C/svg%3E");background-size:180px 180px}
 .verci-stage .nd-wa .inner{position:absolute;left:0;right:0;top:0;padding:2cqw 0 4cqw;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
 .verci-stage .nd-wa .chip{width:fit-content;margin:1cqw auto 2.4cqw;background:#191919;color:#aaa;font-size:2.7cqw;padding:1.2cqw 3cqw;border-radius:2cqw}
-.verci-stage .nd-wa .b{width:fit-content;max-width:81%;border-radius:1.7cqw;margin:1.3cqw 4cqw;padding:2cqw 2.4cqw 1.2cqw;line-height:1.3;font-weight:400;transition:opacity .25s,transform .4s cubic-bezier(.2,1.5,.4,1)}
+.verci-stage .nd-wa .b{width:fit-content;max-width:81%;margin:1.3cqw 4cqw;font-weight:400;transition:opacity .25s,transform .4s cubic-bezier(.2,1.5,.4,1)}
 .verci-stage .nd-wa .b:not(.in){opacity:0;transform:scale(.7) translateY(3cqw)}
 .verci-stage .nd-wa .b.in{background:#202c33;transform-origin:left bottom}
 .verci-stage .nd-wa .b.out{background:#10564e;margin-left:auto;transform-origin:right bottom}
@@ -164,7 +164,7 @@
 .verci-stage .nd-wa .b s{display:block;font-size:3.5cqw;font-weight:700;text-decoration:none;margin-bottom:.3cqw}
 .verci-stage .nd-wa .b time{display:flex;justify-content:flex-end;align-items:center;gap:1cqw;font-size:2.7cqw;color:#b3b3b3;font-variant-numeric:tabular-nums;margin-top:.3cqw}
 .verci-stage .nd-wa .b time svg{width:4cqw;height:2.4cqw;stroke:#53bdeb;fill:none;stroke-width:1.6}
-.verci-stage .nd-wa .w[data-s="0"]{opacity:.55}
+.verci-stage .nd-wa .w[data-s="0"]{opacity:.74}
 .verci-stage .nd-wa .typing{display:flex;gap:1.2cqw;padding:3.4cqw 3.6cqw}
 .verci-stage .nd-wa .typing i{width:2.2cqw;height:2.2cqw;border-radius:50%;background:#8696a0;animation:verci-dot 1s infinite}
 .verci-stage .nd-wa .typing i:nth-child(2){animation-delay:.15s}
@@ -231,7 +231,7 @@
 .verci-stage .nd-wa .kr i.down{background:#8a8a8f;transform:translateY(.35cqw) scale(.96)}
 .verci-stage .nd-wa .kr i.sp.down{background:#6c6c70}
 .verci-stage .nd-wa .kr i.go.down{background:#00cfa0}
-.verci-stage .nd-wa .kr i:not(.sp):not(.space).down::after{content:attr(data-k);position:absolute;left:50%;bottom:100%;translate:-50% -.5cqw;width:128%;height:11cqw;border-radius:1.4cqw;background:#7f7f81;color:#fff;font:500 6.2cqw/11cqw -apple-system,"SF Pro Text",Inter,system-ui,sans-serif;box-shadow:0 1cqw 2.5cqw rgba(0,0,0,.38);z-index:4;pointer-events:none}
+.verci-stage .nd-wa .kr i:not(.sp):not(.space).down::after{content:attr(data-k);position:absolute;left:50%;top:-1cqw;translate:-50% 0;width:118%;height:10.5cqw;border-radius:1.4cqw;background:#7f7f81;color:#fff;font:500 5.4cqw/10.5cqw -apple-system,"SF Pro Text",Inter,system-ui,sans-serif;box-shadow:0 .6cqw 2cqw rgba(0,0,0,.38);z-index:4;pointer-events:none}
 .verci-stage .nd-wa .kb::after{content:"";height:1.3cqw;width:34cqw;border-radius:1cqw;background:rgba(255,255,255,.85);justify-self:center;margin:1.6cqw 0 2.4cqw}
 .verci-stage .code .win{transition:background .2s}
 .verci-stage .code .win.glitch{animation:verci-glitch .4s steps(2)}
@@ -349,7 +349,7 @@
 
 /* Short lines keep the same typography and bubble shape as every other lyric. */
 .verci-stage .nd-wa .b{overflow-wrap:anywhere;min-width:12cqw}
-.verci-stage .nd-wa .b>p{font:inherit;letter-spacing:normal;line-height:1.3}
+.verci-stage .nd-wa .b>p{font:inherit;letter-spacing:normal;line-height:1.36;margin:0;padding:0}
 .verci-stage .nd-wa .b .chat-quote{display:block;width:100%;max-width:100%;margin:0 0 2cqw;padding:2cqw 2.5cqw;background:#0003;border:0;border-left:.8cqw solid #6cd8be;border-radius:1.5cqw;color:#cddbd7;text-align:left;cursor:pointer;font:inherit;line-height:1.25;box-shadow:none}
 .verci-stage .nd-wa .chat-quote>small{display:block;font-size:2.8cqw;font-weight:600;color:#8bddc8;margin-bottom:.8cqw}
 .verci-stage .nd-wa .chat-quote>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:3.3cqw;font-weight:400}
@@ -362,7 +362,6 @@
 /* Message-attached reactions and real local reply threads. */
 .verci-stage .nd-wa .b{position:relative}
 .verci-stage .nd-wa .b.has-chat-reaction{margin-bottom:6cqw}
-.verci-stage .nd-wa .b>p{padding-right:3cqw}
 .verci-stage .nd-wa .b .chat-reaction-pill{position:absolute;bottom:-4.5cqw;left:2cqw;display:flex;align-items:center;justify-content:center;min-width:9cqw;min-height:7cqw;padding:.6cqw 1.8cqw;border:.6cqw solid #0b141a;border-radius:99px;background:#26373c;color:#fff;font-size:4.8cqw;line-height:1.1;box-shadow:0 .5cqw 1cqw #0003;cursor:pointer}
 .verci-stage .nd-wa .b.out .chat-reaction-pill{left:auto;right:2cqw}
 .verci-stage .nd-wa .b .chat-reply-count{display:block;border:0;background:transparent;color:#78d9bb;font:600 3.2cqw/1.4 system-ui;padding:1cqw 0;cursor:pointer}
@@ -420,6 +419,14 @@
 .verci-stage .nd-wa header .nav-trailing{display:flex;align-items:center;gap:4cqw}
 .verci-stage .nd-wa header .nav-title{height:15.6cqw;flex:none;display:flex;align-items:center;justify-content:center;gap:2.4cqw;padding:0 4cqw}
 .verci-stage .nd-wa header .chat-contact{max-width:calc(100% - 13cqw)}
+/* An already-open player may still have the old, flat header DOM when new CSS
+   arrives. Lay its direct children into the same two rows until JS remounts. */
+.verci-stage .nd-wa header:has(> .bk){display:grid;grid-template-columns:6.4cqw 8cqw minmax(0,1fr) 5.6cqw 5.6cqw;grid-template-rows:11.3cqw 15.6cqw;column-gap:2cqw;align-items:center;padding:0 4cqw}
+.verci-stage .nd-wa header:has(> .bk)>.bk{grid-column:1;grid-row:1}
+.verci-stage .nd-wa header:has(> .bk)>:is(img,.chat-avatar-fallback){grid-column:2;grid-row:2}
+.verci-stage .nd-wa header:has(> .bk)>div{grid-column:3/6;grid-row:2;min-width:0}
+.verci-stage .nd-wa header:has(> .bk)>svg:nth-last-of-type(2){grid-column:4;grid-row:1}
+.verci-stage .nd-wa header:has(> .bk)>svg:last-child{grid-column:5;grid-row:1}
 .verci-stage .nd-wa header svg{color:#409cff;width:5.6cqw;height:5.6cqw;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .verci-stage .nd-wa header img{width:8cqw;height:8cqw}
 .verci-stage .nd-wa header b{font-size:4cqw}
@@ -428,16 +435,27 @@
 .verci-stage .nd-wa .chip{background:#191919;color:#aaa;font-size:2.7cqw}
 
 .verci-stage .nd-wa .chat-avatar-fallback{width:8cqw;height:8cqw;border-radius:50%;background:#54656f;color:#e9edef;display:grid;place-items:center;font:600 4cqw/1 Inter,system-ui,sans-serif;flex:none;text-transform:uppercase}
-.verci-stage .nd-wa .b{max-width:81%;border-radius:1.7cqw;margin:1.3cqw 4cqw;padding:2cqw 2.4cqw 1.2cqw;line-height:1.3;font-weight:400}
-.verci-stage .nd-wa .b.in,.verci-stage .nd-wa .chat-fictional-reply.listener-left{background:#383838}
-.verci-stage .nd-wa .b.out{background:#10564e}
-.verci-stage .nd-wa .b.tail{margin-top:2.4cqw}
-.verci-stage .nd-wa .b.in.tail{border-top-left-radius:0}
-.verci-stage .nd-wa .b.out.tail{border-top-right-radius:0}
-.verci-stage .nd-wa .b time{color:#b3b3b3;font-variant-numeric:tabular-nums}
+/* Message typography follows the device width, not the host desktop's fixed 13px font.
+   This is particularly important in a DPR=2 preview of a half-sized phone. */
+.verci-stage .nd-wa .b{max-width:81%;margin:1.1cqw 4cqw;padding:1.8cqw 2.7cqw 1.3cqw;border-radius:2.6cqw;font-size:4.1cqw;line-height:1.36;font-weight:400;color:#e9edef;box-shadow:0 .3cqw 1cqw #0002}
+.verci-stage .nd-wa .b.in,.verci-stage .nd-wa .chat-fictional-reply.listener-left{background:#202c33}
+.verci-stage .nd-wa .b.out{background:#005c4b}
+.verci-stage .nd-wa .b.tail{margin-top:2cqw}
+.verci-stage .nd-wa .b.in.tail{border-top-left-radius:.6cqw}
+.verci-stage .nd-wa .b.out.tail{border-top-right-radius:.6cqw}
+.verci-stage .nd-wa .b.tail::before{content:"";position:absolute;top:0;width:2cqw;height:2.6cqw;pointer-events:none}
+.verci-stage .nd-wa .b.in.tail::before{left:-1.7cqw;background:#202c33;clip-path:polygon(100% 0,100% 100%,0 0)}
+.verci-stage .nd-wa .b.out.tail::before{right:-1.7cqw;background:#005c4b;clip-path:polygon(0 0,100% 0,0 100%)}
+.verci-stage .nd-wa .b time{margin-top:.6cqw;color:#aebbc2;font-size:2.7cqw;font-variant-numeric:tabular-nums}
+.verci-stage .nd-wa .b.out time{color:#afd2c7}
 .verci-stage .nd-wa footer{height:15.9cqw;padding:2.5cqw 3cqw;gap:2cqw;background:#1f2c34;border-top:1px solid #ffffff0d}
 .verci-stage .nd-wa .phone-home{height:8.7cqw;flex:none;display:grid;place-items:center;background:#1f2c34}
 .verci-stage .nd-wa.kbopen .phone-home{background:#2c2c2e}
+/* An open tab with the pre-safe-area renderer lacks .phone-home altogether.
+   Reserve that same space and draw its indicator until the renderer is reloaded. */
+.verci-stage .phone.nd-wa:not(:has(> .phone-home)){padding-bottom:8.7cqw;background:#1f2c34}
+.verci-stage .phone.nd-wa.kbopen:not(:has(> .phone-home)){background:#2c2c2e}
+.verci-stage .phone.nd-wa:not(:has(> .phone-home))::after{content:"";position:absolute;left:50%;bottom:3.7cqw;translate:-50% 0;width:34cqw;height:1.3cqw;border-radius:1cqw;background:#fff;z-index:3;pointer-events:none}
 .verci-stage .nd-wa .kb::after,.verci-stage .nd-wa .kb>.home-indicator{display:none}
 .verci-stage .nd-wa footer .inp{background:#202020;border:1px solid #ffffff08;border-radius:7cqw;padding:1.8cqw 3cqw;min-height:8cqw;font-size:3.8cqw}
 .verci-stage .nd-wa footer svg{color:#409cff;flex-shrink:0;width:5.3cqw;height:5.3cqw;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

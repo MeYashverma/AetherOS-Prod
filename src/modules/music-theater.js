@@ -3,7 +3,7 @@ import { resolveSingerNames } from '../vendor/verci/singer-names.js';
 import { discordCatalogue, renderDiscordSticker } from '../vendor/verci/providers/discord-stickers.js';
 import { STICKER_MOODS, customStickers, cleanSticker } from '../vendor/verci/providers/stickerly.js';
 import { REACTION_DICTIONARY_STATS } from '../vendor/verci/viz/reaction-dictionary.js';
-import { STYLES } from '../vendor/verci/viz/index.js';
+import { STYLES } from '../vendor/verci/viz/index.js?v=chat-layout-21';
 import { frameState, esc } from '../vendor/verci/viz/core.js';
 import { parseTTML } from '../vendor/verci/ttml.js';
 import { findCommunityTTML } from '../vendor/verci/providers/ttml-community.js';
