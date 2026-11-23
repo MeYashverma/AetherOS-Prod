@@ -30,3 +30,19 @@ const off=document.createElement('div');off.innerHTML='<p>love</p>';
 addChatReaction({ctx:{song:{title:'Test'},opts:{emojis:()=>false,gifs:()=>false}}},off,'love',i);
 assert.equal(off.textContent,'love','off switches preserve undecorated lyrics');
 console.log('Context reactions, sparse GIF slots, privacy, host validation, reduced motion and controls verified.');
+
+// Stickers are generated locally, not injected HTML or fetched trending assets.
+const { buildReactionPlan } = await import('../../src/vendor/verci/viz/reaction-intelligence.js');
+const lines=Array.from({length:50},(_,i)=>({t:i*5,text:['love heart baby','happy smile','dance party','boss winning'][i%4],speaker:0}));
+const stickerPlan=buildReactionPlan({lines},'Sticker test','expressive');
+const si=stickerPlan.findIndex(r=>r?.sticker);assert.ok(si>=0);
+const sb=document.createElement('div');sb.innerHTML='<p>Original lyrics</p>';
+const sv={ctx:{song:{title:'Sticker test'},lyrics:{lines},opts:{emojis:()=>false,gifs:()=>false,stickers:()=>true,density:()=>'expressive'}}};
+addChatReaction(sv,sb,lines[si].text,si);
+assert.ok(sb.querySelector('.chat-sticker strong'));
+assert.equal(sb.querySelector('p').textContent,'Original lyrics');
+assert.equal(sb.querySelector('img'),null,'static stickers need no third-party image');
+const disabled=document.createElement('div');disabled.innerHTML='<p>Original lyrics</p>';
+sv.ctx.opts.stickers=()=>false;
+addChatReaction(sv,disabled,lines[si].text,si);
+assert.equal(disabled.querySelector('.chat-sticker'),null);

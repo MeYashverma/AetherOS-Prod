@@ -49,3 +49,52 @@ The `ttml.test.mjs` suite covers timing, named/unnamed agents, overlapping duet 
 Native Design can append decorative Unicode emojis without modifying the lyric tokens, speaker attribution or timing. It recognizes a small set of English and romanized Hindi/Punjabi mood words (plus selected Devanagari words); this is a lightweight heuristic, not full language understanding. Unrecognized lines get no reaction. Emoji glyphs use the installed system font, preferring Apple Color Emoji where available; a specific iOS release's artwork is not bundled or guaranteed.
 
 Occasional GIF slots are deterministically randomized by song/line so seeks stay consistent, with at most one eligible line in each eight-line block. Supported moods request an anime reaction from `nekos.best`; only the allowlisted category is transmitted, never the lyrics, song title or artist. Third-party requests reveal normal connection metadata such as IP address. GIF media is restricted to HTTPS on the provider host, failures are silent, and requests abort when the scene is destroyed. Reduced-motion preference suppresses GIF loading and display. Emoji and GIF toggles are in **Source & connection** and are saved in desktop settings. The third-party service requires internet; actual GIF availability is not covered by offline tests.
+
+
+### Context-aware reactions upgrade
+
+The current planner supersedes the original first-keyword/eight-line-slot behavior. `reaction-intelligence.js` performs Unicode-aware whole-word and phrase scoring, local negation filtering, explicit rejected-love handling, mixed-mood detection, and a small previous-line bonus when speaker identity matches. This is explainable on-device heuristics, not a general-purpose language model; ambiguous/unsupported lyrics may still be misclassified or receive no decoration.
+
+A deterministic song-level plan separates emoji cadence from media cadence, avoids adjacent repeated glyphs, and enforces both a line gap and playback-time gap for media. **Subtle / Balanced / Expressive** choose minimum emoji gaps of 4 / 2 / 1 lines and media gaps of 12 / 8 / 5 lines (35 / 24 / 16 seconds). Media slots interleave GIFs and stickers rather than attaching both at once. Rebuilding or seeking does not reroll the plan.
+
+Meme-style reaction stickers are generated locally from system emoji and fixed captions such as “MAIN CHARACTER ENERGY” and “IN MY FEELINGS,” with cutout outlines and mood palettes. They are popular-format inspired, not a live trending feed or copyrighted sticker-pack downloads. They remain static for accessibility, work offline and have a separate saved off switch.
+
+GIF discovery uses allowlisted reaction-category endpoints on nekos.best, with waifu.pics SFW fallback for hug/cry/dance/happy moods. Both are anime-reaction services, not trending feeds. Failed providers cool down for 30 seconds; successful variants cache for five minutes and in-scene requests are deduplicated during TTML reconstruction. Only HTTPS GIF URLs on the expected media hosts are accepted. No lyrics are transmitted. GIFs are suppressed when the browser reports Save-Data or a 2G connection, as well as reduced motion. Actual provider uptime/content and visual rendering require live browser checks.
+
+
+### Expanded Gen-Z / multilingual dictionary
+
+`reaction-dictionary.js` is the editable local data source: 46 mood/context categories, 843 unique lyric cues, 93 distinct Unicode emoji choices and 154 sticker captions. Coverage includes English internet slang, romanized Hindi/Hinglish and Punjabi, plus selected Devanagari phrases—not full translation or general multilingual understanding. Unsupported scripts/phrases produce no reaction. Examples distinguish “I am dead” (humor), “dead inside” (sadness), “left on read” (ghosting), “caught in 4K” (awkwardness), “dil toot gaya” (heartbreak) and “yaari” (friendship).
+
+Longest-phrase-first matching avoids scoring each component of the same phrase repeatedly. Matcher expressions are cached and only compiled when their literal phrase occurs, avoiding hundreds of unnecessary regular expression compilations during the first song. Smart-quote variants normalize consistently. Sticker captions rotate deterministically from each mood's caption set without rerolling on seeks; spacing, privacy and off switches are unchanged. Settings shows dictionary counts. Phrase coverage and sticker choices are curated, not evidence of live trend popularity.
+
+### Short lines, text reactions and replies
+
+Short lyrics now use ordinary bubble typography, background and timestamps; the former oversized two-word typography exception has been removed. GIFs no longer insert visible provider-credit labels into chat (provider information remains documented here and in source settings).
+
+Occasional text/emoticon reaction pills are context-selected decorations, with accessible labels identifying them as not part of the lyrics. Quoted replies reference the exact text of a recent earlier lyric on the other chat side; they never generate new singer dialogue. Quotes occur no more than once per four lines, look back at most three lines/30 seconds, and do not reference simultaneous lines. Click a quote to seek to its lyric, respecting the timing offset. Untagged lyrics show “Earlier line,” not a claimed singer name. Both features have independent saved switches under Source & connection and remain deterministic across seeks.
+
+### Interactive message reactions and reply threads
+
+Native Design now converts automatic emoji suggestions into small pills attached beneath a lyric bubble, rather than appending those emojis to its lyric text. The message arrow, right-click, long-press (450 ms, canceled by movement), or an existing reaction pill opens a dialog with six WhatsApp-style quick choices and a `+` grid of 24 emojis. Selecting an already selected emoji removes it; Remove reaction also suppresses a suggested reaction for that message.
+
+Reply opens a quoted-lyric composer and a dedicated local thread. Sending adds a note labeled **You · local reply**, updates the original message's reply count, and keeps the text out of lyric tokens and singer metadata. Counts reopen the thread. Enter sends, Shift+Enter inserts a newline; blank replies are ignored, notes are limited to 280 characters, and each message has a 50-reply limit. User text is rendered with textContent. Dialogs support Escape, focus trapping, close buttons and focus restoration.
+
+Selections and notes use a WeakMap keyed by the parsed lyrics object: they survive seeks, TTML bubble reconstruction and scene remounts that use that same lyrics object. They do not survive page reload, lyrics re-import or track reload that replaces the timeline. No replies/reactions are sent to WhatsApp, artists, other listeners or any server. This is a local interactive lyric visualization, not a messaging service. The interactive picker remains available even if automatic suggestions are disabled. Live browser appearance and touch behavior remain manual verification items.
+
+### Sticker.ly image source
+
+Source & connection now has **Sticker.ly + local fallback** and **Local only** choices. The initial remote set contains the nine static PNGs publicly featured on [Sticker.ly's homepage](https://sticker.ly/) in the **Hearts❤️💛🖤💚💙** pack by **Killthislove**. Their source and creator are recorded in `providers/stickerly.js`; assets are linked from Sticker.ly's CDN, not copied into the repository. The images are used only for love-tagged sticker slots. This is not a full Sticker.ly catalogue, trending feed, pack importer or an official API integration.
+
+Users may add up to 50 direct Sticker.ly image URLs, each assigned to one of the lyric moods, and remove them from their saved library. Pack/share pages are not direct image URLs and are not scraped. Only HTTPS PNG/WebP/GIF image URLs under `stickerly.pstatic.net/sticker_pack/` are allowed; credentials, query strings, hashes, unrelated hosts and other file formats are rejected. Use only images you have permission to use. Saving a custom sticker for a mood gives it preference over the featured set.
+
+Local emoji/caption stickers remain visible until the remote image loads and are restored if it fails. Uncovered moods keep local stickers; no unrelated remote image is substituted. Save-Data/2G suppress remote stickers, and reduced motion permits only static PNG selections (WebP is conservatively treated as potentially animated). Image requests use no-referrer and transmit no lyric queries, but the CDN receives normal network metadata. Availability/hotlink policy can change; offline tests verify validation and simulated load/failure handling, not actual CDN image delivery.
+
+
+### Discord public sticker API
+
+Automatic sticker source now tries the official anonymous `https://discord.com/api/v10/sticker-packs` catalogue, then the existing Sticker.ly/local fallbacks. Discord-only and offline/local-only modes are also available. Existing explicit Sticker.ly preferences are preserved. Names and comma-separated mood tags are matched locally; lyric text is never submitted. This is public-pack media, not access to private guilds, chat accounts, WhatsApp, or Telegram.
+
+Supports PNG/APNG/GIF and Discord's Lottie JSON using locally vendored lottie-web 5.13.0 light SVG renderer (MIT license alongside runtime). No bot token, third-party proxy, or runtime script CDN. Animation payloads with external assets/fonts are rejected. Catalogue fetches deduplicate, cache for one hour in memory, time out after ten seconds and cool down after failure. Individual media failures retain the local tile. Reduced motion selects static PNGs only; save-data/2G skips remote automatic media. Removed chat tiles and destroyed renderers abort their animation jobs.
+
+Source & connection → **Test Discord sticker API** checks the browser's catalogue connection and renders/destroys a sample media asset. Research confirmed the public catalogue and a Lottie CDN payload were accessible; this does not establish CORS/network availability for every user's browser. The connection test reports that locally. Public availability does not grant blanket redistribution rights; media is loaded from Discord, not copied into this repository.

@@ -1,40 +1,43 @@
 // Decorative reactions, not lyric replacements or singer metadata.
-const RULES = [
-  { re: /\b(?:heartbreak|broken|goodbye|alvida|bewafa|dhokha|judai)\b/iu, emoji: ['💔','🥀'], gif:'cry' },
-  { re: /\b(?:cry|crying|tears|sad|lonely|alone|aansu|tanha|udaas|rona|roye)\b|आँसू|उदास|तन्हा/iu, emoji:['🥺','😢'], gif:'cry' },
-  { re: /\b(?:love|heart|kiss|baby|darling|pyaar|pyar|ishq|mohabbat|dil|jaan|sajna|sohneya)\b|प्यार|दिल|इश्क/iu, emoji:['❤️','🥰','🫶'], gif:'hug' },
-  { re: /\b(?:dance|dancing|party|nach|nachdi|bhangra|jashn)\b|नाच/iu, emoji:['💃','🕺','✨'], gif:'dance' },
-  { re: /\b(?:smile|laugh|laughing|happy|happiness|hassi|hasi|khushi|muskur)\b|खुशी|हँस/iu, emoji:['😊','😂','✨'], gif:'smile' },
-  { re: /\b(?:angry|anger|hate|gussa|nafrat)\b|गुस्सा|नफ़रत/iu, emoji:['😤','🔥'], gif:'angry' },
-  { re: /\b(?:sleep|sleeping|dream|dreams|neend|sapne|khwab)\b|नींद|सपने/iu, emoji:['😴','💭','🌙'], gif:'sleep' },
-  { re: /\b(?:rain|raining|baarish|barish|barsaat)\b|बारिश/iu, emoji:['🌧️','☔'], gif:null },
-  { re: /\b(?:moon|stars|night|chaand|chand|taare|raat)\b|चाँद|रात/iu, emoji:['🌙','✨'], gif:null },
-  { re: /\b(?:fire|burn|burning|aag)\b|आग/iu, emoji:['🔥'], gif:null }
-];
-function hash(text) { let n=2166136261; for(const c of text) n=Math.imul(n^c.codePointAt(0),16777619); return n>>>0; }
-export function lyricReaction(text, index, seed='') {
-  const rule=RULES.find(r=>r.re.test(text));
-  if(!rule) return null;
+import { attachAutomaticSticker } from '../providers/automatic-stickers.js';
+import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
+export function lyricReaction(text,index,seed='') {
+  const info=analyzeLyric(text);if(!info)return null;
   const n=hash(`${seed}:${index}:${text}`);
-  return { emoji: n%3 !== 0 ? rule.emoji[n%rule.emoji.length] : null,
-    // One eligible slot per eight lines; deterministic randomness keeps seeking stable.
-    gif: index%8===3 && n%3!==0 ? rule.gif : null };
+  return {...info,emoji:n%3!==0?info.emojis[n%info.emojis.length]:null,gif:index%8===3&&n%3!==0?info.gif:null};
 }
-const cache=new Map();
-export async function reactionGif(category, signal, fetchImpl=fetch) {
-  if(!['hug','cry','dance','smile','angry','sleep'].includes(category)) return null;
-  if(cache.has(category)) return cache.get(category);
-  const response=await fetchImpl(`https://nekos.best/api/v2/${category}`, {signal:AbortSignal.any([signal,AbortSignal.timeout(7000)]),referrerPolicy:'no-referrer'});
-  if(!response.ok) throw Error('Reaction service unavailable');
-  const item=(await response.json()).results?.[0];
-  let url; try { url=new URL(item?.url); } catch { return null; }
-  if(url.protocol!=='https:' || url.hostname!=='nekos.best' || !url.pathname.endsWith('.gif')) return null;
-  const result={url:url.href,alt:`${category} reaction (anime GIF)`,provider:'nekos.best'};
-  cache.set(category,result); return result;
+const cache=new Map(), cooldown=new Map();
+const CATEGORIES=['hug','cry','dance','smile','angry','sleep'];
+export async function reactionGif(category, signal, fetchImpl=fetch, variant=0) {
+  if(!CATEGORIES.includes(category))return null;
+  const key=`${category}:${variant%3}`,old=cache.get(key);
+  if(old && Date.now()-old.at<300000)return old.item;
+  const alternatives={hug:'hug',cry:'cry',dance:'dance',smile:'happy'};
+  const sources=[{name:'nekos.best',endpoint:`https://nekos.best/api/v2/${category}`,host:'nekos.best',read:d=>d.results?.[0]?.url}];
+  if(alternatives[category])sources.push({name:'waifu.pics',endpoint:`https://api.waifu.pics/sfw/${alternatives[category]}`,host:'i.waifu.pics',read:d=>d.url});
+  for(const source of sources) {
+    if(signal?.aborted)throw new DOMException('Aborted','AbortError');
+    if(cooldown.get(source.name)>Date.now())continue;
+    try {
+      const response=await fetchImpl(source.endpoint,{signal:AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(7000)]),referrerPolicy:'no-referrer'});
+      if(!response.ok)throw Error('Reaction service unavailable');
+      let url;try{url=new URL(source.read(await response.json()));}catch{return null;}
+      if(url.protocol!=='https:'||url.hostname!==source.host||!url.pathname.endsWith('.gif'))return null;
+      const item={url:url.href,alt:`${category} reaction (anime GIF)`,provider:source.name};
+      cache.set(key,{at:Date.now(),item});return item;
+    } catch(e) {if(signal?.aborted)throw e;cooldown.set(source.name,Date.now()+30000);}
+  }
+  return null;
 }
 export function addChatReaction(viz, bubble, text, index) {
   const options=viz.ctx.opts || {};
-  const reaction=lyricReaction(text,index,viz.ctx.song.title);
+  const density=options.density?.() || 'balanced';
+  if(viz.ctx.lyrics?.lines) {
+    if(!viz.reactionPlan || viz.reactionDensity!==density) {
+      viz.reactionPlan=buildReactionPlan(viz.ctx.lyrics,viz.ctx.song.title,density);viz.reactionDensity=density;
+    }
+  }
+  const reaction=viz.reactionPlan?.[index] ?? (viz.ctx.lyrics?.lines ? null : lyricReaction(text,index,viz.ctx.song.title));
   if(!reaction) return;
   const reduced=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(options.emojis?.()!==false && reaction.emoji) {
@@ -42,14 +45,27 @@ export function addChatReaction(viz, bubble, text, index) {
     emoji.textContent=reaction.emoji; emoji.setAttribute('aria-label','Decorative reaction');
     bubble.querySelector('p').append(' ',emoji);
   }
-  if(options.gifs?.()===false || reduced || !reaction.gif) return;
+  if(options.stickers?.()!==false && reaction.sticker) {
+    const sticker=document.createElement('div');sticker.className='chat-sticker';
+    sticker.dataset.mood=reaction.sticker.mood;sticker.setAttribute('aria-label','Decorative reaction sticker');
+    const icon=document.createElement('span');icon.textContent=reaction.sticker.emoji;
+    const caption=document.createElement('strong');caption.textContent=reaction.sticker.caption;
+    sticker.append(icon,caption);bubble.append(sticker);
+    attachAutomaticSticker(viz,sticker,reaction.sticker,options,index,hash(viz.ctx.song.title || ''),reduced);
+  }
+  const connection=globalThis.navigator?.connection;
+  if(options.gifs?.()===false || reduced || connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '') || !reaction.gif) return;
   const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; bubble.append(slot);
   viz.reactionAbort ||= new AbortController();
   // Fixed reaction category only: no title, artist, lyric text or API key leaves the app.
-  reactionGif(reaction.gif,viz.reactionAbort.signal).then(item=>{
+  // Deduplicate concurrent requests when TTML reconstructs bubbles during seeks.
+  viz.reactionRequests ||= new Map();
+  const key=`${reaction.gif}:${index%3}`;
+  if(!viz.reactionRequests.has(key)) viz.reactionRequests.set(key,reactionGif(reaction.gif,viz.reactionAbort.signal,fetch,index));
+  viz.reactionRequests.get(key).then(item=>{
     if(!item || viz.reactionAbort.signal.aborted || !bubble.isConnected) return;
     const img=document.createElement('img'); img.alt=item.alt; img.referrerPolicy='no-referrer';
-    img.onload=()=>{ if(!viz.reactionAbort.signal.aborted) { slot.hidden=false; const credit=document.createElement('small'); credit.textContent='GIF · '+item.provider;slot.append(credit); } };
+    img.onload=()=>{ if(!viz.reactionAbort.signal.aborted) slot.hidden=false; };
     img.onerror=()=>slot.remove(); img.src=item.url;slot.append(img);
   }).catch(()=>slot.remove());
 }

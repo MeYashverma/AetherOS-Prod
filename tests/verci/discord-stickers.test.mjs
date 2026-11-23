@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {normalizeDiscordPacks,pickDiscordSticker,discordCatalogue,DISCORD_STICKER_API} from '../../src/vendor/verci/providers/discord-stickers.js';
+const list=normalizeDiscordPacks({sticker_packs:[{name:'Test',stickers:[{id:'796140620111544330',name:'Happy',tags:'happy,smile',format_type:3},{id:'796140638093443092',name:'Sad',tags:'cry,tears',format_type:1},{id:'796140656941989888',name:'Love',tags:'heart,hug',format_type:4},{id:'../evil',format_type:1},{id:'796140753143201873',format_type:99}]}]});
+assert.equal(list.length,3);
+assert.equal(list[0].url,'https://cdn.discordapp.com/stickers/796140620111544330.json');
+assert.equal(list[1].animated,false);
+assert.equal(list[2].url.endsWith('.gif'),true);
+assert.equal(pickDiscordSticker(list,'sad').name,'Sad');
+assert.equal(pickDiscordSticker(list,'love').name,'Love');
+assert.equal(pickDiscordSticker(list,'love',0,true),null);
+assert.equal(pickDiscordSticker(list,'betrayal'),null);
+assert.equal(pickDiscordSticker(list,'unknown'),null);
+assert.throws(()=>normalizeDiscordPacks({}));
+let calls=0;
+const fake=async (url,opts)=>{calls++;assert.equal(url,DISCORD_STICKER_API);assert.equal(opts.credentials,'omit');return {ok:true,json:async()=>({sticker_packs:[{stickers:[{id:'796140620111544330',name:'Happy',format_type:1}]}]})};};
+const [a,b]=await Promise.all([discordCatalogue(fake),discordCatalogue(fake)]);
+assert.equal(a,b);assert.equal(calls,1);await discordCatalogue(fake);assert.equal(calls,1);
+console.log('Discord catalogue validation, mood selection, formats, motion filtering and request caching pass');
