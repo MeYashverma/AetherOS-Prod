@@ -148,6 +148,7 @@ window.extendOS({
     },
 
     playRadioBrowserStation: (url, name, favicon, tags, bitrate, uuid) => {
+                os.stopFullTrackPlayback?.();
                 os.initAudioEngine();
                 if(os.audioStream) { try { os.audioStream.pause(); os.audioStream.src = ''; } catch(e){} }
                 os._rbNowPlaying = { url_resolved: url, stationuuid: uuid, name, favicon, tags, bitrate };

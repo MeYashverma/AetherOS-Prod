@@ -236,25 +236,35 @@
 
         _ensureRegistryItems() {
             if (!this.resultsEl) return;
-            const existingCmds = new Set(
-                Array.from(this.resultsEl.querySelectorAll('.cmd-item')).map((el) => el.getAttribute('data-cmd'))
-            );
-
-            // Ensure any newly registered modules (e.g. focus, devpad, about, aetherbridge, aetherlink) exist
             const reg = window.AETHER_MODULE_REGISTRY || {};
+            const existingMap = new Map();
+            Array.from(this.resultsEl.querySelectorAll('.cmd-item')).forEach((el) => {
+                const cmd = el.getAttribute('data-cmd');
+                if (!cmd) return;
+                existingMap.set(cmd, el);
+                if (cmd.startsWith('open:')) {
+                    const modId = cmd.slice(5);
+                    const m = reg[modId];
+                    if (m) {
+                        el.innerHTML = `<i data-lucide="${esc(m.icon)}" style="width:14px;height:14px;flex-shrink:0"></i> ${esc(m.label)}`;
+                    }
+                }
+            });
+
+            // Ensure any newly registered modules exist
             Object.values(reg).forEach((m) => {
                 const cmd = `open:${m.id}`;
-                if (existingCmds.has(cmd)) return;
+                if (existingMap.has(cmd)) return;
                 const row = document.createElement('div');
                 row.className = 'cmd-item flex items-center justify-between p-3 rounded hover:bg-white/5 cursor-none hover-target transition-colors';
                 row.setAttribute('data-cmd', cmd);
                 row.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${esc(m.icon)}" class="w-4 h-4 text-gray-400"></i><span class="text-white">${esc(m.label)}</span></div><span class="text-[10px] font-mono text-gray-500">App</span>`;
                 this.resultsEl.insertBefore(row, this.resultsEl.firstChild);
-                existingCmds.add(cmd);
+                existingMap.set(cmd, row);
             });
 
             QUICK_ACTIONS.forEach((a) => {
-                if (existingCmds.has(a.cmd)) return;
+                if (existingMap.has(a.cmd)) return;
                 const row = document.createElement('div');
                 row.className = 'cmd-item flex items-center justify-between p-3 rounded hover:bg-white/5 cursor-none hover-target transition-colors';
                 row.setAttribute('data-cmd', a.cmd);

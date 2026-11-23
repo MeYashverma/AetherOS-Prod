@@ -893,53 +893,53 @@ window.extendOS({
     finderOpen: false,
 
     finderModules: [
-                { id: 'about',          label: 'About This Mac',        icon: 'info',         category: 'System' },
-                { id: 'settings',       label: 'System Settings',       icon: 'sliders',      category: 'System' },
-                { id: 'worldmuseums',   label: 'World Museums Vault',   icon: 'landmark',     category: 'Live APIs' },
-                { id: 'spacexhub',      label: 'Orbital Launch Control',icon: 'rocket',       category: 'Live APIs' },
-                { id: 'stellarium',     label: 'NASA Eyes & Planetarium', icon: 'orbit',      category: 'Exploration' },
-                { id: 'shadertoy',      label: 'GLSL Shader Studio',    icon: 'flame',        category: 'Intelligence' },
-                { id: 'georadar',       label: 'GeoRadar Explorer',     icon: 'compass',      category: 'Exploration' },
-                { id: 'worldfactbook',  label: 'World Factbook & FX',   icon: 'flag',         category: 'Live APIs' },
-                { id: 'gutendex',       label: 'Gutenberg Library',     icon: 'library',      category: 'Content' },
-                { id: 'chiptune',       label: 'Retro & 3D Makers',     icon: 'boxes',        category: 'Content' },
-                { id: 'earthpulse',     label: 'Earth Pulse Radar',     icon: 'globe-2',      category: 'Exploration' },
-                { id: 'ossradar',       label: 'Open-Source Radar',     icon: 'git-branch',   category: 'Intelligence' },
-                { id: 'wayback',        label: 'Archive & DOS Vault',   icon: 'history',      category: 'Exploration' },
-                { id: 'photopea',       label: 'Photopea Studio',       icon: 'layers',       category: 'Content' },
-                { id: 'whiteboard',     label: 'OpenCanvas Board',      icon: 'pen-tool',     category: 'Content' },
-                { id: 'winamp',         label: 'Webamp + SomaFM',       icon: 'disc-3',       category: 'Media' },
-                { id: 'photobooth',     label: 'Photo Booth',           icon: 'aperture',     category: 'Media' },
-                { id: 'synthstudio',    label: 'GaragePad Studio',      icon: 'music',        category: 'Media' },
-                { id: 'focus',          label: 'Focus & Soundscapes',   icon: 'timer',        category: 'System' },
-                { id: 'devpad',         label: 'Markdown & Dev Studio', icon: 'code-2',       category: 'Intelligence' },
-                { id: 'kanban',         label: 'Project Board',         icon: 'kanban',       category: 'Content' },
-                { id: 'codeplay',       label: 'Live Code Sandbox',     icon: 'play-square',  category: 'Intelligence' },
-                { id: 'terminal',       label: 'Data Stream',           icon: 'terminal',     category: 'System' },
-                { id: 'sysmon',         label: 'System Diagnostics',    icon: 'cpu',          category: 'System' },
-                { id: 'media',          label: 'Media Console',         icon: 'radio',        category: 'Media' },
-                { id: 'radiobrowser',   label: 'Global Radio',          icon: 'radio-tower',  category: 'Media' },
-                { id: 'ytchtv',         label: 'Retro TV',              icon: 'tv',           category: 'Media' },
-                { id: 'presence',       label: 'Uplink Presence',       icon: 'user',         category: 'Network' },
-                { id: 'feed',           label: 'Signal Feed',           icon: 'rss',          category: 'Network' },
-                { id: 'browser',        label: 'Web Proxy',             icon: 'globe',        category: 'Network' },
-                { id: 'wplace',         label: 'Wplace Live Canvas',    icon: 'paintbrush',   category: 'Network' },
-                { id: 'floor796',       label: 'Floor796 Explorer',     icon: 'building-2',   category: 'Content' },
-                { id: 'globe',          label: 'Airspace Radar',        icon: 'plane',        category: 'Intelligence' },
-                { id: 'market',         label: 'Market Matrix',         icon: 'trending-up',  category: 'Intelligence' },
-                { id: 'entityscanner',  label: 'Entity Scanner',        icon: 'scan',         category: 'Intelligence' },
-                { id: 'memes',          label: 'Memetic Intel',         icon: 'smile',        category: 'Content' },
-                { id: 'filemanager',    label: 'Living Archive',        icon: 'folder-tree',  category: 'Content' },
-                { id: 'wikiboard',      label: 'WikiBoard',             icon: 'network',      category: 'Content' },
-                { id: 'weather',        label: 'Weather Station',       icon: 'cloud-rain',   category: 'Live APIs' },
-                { id: 'nasa',           label: 'NASA Deep Space',       icon: 'telescope',    category: 'Live APIs' },
-                { id: 'taskmanager',    label: 'Task Manager',          icon: 'list-x',       category: 'System' },
-                { id: 'games',          label: 'Game Vault',            icon: 'gamepad-2',    category: 'Media' },
-                { id: 'anime',          label: 'Anime Discovery',       icon: 'sparkles',     category: 'Content' },
-                { id: 'manga',          label: 'Manga Launcher',        icon: 'book-open',    category: 'Content' },
-                { id: 'iss',            label: 'ISS Tracker',           icon: 'satellite',    category: 'Live APIs' },
-                { id: 'aetherbridge',   label: 'Aether Bridge',         icon: 'radio-tower',  category: 'Network' },
-                { id: 'aetherlink',     label: 'Aether Link',           icon: 'link-2',       category: 'Network' },
+                { id: 'about',          label: 'About AetherOS',          icon: 'info',         category: 'System' },
+                { id: 'settings',       label: 'System Settings',         icon: 'sliders',      category: 'System' },
+                { id: 'terminal',       label: 'Terminal',                icon: 'terminal',     category: 'System' },
+                { id: 'sysmon',         label: 'Activity & Speed',        icon: 'cpu',          category: 'System' },
+                { id: 'taskmanager',    label: 'Task Manager',            icon: 'list-checks',  category: 'System' },
+                { id: 'focus',          label: 'Focus & Soundscapes',     icon: 'timer',        category: 'System' },
+                { id: 'media',          label: 'Music & Podcasts',        icon: 'radio',        category: 'Media' },
+                { id: 'radiobrowser',   label: 'World Radio',             icon: 'radio-tower',  category: 'Media' },
+                { id: 'winamp',         label: 'Winamp + SomaFM',         icon: 'disc-3',       category: 'Media' },
+                { id: 'photobooth',     label: 'Photo Booth',             icon: 'aperture',     category: 'Media' },
+                { id: 'synthstudio',    label: 'SynthPad Studio',         icon: 'music',        category: 'Media' },
+                { id: 'ytchtv',         label: 'Retro TV',                icon: 'tv',           category: 'Media' },
+                { id: 'games',          label: 'Arcade',                  icon: 'gamepad-2',    category: 'Media' },
+                { id: 'filemanager',    label: 'Files',                   icon: 'folder-tree',  category: 'Workspace' },
+                { id: 'wikiboard',      label: 'WikiBoard',               icon: 'network',      category: 'Workspace' },
+                { id: 'devpad',         label: 'Dev Studio',              icon: 'code-2',       category: 'Workspace' },
+                { id: 'kanban',         label: 'Kanban Board',            icon: 'kanban',       category: 'Workspace' },
+                { id: 'photopea',       label: 'Photopea Studio',         icon: 'layers',       category: 'Workspace' },
+                { id: 'whiteboard',     label: 'Whiteboard Studio',       icon: 'pen-tool',     category: 'Workspace' },
+                { id: 'chiptune',       label: 'Retro & 3D Makers',       icon: 'boxes',        category: 'Workspace' },
+                { id: 'codeplay',       label: 'Code Sandbox',            icon: 'play-square',  category: 'Developer' },
+                { id: 'shadertoy',      label: 'Shader Studio',           icon: 'flame',        category: 'Developer' },
+                { id: 'ossradar',       label: 'GitHub Explorer',         icon: 'git-branch',   category: 'Developer' },
+                { id: 'browser',        label: 'Web Browser',             icon: 'globe',        category: 'Network' },
+                { id: 'feed',           label: 'News & RSS',              icon: 'rss',          category: 'Network' },
+                { id: 'aetherbridge',   label: 'Device Sync',             icon: 'share-2',      category: 'Network' },
+                { id: 'aetherlink',     label: 'AetherLink P2P',          icon: 'link-2',       category: 'Network' },
+                { id: 'presence',       label: 'Discord Presence',        icon: 'user',         category: 'Network' },
+                { id: 'weather',        label: 'Weather',                 icon: 'cloud-rain',   category: 'World & Space' },
+                { id: 'earthpulse',     label: 'Earth Monitor',           icon: 'globe-2',      category: 'World & Space' },
+                { id: 'spacexhub',      label: 'Space Launches',          icon: 'rocket',       category: 'World & Space' },
+                { id: 'stellarium',     label: '3D Solar System & Sky',   icon: 'orbit',        category: 'World & Space' },
+                { id: 'georadar',       label: 'Atlas & Landmarks',       icon: 'compass',      category: 'World & Space' },
+                { id: 'worldfactbook',  label: 'World Factbook & FX',     icon: 'flag',         category: 'World & Space' },
+                { id: 'iss',            label: 'ISS 3D Tracker',          icon: 'satellite',    category: 'World & Space' },
+                { id: 'nasa',           label: 'NASA Space',              icon: 'telescope',    category: 'World & Space' },
+                { id: 'globe',          label: 'Flight Radar',            icon: 'plane',        category: 'World & Space' },
+                { id: 'market',         label: 'Crypto Markets',          icon: 'trending-up',  category: 'World & Space' },
+                { id: 'worldmuseums',   label: 'World Museum Gallery',    icon: 'landmark',     category: 'Culture' },
+                { id: 'gutendex',       label: 'Open Bookshelf',          icon: 'library',      category: 'Culture' },
+                { id: 'wayback',        label: 'Archive & DOS Vault',     icon: 'history',      category: 'Culture' },
+                { id: 'memes',          label: 'Reddit Gallery',          icon: 'smile',        category: 'Culture' },
+                { id: 'anime',          label: 'Anime',                   icon: 'sparkles',     category: 'Culture' },
+                { id: 'manga',          label: 'Manga Reader',            icon: 'book-open',    category: 'Culture' },
+                { id: 'entityscanner',  label: 'Character Dex',           icon: 'scan',         category: 'Culture' },
+                { id: 'floor796',       label: 'Floor796 Panorama',       icon: 'building-2',   category: 'Culture' },
+                { id: 'wplace',         label: 'Wplace World Canvas',     icon: 'paintbrush',   category: 'Culture' },
             ],
 
     finderExtraActions: [],
@@ -1002,10 +1002,15 @@ window.extendOS({
                 let hiddenMatches = 0;
                 let totalHidden = 0;
 
-                // Group enabled modules by category
-                os.finderModules.forEach(mod => {
+                const reg = window.AETHER_MODULE_REGISTRY || {};
+
+                // Group enabled modules by category, always syncing label/icon from canonical registry
+                os.finderModules.forEach(rawMod => {
+                    const regEntry = reg[rawMod.id];
+                    const mod = regEntry ? { ...rawMod, label: regEntry.label || rawMod.label, icon: regEntry.icon || rawMod.icon } : rawMod;
                     const enabled = os.isModuleEnabled ? os.isModuleEnabled(mod.id) : true;
-                    const matches = !q || mod.label.toLowerCase().includes(q) || mod.id.toLowerCase().includes(q) || mod.category.toLowerCase().includes(q);
+                    const desc = (regEntry && regEntry.desc) ? regEntry.desc.toLowerCase() : '';
+                    const matches = !q || mod.label.toLowerCase().includes(q) || mod.id.toLowerCase().includes(q) || mod.category.toLowerCase().includes(q) || desc.includes(q);
                     if (!enabled) {
                         totalHidden++;
                         if (q && matches) hiddenMatches++;
@@ -1024,7 +1029,8 @@ window.extendOS({
                 });
 
                 let html = '';
-                const catOrder = ['System', 'Media', 'Network', 'Intelligence', 'Content', 'Live APIs'];
+                const baseOrder = ['Workspace', 'Media', 'Developer', 'Network', 'World & Space', 'Culture', 'System'];
+                const catOrder = [...baseOrder, ...Object.keys(categories).filter(c => !baseOrder.includes(c))];
                 catOrder.forEach(cat => {
                     const mods = categories[cat];
                     if (!mods || mods.length === 0) return;

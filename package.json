@@ -1,0 +1,6 @@
+{
+  "name": "aetheros-desktop",
+  "private": true,
+  "scripts": { "test": "node --test tests/verci/*.test.mjs" },
+  "devDependencies": { "jsdom": "26.1.0" }
+}
