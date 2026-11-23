@@ -49,7 +49,9 @@ const ctx = { song:{ title:'Yellow',artist:'Coldplay',artwork:'' }, lyrics:L, du
 const viz = new Messages(root, ctx).mount();
 viz.onLine({ ...frameState(L, 4.4), jump:true });
 let bubbles = [...root.querySelectorAll('.inner > .b')];
-assert.equal(bubbles.length, 2);
+assert.equal(bubbles.length, 3, 'seeking forward restores the earlier conversation too');
+assert.equal(bubbles[0].querySelector('p').textContent, 'Hello world');
+bubbles = bubbles.slice(-2);
 assert.deepEqual(bubbles.map(b => [b.classList.contains('out'), b.querySelector('p').textContent]), [
   [false, 'Ah'], [true, 'Your skin, oh, yeah, your skin and bones']
 ], 'ad-lib is an incoming bubble, main lyric is still outgoing without parentheses');
@@ -65,15 +67,19 @@ assert.deepEqual(bubbles.slice(-2).map(b => [b.classList.contains('out'), b.quer
   [true, 'Ooh'], [false, 'Turn into something beautiful']
 ], 'incoming main lyric gives its aside to the outgoing participant');
 viz.onLine({ ...frameState(L, 4.2), jump:true });
-assert.equal(root.querySelectorAll('.inner > .b').length, 2, 'seeking backward does not duplicate either part');
+assert.equal(root.querySelectorAll('.inner > .b').length, 3, 'seeking backward retains earlier chat without duplicating either part');
 viz.onLine({ ...frameState(L, 0.2), jump:true });
 viz.tick(frameState(L, 3.5));
 assert.ok(viz.kbw.classList.contains('open'), 'outgoing lyric still types on the keyboard');
 assert.ok(!viz.inp.textContent.includes('Ah'), 'keyboard types the main lyric, not the other participant’s ad-lib');
 viz.onLine({ ...frameState(L, 16.1), jump:true });
-assert.deepEqual([...root.querySelectorAll('.inner > .b')].map(b => b.querySelector('p').textContent), ['Oh'], 'aside-only lyric has no empty original bubble');
-assert.equal(root.querySelector('.chat-aside').tabIndex, 0, 'aside-only lyric remains interactive');
-assert.match(root.querySelector('.chat-aside').getAttribute('aria-label'), /^Oh, lyric/, 'assistive tech hears the extracted lyric');
+assert.deepEqual([...root.querySelectorAll('.inner > .b')].map(b => b.querySelector('p').textContent), [
+  'Hello world', 'Ah', 'Your skin, oh, yeah, your skin and bones', 'Ooh', 'Turn into something beautiful',
+  'Ah', 'And you know, you know I love you so', 'Oh'
+], 'forward seek restores all earlier messages and an aside-only lyric has no empty bubble');
+const latestAside = [...root.querySelectorAll('.chat-aside')].at(-1);
+assert.equal(latestAside.tabIndex, 0, 'aside-only lyric remains interactive');
+assert.match(latestAside.getAttribute('aria-label'), /^Oh, lyric/, 'assistive tech hears the extracted lyric');
 assert.equal(L.lines[2].text, '(Ooh) Turn into something beautiful', 'rendering does not rewrite the canonical lyrics');
 viz.destroy();
 

@@ -176,11 +176,21 @@ export class Messages extends Phone {
       <div class="kbw"><div class="kb">${KB}</div></div>
       <div class="phone-home" aria-hidden="true"><span class="home-indicator"></span></div>`;
     this.inner = this.ph.querySelector(".inner"); this.sub = this.ph.querySelector("header small"); this.rows = []; this.typing = null;
+    this.thread = this.ph.querySelector('.thread'); this.following = true;
+    this.thread.tabIndex = 0;
+    this.thread.setAttribute('role', 'region');
+    this.thread.setAttribute('aria-label', 'Lyric chat history');
+    this.thread.addEventListener('scroll', () => { this.following = this.atLatest(); }, { passive: true });
     this.kbw = this.ph.querySelector(".kbw"); this.inp = this.ph.querySelector(".inp"); this.plans = new Map(); this.down = [];
     this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
     this.predictionText = ""; this.shown = ""; this.kbo = false;
     this.clock = this.ph.querySelector(".chat-clock");
   }
+  atLatest() {
+    const thread = this.thread;
+    return !thread || thread.scrollHeight - thread.clientHeight - thread.scrollTop <= Math.max(8, thread.clientWidth * .04);
+  }
+  scrollToLatest() { if (this.following && this.thread) this.thread.scrollTop = this.thread.scrollHeight; }
   outgoing(turn) { return !!turn && !this.P.group && turn.who === 1; }
   lyricSegments(i, line) {
     if (!this.asides.has(i)) {
@@ -274,44 +284,45 @@ export class Messages extends Phone {
   }
   destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
-    if (!S.line || S.gap) return;
-    const t = this.P.T[S.idx]; if (!t) return;
-    if (S.jump) { if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = []; this.typing = null; }
+    const previous = this.rows[0]?.index ?? -1;
+    const rewinding = S.idx < previous;
+    // A seek restores the conversation up to that point, rather than clearing
+    // everything except the current line. Ordinary playback never evicts rows.
+    if (rewinding) this.following = true;
+    if (rewinding) {
+      while (this.rows.length && this.rows[0].index > S.idx) {
+        const row = this.rows.shift();
+        row.parts.forEach(part => part.el.remove());
+        row.reply?.remove();
+      }
+    }
+    this.typing?.remove(); this.typing = null;
+    if (!S.line || S.idx < 0) { this.scrollToLatest(); return; }
+    const last = this.rows[0]?.index ?? -1;
+    if (last >= S.idx) { this.scrollToLatest(); return; }
     this.sendFlash = S.t;
     if (this.rows[0]) for (const part of this.rows[0].parts) this.full(part.el);
-    this.typing?.remove(); this.typing = null;
-    // TTML can have simultaneous agents. Rebuild a small deterministic window on
-    // each line change so equal-start duet lines and backward seeks aren't lost.
-    if (this.ctx.lyrics.format === 'TTML') {
-      if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove());
-      const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
-      for (const { line, i } of eligible) {
-        const row = this.lyricBubbles(i, line);
-        for (const part of row.parts) {
-          if(this.inner) this.inner.append(part.el);
-          part.el.classList.add('in');
-          if(!S.jump&&i===S.idx)part.el.classList.add('message-arrival');
+    // Fill skipped lines on a forward seek, including simultaneous TTML agents.
+    // Only a newly arriving, adjacent lyric animates; history is already sent.
+    for (let i = last + 1; i <= S.idx; i++) {
+      const line = this.ctx.lyrics.lines[i];
+      if (!line?.text) continue;
+      const row = this.lyricBubbles(i, line);
+      for (const part of row.parts) this.inner.append(part.el);
+      const reply = this.appendListener(i, line, row.el);
+      this.rows.unshift({ ...row, index: i, line, reply });
+      const animate = i === S.idx && !S.jump && i === last + 1;
+      if (animate) requestAnimationFrame(() => {
+        for (const part of row.parts) if (part.el.isConnected) {
+          part.el.classList.add('in', 'message-arrival');
         }
-        const reply=this.appendListener(i,line,row.el);
-        this.rows.unshift({ ...row, reply });
-      }
-      return;
-    }
-    const row = this.lyricBubbles(S.idx, S.line);
-    if(!this.inner) this.inner=this.ph.querySelector('.inner');
-    if(this.inner) for (const part of row.parts) this.inner.append(part.el);
-    const reply=this.appendListener(S.idx,S.line,row.el);
-    this.rows.unshift({ ...row, reply });
-    while (this.rows.length > 9) {
-      const old=this.rows.pop();
-      old.parts.forEach(part => part.el.remove()); old.reply?.remove();
-    }
-    requestAnimationFrame(() => {
-      for (const part of row.parts) {
+      });
+      else for (const part of row.parts) {
         part.el.classList.add('in');
-        if(!S.jump)part.el.classList.add('message-arrival');
+        if (i !== S.idx) this.full(part.el);
       }
-    });
+    }
+    this.scrollToLatest();
   }
   tick(S) {
     if (!this.down) this.down = [];
@@ -329,7 +340,8 @@ export class Messages extends Phone {
     cleanupStickerJobs(this);
     const clock=this.ph.querySelector('.chat-clock');if(clock)clock.textContent=localChatTime();
     const listener=this.listenerFrame(S.t);
-    const r = this.rows[0]; if (!r || !S.line) return;
+    const r = this.rows[0];
+    if (!r || !S.line) { this.scrollToLatest(); return; }
     const litRows = this.ctx.lyrics.format === 'TTML' ? this.rows : [r];
     for (const row of litRows) for (const part of row.parts) {
       light(part.spans, S.gap && row === r ? 99 : wordPos(part.line.tokens, S.t));
@@ -373,7 +385,7 @@ export class Messages extends Phone {
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
     }
     if (!want && this.typing) { this.typing.remove(); this.typing = null; this.sub.textContent = this.P.group ? this.P.names.join(', ') : 'online'; }
-    if(this.inner) this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
+    this.scrollToLatest();
   }
 }
 
