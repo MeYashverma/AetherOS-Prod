@@ -56,7 +56,18 @@ assert.equal(viz.inner.querySelectorAll(':scope > .b').length,expectedBubbles(ga
 viz.destroy();
 
 // Direct initial seeks build every elapsed message; a new song starts a new log.
+// jsdom has no ResizeObserver, so invoke its callback to model a late reply/GIF
+// or keyboard resize without relying on a new playback frame.
+const nativeResizeObserver = globalThis.ResizeObserver;
+let observer;
+globalThis.ResizeObserver = class {
+  constructor(callback) { this.callback = callback; this.elements = []; observer = this; }
+  observe(element) { this.elements.push(element); }
+  notify() { this.callback([]); }
+  disconnect() { this.disconnected = true; }
+};
 viz = new Messages(root,ctx(L)).mount();
+assert.deepEqual(observer.elements,[viz.inner,viz.thread],'both message growth and keyboard resizing keep the latest message visible');
 viz.frame(frameState(L,L.lines[early].t+.2),.016);
 assert.equal(viz.rows.length,expectedRows(early));
 assert.equal(viz.inner.querySelector('.b p').textContent,'Line 0 stays in the chat');
@@ -71,17 +82,47 @@ Object.defineProperty(thread,'clientWidth',{value:200,configurable:true});
 Object.defineProperty(thread,'scrollHeight',{get:()=>scrollHeight,configurable:true});
 Object.defineProperty(thread,'scrollTop',{get:()=>scrollTop,set:n=>{scrollTop=Math.max(0,Math.min(n,scrollHeight-100));},configurable:true});
 viz.scrollToLatest();assert.equal(scrollTop,500,'the newest lyric stays in view during playback');
+scrollHeight=650;
+thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,true,'a layout-driven scroll event cannot silently disable auto-follow');
+observer.notify();assert.equal(scrollTop,550,'a late GIF or listener reply scrolls to the new bottom without another playback frame');
+thread.dispatchEvent(new dom.window.WheelEvent('wheel',{deltaY:-80,bubbles:true}));
 scrollTop=70;thread.dispatchEvent(new dom.window.Event('scroll'));
-assert.equal(viz.following,false,'scrolling to old messages pauses auto-follow');
+assert.equal(viz.following,false,'deliberately scrolling to old messages pauses auto-follow');
 scrollHeight=700;
 viz.frame(frameState(L,L.lines[lyricIndex(39)].t+.2),.016);
 assert.equal(viz.rows.length,40,'fast-forward fills the entire history while the user reads earlier messages');
 assert.equal(viz.following,false,'a forward jump or skipped lyric must not re-enable auto-follow');
-viz.scrollToLatest();assert.equal(scrollTop,70,'new lyrics do not drag the user away from older history');
+observer.notify();assert.equal(scrollTop,70,'late content must not drag the user away from older history');
 scrollTop=596;thread.dispatchEvent(new dom.window.Event('scroll'));
 assert.equal(viz.following,true,'returning near the bottom resumes auto-follow');
-scrollHeight=800;viz.scrollToLatest();assert.equal(scrollTop,700);
+assert.equal(viz.userScrollUntil,0,'an old browse gesture cannot later stop a resumed feed');
+scrollHeight=800;observer.notify();assert.equal(scrollTop,700,'keyboard height changes still follow the bottom');
+thread.dispatchEvent(new dom.window.WheelEvent('wheel',{deltaY:40,bubbles:true}));
+scrollHeight=830;thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,true,'scrolling down must not mistake a keyboard resize for a request to pause playback');
+observer.notify();assert.equal(scrollTop,730);
+thread.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'PageUp',bubbles:true}));
+scrollTop=200;thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,false,'keyboard browsing also pauses auto-follow');
+scrollHeight=850;observer.notify();assert.equal(scrollTop,200);
+scrollTop=750;thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,true,'keyboard users can resume by returning to the bottom');
+const touch = (type,y) => {
+  const event = new dom.window.Event(type,{bubbles:true});
+  Object.defineProperty(event,'touches',{value:[{clientY:y}]});
+  thread.dispatchEvent(event);
+};
+touch('touchstart',100);touch('touchmove',125);
+scrollTop=350;thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,false,'swiping down to read history pauses auto-follow on touchscreens');
+scrollHeight=900;observer.notify();assert.equal(scrollTop,350);
+scrollTop=800;thread.dispatchEvent(new dom.window.Event('scroll'));
+assert.equal(viz.following,true,'touch users can resume by returning to the bottom');
 viz.destroy();
+assert.equal(observer.disconnected,true,'the resize watcher is removed with the stage');
+if (nativeResizeObserver === undefined) delete globalThis.ResizeObserver;
+else globalThis.ResizeObserver = nativeResizeObserver;
 const newLyrics=parseLRC('[00:00]An entirely different song');
 viz=new Messages(root,ctx(newLyrics)).mount();viz.frame(frameState(newLyrics,.2),.016);
 assert.equal(viz.inner.querySelectorAll(':scope > .b').length,1,'a different song starts with its own conversation');

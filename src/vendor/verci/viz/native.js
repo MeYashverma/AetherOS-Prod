@@ -180,7 +180,39 @@ export class Messages extends Phone {
     this.thread.tabIndex = 0;
     this.thread.setAttribute('role', 'region');
     this.thread.setAttribute('aria-label', 'Lyric chat history');
-    this.thread.addEventListener('scroll', () => { this.following = this.atLatest(); }, { passive: true });
+    // Scrolling caused by layout, a new lyric, or setting scrollTop is not a
+    // request to browse history. Only a deliberate gesture pauses auto-follow.
+    this.userScrollUntil = 0;
+    this.lastScrollTop = 0;
+    const userScroll = () => { this.userScrollUntil = Date.now() + 750; };
+    const scrollable = () => this.thread.scrollHeight > this.thread.clientHeight + 8;
+    const browseHistory = () => { if (scrollable()) { userScroll(); this.following = false; } };
+    this.thread.addEventListener('wheel', e => { if (e.deltaY < 0) browseHistory(); }, { passive: true });
+    this.thread.addEventListener('touchstart', e => { this.touchY = e.touches[0]?.clientY; }, { passive: true });
+    this.thread.addEventListener('touchmove', e => {
+      const y = e.touches[0]?.clientY;
+      if (y != null && this.touchY != null && y > this.touchY + 2) browseHistory();
+      this.touchY = y;
+    }, { passive: true });
+    this.thread.addEventListener('pointermove', e => { if (e.buttons) userScroll(); }, { passive: true });
+    this.thread.addEventListener('keydown', e => {
+      if (e.target.closest('button,input,textarea,[contenteditable="true"]')) return;
+      if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) || e.key === ' ' && e.shiftKey) browseHistory();
+      else if (e.key === 'Tab') userScroll();
+    });
+    this.thread.addEventListener('scroll', () => {
+      const top = this.thread.scrollTop;
+      if (this.atLatest()) { this.following = true; this.userScrollUntil = 0; }
+      else if (Date.now() < this.userScrollUntil && top < this.lastScrollTop - 1) this.following = false;
+      this.lastScrollTop = top;
+    }, { passive: true });
+    // Replies, GIFs and the keyboard can grow after the lyric frame has run.
+    // Keep the last bubble visible even when playback is paused or frames stall.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.chatResizeObserver = new ResizeObserver(() => this.scrollToLatest());
+      this.chatResizeObserver.observe(this.inner);
+      this.chatResizeObserver.observe(this.thread);
+    }
     this.kbw = this.ph.querySelector(".kbw"); this.inp = this.ph.querySelector(".inp"); this.plans = new Map(); this.down = [];
     this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
     this.predictionText = ""; this.shown = ""; this.kbo = false;
@@ -190,7 +222,12 @@ export class Messages extends Phone {
     const thread = this.thread;
     return !thread || thread.scrollHeight - thread.clientHeight - thread.scrollTop <= Math.max(8, thread.clientWidth * .04);
   }
-  scrollToLatest() { if (this.following && this.thread) this.thread.scrollTop = this.thread.scrollHeight; }
+  scrollToLatest() {
+    if (this.following && this.thread) {
+      this.thread.scrollTop = this.thread.scrollHeight;
+      this.lastScrollTop = this.thread.scrollTop;
+    }
+  }
   outgoing(turn) { return !!turn && !this.P.group && turn.who === 1; }
   lyricSegments(i, line) {
     if (!this.asides.has(i)) {
@@ -282,7 +319,7 @@ export class Messages extends Phone {
     }
     return active;
   }
-  destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
+  destroy() { this.chatResizeObserver?.disconnect(); cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
     const previous = this.rows[0]?.index ?? -1;
     const rewinding = S.idx < previous;
