@@ -339,7 +339,7 @@ Apply via `os.applyTheme(name)` → sets `document.documentElement` variables + 
 
 ### Media
 - **Media Console:** Last.fm (requires `api_lastfm` + `api_lastfm_user`), LRCLib → lyrics.ovh → no-lyrics, Deezer/iTunes fallback, GIF overlay (`#rb-gif-bg` blur 14px), vinyl, tonearm, visualizer (`#rb-visualizer-canvas`)
-- **Stickers & Profiles:** Finder media library and lyric-chat picker for keyless [StickersAPI](https://stickerapi.sbs/docs) stickers, emotes, public Telegram sets, PFPs and banners. Automatic lyric reactions fall back to Discord, Sticker.ly and local media; [details](docs/music-and-verci.md#stickersapi-automatic-media-and-app-wide-library).
+- **Stickers & Profiles:** Finder media library and lyric-chat picker for keyless [StickersAPI](https://stickerapi.sbs/docs) stickers, emotes, public Telegram sets, PFPs and banners. In WhatsApp-style lyric chat, the first eligible mood cue tries a StickersAPI sticker inside the lyric bubble without any caption or provider credit beneath the sticker. Automatic reactions fall back to Discord, Sticker.ly and local media; the in-app connection test checks a sample image as well as search. [Details](docs/music-and-verci.md#stickersapi-automatic-media-and-app-wide-library).
 - **Radio Browser:** topvote/trending, station search, play via `<audio>` + visualizer
 - **YouTube Ambient:** Piped search + Invidious mirrors + proxy fallback, `youtubeambient` window
 - **YTCH.TV:** retro TV iframe with mirror handling

@@ -45,6 +45,27 @@ export function listenerAnalysis(lyrics,index){
  if(mood==='sad'||mood==='anxiety')return {mood,pool:SAFE};
  return mood?{mood,pool:BANKS[mood]}:null;
 }
+// Keep lyric analyses for the four independent rotation phases. The old scan
+// re-analysed every earlier matching line for *each* generated reply, making a
+// long-history seek quadratic. A parsed lyrics object is stable across seeks;
+// WeakMap entries disappear with it, while a replaced lines array resets state.
+const moodCounts=new WeakMap();
+function previousMoodCount(lyrics,index,mood){
+ let cache=moodCounts.get(lyrics);
+ if(!cache||cache.lines!==lyrics.lines||cache.length!==lyrics.lines.length){
+  // The original scan begins at line 2, so phases 0/1 begin at 4/5.
+  cache={lines:lyrics.lines,length:lyrics.lines.length,occurrences:[],phases:Array.from({length:4},(_,phase)=>({next:phase<2?phase+4:phase,seen:new Map()}))};
+  moodCounts.set(lyrics,cache);
+ }
+ const phase=cache.phases[index%4];
+ for(let i=phase.next;i<=index;i+=4){
+  const label=i===index?mood:listenerAnalysis(lyrics,i)?.mood;
+  cache.occurrences[i]=label?(phase.seen.get(label)||0):0;
+  if(label)phase.seen.set(label,(phase.seen.get(label)||0)+1);
+ }
+ if(phase.next<=index)phase.next=index+4;
+ return cache.occurrences[index]||0;
+}
 export function listenerReplyFor(lyrics,plan,index,seed='') {
  if(index<2)return null;
  const who=plan.T[index]?.who;if(who===undefined)return null;
@@ -53,9 +74,9 @@ export function listenerReplyFor(lyrics,plan,index,seed='') {
  const line=lyrics.lines[index],prev=lyrics.lines[index-1];
  if(!line?.text||!prev||line.t-prev.t>20)return null;
  const info=listenerAnalysis(lyrics,index);if(!info)return null;
- // Rotate within each mood bank: repeated choruses don't repeat the same response.
- let occurrence=0;
- for(let i=2;i<index;i++)if((index-i)%4===0 && listenerAnalysis(lyrics,i)?.mood===info.mood)occurrence++;
+ // Same phase and mood as the original full-history scan, in constant time
+ // on replay. The seed still affects only the bank offset, not the count.
+ const occurrence=previousMoodCount(lyrics,index,info.mood);
  return info.pool[(reactionHash(`${seed}:${info.mood}`)+occurrence)%info.pool.length];
 }
 export function listenerTiming(line,text){

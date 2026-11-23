@@ -68,6 +68,8 @@ globalThis.ResizeObserver = class {
 };
 viz = new Messages(root,ctx(L)).mount();
 assert.deepEqual(observer.elements,[viz.inner,viz.thread],'both message growth and keyboard resizing keep the latest message visible');
+let geometryReads=0;
+viz.el.getBoundingClientRect=()=>{geometryReads++;return {width:320,height:640};};
 viz.frame(frameState(L,L.lines[early].t+.2),.016);
 assert.equal(viz.rows.length,expectedRows(early));
 assert.equal(viz.inner.querySelector('.b p').textContent,'Line 0 stays in the chat');
@@ -76,16 +78,38 @@ const thread = viz.thread;
 assert.equal(thread.tabIndex,0,'history can receive keyboard scrolling focus');
 assert.equal(thread.getAttribute('aria-label'),'Lyric chat history');
 // jsdom has no layout. Simulate a tall scroll region to verify follow/pause rules.
-let scrollTop=0, scrollHeight=600;
+let scrollTop=0, scrollHeight=600, heightReads=0, topWrites=0;
 Object.defineProperty(thread,'clientHeight',{value:100,configurable:true});
 Object.defineProperty(thread,'clientWidth',{value:200,configurable:true});
-Object.defineProperty(thread,'scrollHeight',{get:()=>scrollHeight,configurable:true});
-Object.defineProperty(thread,'scrollTop',{get:()=>scrollTop,set:n=>{scrollTop=Math.max(0,Math.min(n,scrollHeight-100));},configurable:true});
+Object.defineProperty(thread,'scrollHeight',{get:()=>{heightReads++;return scrollHeight;},configurable:true});
+Object.defineProperty(thread,'scrollTop',{get:()=>scrollTop,set:n=>{topWrites++;scrollTop=Math.max(0,Math.min(n,scrollHeight-100));},configurable:true});
 viz.scrollToLatest();assert.equal(scrollTop,500,'the newest lyric stays in view during playback');
 scrollHeight=650;
 thread.dispatchEvent(new dom.window.Event('scroll'));
 assert.equal(viz.following,true,'a layout-driven scroll event cannot silently disable auto-follow');
 observer.notify();assert.equal(scrollTop,550,'a late GIF or listener reply scrolls to the new bottom without another playback frame');
+const writesBefore=topWrites,readsBefore=heightReads;
+for(let i=0;i<80;i++)viz.frame(frameState(L,L.lines[early].t+.2),.016);
+assert.equal(topWrites,writesBefore,'unchanged frames never write scrollTop (which forces full-history layout)');
+assert.equal(heightReads,readsBefore,'unchanged frames never measure the entire history');
+assert.equal(geometryReads,0,'CSS-only chat frames never force layout by measuring the stage');
+// Updating the animated composer must not measure the retained conversation
+// for each typed character; its ResizeObserver handles actual size changes.
+const typingIndex=L.lines.findIndex((line,i)=>i>early && i<39 && viz.outgoing(viz.P.T[i+1]));
+assert.ok(typingIndex>early,'fixture contains a later outgoing typing interval');
+viz.frame(frameState(L,L.lines[typingIndex].t+.7),.016);
+const typingReads=heightReads,typingWrites=topWrites;
+const composers=[];
+for(const t of [1,1.3,1.6,1.9,2.2,2.5]){
+  viz.frame(frameState(L,L.lines[typingIndex].t+t),.016);
+  composers.push(viz.shown);
+}
+assert.ok(new Set(composers).size>1,'the outgoing composer still types');
+assert.equal(topWrites,typingWrites,'typing text alone never forces a full-history scroll with ResizeObserver');
+assert.equal(heightReads,typingReads,'typing text alone never measures the chat height');
+assert.equal(geometryReads,0,'typing text does not force a stage measurement either');
+scrollHeight+=40;observer.notify();
+assert.equal(scrollTop,scrollHeight-100,'a composer size change still follows through ResizeObserver');
 thread.dispatchEvent(new dom.window.WheelEvent('wheel',{deltaY:-80,bubbles:true}));
 scrollTop=70;thread.dispatchEvent(new dom.window.Event('scroll'));
 assert.equal(viz.following,false,'deliberately scrolling to old messages pauses auto-follow');
@@ -127,6 +151,12 @@ const newLyrics=parseLRC('[00:00]An entirely different song');
 viz=new Messages(root,ctx(newLyrics)).mount();viz.frame(frameState(newLyrics,.2),.016);
 assert.equal(viz.inner.querySelectorAll(':scope > .b').length,1,'a different song starts with its own conversation');
 assert.equal(viz.inner.querySelector('.b p').textContent,'An entirely different song');
+if(!nativeResizeObserver){
+  let fallbackReads=0;
+  Object.defineProperty(viz.thread,'scrollHeight',{get:()=>{fallbackReads++;return 200;},configurable:true});
+  viz.frame(frameState(newLyrics,.3),.016);
+  assert.ok(fallbackReads>0,'without ResizeObserver, legacy frame following still works');
+}
 viz.destroy();
 
 const tt = Array.from({length:22},(_,i)=>`<p begin="${Math.floor(i/2)*2}s" end="${Math.floor(i/2)*2+1.8}s" ttm:agent="v${1+i%2}">Voice ${i} sings</p>`).join('');

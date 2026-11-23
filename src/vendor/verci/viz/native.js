@@ -4,13 +4,14 @@ import { splitChatAsides } from './chat-asides.js';
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
-import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
+// A cached provider module would still inject the old sticker credit.
+import { cleanupStickerJobs } from '../providers/automatic-stickers.js?v=stickersapi-29';
 import { cleanMedia, mediaURL, renderMediaImage } from '../providers/stickersapi.js';
 import { ChatInteractions } from './chat-interactions.js';
 import { listenerReplyFor, listenerTiming } from './listener-replies.js';
 import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
-import { addChatReaction } from './chat-reactions.js?v=stickersapi-26';
+import { addChatReaction } from './chat-reactions.js?v=stickersapi-29';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */
@@ -152,6 +153,8 @@ export function typedAt(ev, p) { // text so far and the last key event at progre
 
 export class Messages extends Phone {
   pcls = 'nd-wa';
+  // All phone sizing is CSS-driven; the chat never consumes Viz.w/h or resize().
+  measureFrameRect = false;
   constructor(ph, ctx) {
     super(ph, ctx);
     this.inner = null;
@@ -354,10 +357,12 @@ export class Messages extends Phone {
   }
   listenerFrame(t) {
     let active=null;
+    this.listenerLayoutChanged=false;
     for(const row of this.rows){
       const el=row.reply,data=el?.listener;if(!data)continue;
       const state=t<data.start?'pending':t<data.end?'typing':'sent';
       if(state!==data.state){
+        this.listenerLayoutChanged=true;
         const old=data.state;data.state=state;
         el.classList.remove('typing','listener-arrival');
         if(state==='typing'&&!el.classList.contains('out')){
@@ -431,10 +436,11 @@ export class Messages extends Phone {
     if (!this.shown) this.shown = '';
     if (!this.kbo) this.kbo = false;
     cleanupStickerJobs(this);
-    const clock=this.ph.querySelector('.chat-clock');if(clock)clock.textContent=localChatTime();
+    const clock=this.clock || this.ph.querySelector('.chat-clock'), now=localChatTime();
+    if(clock && clock.textContent!==now)clock.textContent=now;
     const listener=this.listenerFrame(S.t);
     const r = this.rows[0];
-    if (!r || !S.line) { this.scrollToLatest(); return; }
+    if (!r || !S.line) return;
     const litRows = this.ctx.lyrics.format === 'TTML' ? this.rows : [r];
     for (const row of litRows) for (const part of row.parts) {
       light(part.spans, S.gap && row === r ? 99 : wordPos(part.line.tokens, S.t));
@@ -457,6 +463,7 @@ export class Messages extends Phone {
       const data=listener.data;kb=true;p=clamp((S.t-data.start)/(data.end-data.start));
       ({str:typed,last}=typedAt(data.plan,p));this.dur=data.end-data.start;this.ev=last&&last.u*this.dur;
     }
+    const keyboardChanged=kb!==this.kbo;
     if(this.kbw) this.kbw.classList.toggle('open', kb); if(this.ph) this.ph.classList.toggle('kbopen', kb);
     const predictionText=kb?typed:'';
     if(predictionText!==this.predictionText){
@@ -465,7 +472,8 @@ export class Messages extends Phone {
       if(this.ph && this.predict){const bar=this.ph.querySelector('.kb-suggestions');if(bar)for(const word of this.predict(predictionText)){const item=document.createElement('span');item.textContent=word;bar.append(item);}}
     }
     const shown = typed.length > 90 ? '…' + typed.slice(-88) : typed;
-    if (shown !== (this.shown||'') || kb !== (this.kbo||false)) { this.shown = shown; this.kbo = kb; if(this.inp) this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; if(this.ph) this.ph.classList.toggle('hastext', kb && !!shown); }
+    const composerChanged=shown!==(this.shown||'');
+    if (composerChanged || keyboardChanged) { this.shown = shown; this.kbo = kb; if(this.inp) this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; if(this.ph) this.ph.classList.toggle('hastext', kb && !!shown); }
     if(Array.isArray(this.down)) { for (const k of this.down) { if(k) k.classList.remove('down'); } } this.down = [];
     if (kb && last && p * this.dur - this.ev < 0.13 && p < 1) {
     const hit = k => { const e = this.keys?.[k]; if (e) { e.classList.add('down'); if(Array.isArray(this.down)) this.down.push(e); } };
@@ -473,12 +481,17 @@ export class Messages extends Phone {
     }
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
     const want = !!(!listener && nx && nt && !out && nextMain && S.t > nx.t - 1.5);
+    const typingChanged=want!==!!this.typing;
     if (want && !this.typing) {
       this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); if(this.inner) this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
     }
     if (!want && this.typing) { this.typing.remove(); this.typing = null; this.sub.textContent = this.P.group ? this.P.names.join(', ') : 'online'; }
-    this.scrollToLatest();
+    // Measuring scrollHeight after every unchanged frame or typed character
+    // forces layout of the entire retained chat. Newly visible replies and
+    // typing scroll here; ResizeObserver follows composer/keyboard size changes
+    // and late images. Older browsers without it retain legacy frame following.
+    if(!this.chatResizeObserver || this.listenerLayoutChanged || keyboardChanged || typingChanged) this.scrollToLatest();
   }
 }
 

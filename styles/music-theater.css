@@ -80,6 +80,9 @@
 
 .music-stickerly-library{border-top:1px solid #ffffff12;padding-top:6px}
 .music-stickerly-library a{color:#8bddc8;text-decoration:underline}
+.music-stickersapi-sample{display:inline-block;margin-left:6px;vertical-align:middle}
+.music-stickersapi-sample img{display:block;width:44px;height:44px;object-fit:contain}
+.music-stickersapi-sample img[hidden]{display:none}
 .music-stickerly-library form{flex-wrap:wrap}
 .music-stickerly-library input{flex:1 1 200px}
 .music-stickerly-library select{background:#1b1d28;border:1px solid #ffffff24;color:#eee;border-radius:7px;padding:6px}

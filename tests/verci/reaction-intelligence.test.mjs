@@ -13,6 +13,17 @@ assert.equal(analyzeLyric('दिल में प्यार').mood,'love');
 assert.equal(analyzeLyric('I am crying with tears').mood,'sad');
 assert.equal(analyzeLyric('I love you but I am lonely').mixed,true);
 assert.ok(analyzeLyric('I love you','my heart loves you').confidence > analyzeLyric('I love you').confidence);
+const short={lines:Array.from({length:3},(_,i)=>({t:i*3,text:'I love you',speaker:0}))};
+for(const title of ['Love Song','Song','My Song','Taylor']) for(const density of ['subtle','balanced','expressive']) {
+ const plan=buildReactionPlan(short,title,density);
+ assert.equal(plan[0]?.sticker?.mood,'love',`${title}/${density} must offer an API-eligible sticker, not spend the only slot on a GIF`);
+ assert.equal(plan.filter(r=>r?.gif || r?.sticker).length,1,'the short-song guarantee still respects media density');
+}
+assert.ok(buildReactionPlan({lines:[{t:0,text:'Ordinary unrelated sentence'}]},'Song')[0]===null,'no unrelated mood is invented');
+const gifOnly=buildReactionPlan(short,'Love Song','balanced',{stickers:false,gifs:true});
+assert.equal(gifOnly[0]?.gif,'hug','disabling stickers keeps the first eligible GIF slot');
+assert.ok(gifOnly.every(r=>!r?.sticker));
+assert.ok(buildReactionPlan(short,'Love Song','balanced',{stickers:false,gifs:false}).every(r=>!r?.sticker&&!r?.gif));
 const lyrics={lines:Array.from({length:100},(_,i)=>({t:i*5,text:['I love my heart baby','happy smile','crying alone','dance party','boss winning'][i%5],speaker:i%2}))};
 for(const density of ['subtle','balanced','expressive']) {
  const plan=buildReactionPlan(lyrics,'Song',density);
@@ -25,6 +36,7 @@ for(const density of ['subtle','balanced','expressive']) {
 const count=d=>buildReactionPlan(lyrics,'Song',d).filter(r=>r?.emoji).length;
 assert.ok(count('expressive')>count('balanced'));assert.ok(count('balanced')>count('subtle'));
 assert.ok(buildReactionPlan(lyrics,'Song','expressive').some(r=>r?.sticker),'sticker planning is active');
+assert.ok(buildReactionPlan(lyrics,'Song','balanced').slice(1).some(r=>r?.gif),'longer songs still get occasional GIFs');
 const calls=[];
 const fallback=await reactionGif('dance',new AbortController().signal,async url=>{
  calls.push(url);

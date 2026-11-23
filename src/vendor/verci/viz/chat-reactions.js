@@ -1,5 +1,5 @@
 // Decorative reactions, not lyric replacements or singer metadata.
-import { attachAutomaticSticker } from '../providers/automatic-stickers.js';
+import { attachAutomaticSticker } from '../providers/automatic-stickers.js?v=stickersapi-29';
 import { moodMedia, renderMediaImage } from '../providers/stickersapi.js';
 import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
 export function lyricReaction(text,index,seed='') {
@@ -33,30 +33,36 @@ export async function reactionGif(category, signal, fetchImpl=fetch, variant=0) 
 export function addChatReaction(viz, bubble, text, index) {
   const options=viz.ctx.opts || {};
   const density=options.density?.() || 'balanced';
+  const reduced=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const connection=globalThis.navigator?.connection;
+  const stickersEnabled=options.stickers?.()!==false;
+  const gifsEnabled=options.gifs?.()!==false && !reduced && !connection?.saveData && !/(^|-)2g$/.test(connection?.effectiveType || '');
+  const mediaKey=`${stickersEnabled}:${gifsEnabled}`;
   if(viz.ctx.lyrics?.lines) {
-    if(!viz.reactionPlan || viz.reactionDensity!==density) {
-      viz.reactionPlan=buildReactionPlan(viz.ctx.lyrics,viz.ctx.song.title,density);viz.reactionDensity=density;
+    if(!viz.reactionPlan || viz.reactionDensity!==density || (viz.reactionMedia && viz.reactionMedia!==mediaKey)) {
+      viz.reactionPlan=buildReactionPlan(viz.ctx.lyrics,viz.ctx.song.title,density,{stickers:stickersEnabled,gifs:gifsEnabled});
+      viz.reactionDensity=density;viz.reactionMedia=mediaKey;
     }
   }
   const reaction=viz.reactionPlan?.[index] ?? (viz.ctx.lyrics?.lines ? null : lyricReaction(text,index,viz.ctx.song.title));
   if(!reaction) return;
-  const reduced=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Keep the sticker/emote inside its lyric bubble, above the message time.
+  const insertMedia=el=>{const time=bubble.querySelector(':scope > time');if(time)time.before(el);else bubble.append(el);};
   if(options.emojis?.()!==false && reaction.emoji) {
     const emoji=document.createElement('span'); emoji.className='chat-emoji';
     emoji.textContent=reaction.emoji; emoji.setAttribute('aria-label','Decorative reaction');
     bubble.querySelector('p').append(' ',emoji);
   }
-  if(options.stickers?.()!==false && reaction.sticker) {
+  if(stickersEnabled && reaction.sticker) {
     const sticker=document.createElement('div');sticker.className='chat-sticker';
     sticker.dataset.mood=reaction.sticker.mood;sticker.setAttribute('aria-label','Decorative reaction sticker');
+    // The emoji is an offline/loading fallback, not a caption under the image.
     const icon=document.createElement('span');icon.textContent=reaction.sticker.emoji;
-    const caption=document.createElement('strong');caption.textContent=reaction.sticker.caption;
-    sticker.append(icon,caption);bubble.append(sticker);
+    sticker.append(icon);insertMedia(sticker);
     attachAutomaticSticker(viz,sticker,reaction.sticker,options,index,hash(viz.ctx.song.title || ''),reduced);
   }
-  const connection=globalThis.navigator?.connection;
-  if(options.gifs?.()===false || reduced || connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '') || !reaction.gif) return;
-  const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; bubble.append(slot);
+  if(!gifsEnabled || !reaction.gif) return;
+  const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; insertMedia(slot);
   if(['auto','stickerapi'].includes(options.stickerSource?.() || '')){
     const controller=new AbortController(),job={element:slot,controller};
     viz.stickerJobs ||= new Set();viz.stickerJobs.add(job);

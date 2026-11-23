@@ -343,13 +343,11 @@
 .verci-stage .nd-wa .chat-gif img{display:block;width:100%;max-height:30cqw;object-fit:cover}
 @media(prefers-reduced-motion:reduce){.verci-stage .nd-wa .chat-gif{display:none!important}}
 
-/* Locally rendered meme-style stickers: transparent cutout feel, no remote assets. */
+/* Emoji-only fallback. Cached renderers can still insert an old caption or
+   provider credit, so hide both even before their module finishes updating. */
 .verci-stage .nd-wa .chat-sticker{width:42cqw;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:1cqw;padding:3cqw 2cqw;margin:2cqw auto 1cqw;transform:rotate(-5deg);filter:drop-shadow(0 1cqw 1cqw #0005)}
 .verci-stage .nd-wa .chat-sticker>span{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:19cqw;line-height:1.2;filter:drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff)}
-.verci-stage .nd-wa .chat-sticker>strong{display:block;max-width:100%;padding:1.5cqw 2.5cqw;background:#fbf6dc;color:#16211d;border:1px solid #192b2440;border-radius:2cqw;font:900 3cqw/1.2 Inter,system-ui,sans-serif;letter-spacing:.02em;text-align:center;white-space:normal;text-wrap:balance}
-.verci-stage .nd-wa .chat-sticker[data-mood="heartbreak"]>strong,.verci-stage .nd-wa .chat-sticker[data-mood="sad"]>strong{background:#e0dcff}
-.verci-stage .nd-wa .chat-sticker[data-mood="confidence"]>strong,.verci-stage .nd-wa .chat-sticker[data-mood="money"]>strong{background:#bcf0cb}
-.verci-stage .nd-wa .chat-sticker[data-mood="love"]>strong{background:#ffd4e4}
+.verci-stage .nd-wa .chat-sticker>strong,.verci-stage .nd-wa .chat-sticker>.chat-sticker-credit{display:none!important}
 
 /* Short lines keep the same typography and bubble shape as every other lyric. */
 .verci-stage .nd-wa .b{overflow-wrap:anywhere;min-width:12cqw}
@@ -391,7 +389,7 @@
 
 /* StickersAPI previews and Sticker.ly PNG/WebP assets retain their cutout silhouette. */
 .verci-stage .nd-wa .chat-sticker.has-stickersapi-image,.verci-stage .nd-wa .chat-sticker.has-stickerly-image{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
-.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span,.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>strong{display:none}
+.verci-stage .nd-wa .chat-sticker.has-stickersapi-image>span{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickersapi-image[hidden]{display:none}
 .verci-stage .nd-wa .chat-gif .chat-stickersapi-image{display:block;max-width:100%;max-height:35cqw;object-fit:contain}
@@ -405,13 +403,13 @@
 .verci-stage .nd-wa .chat-local-media-preview span{font-size:3cqw;color:#c5d9d4;padding:2cqw;text-align:center}
 .verci-stage .nd-wa .chat-local-media-image{display:block;max-width:100%;width:auto;max-height:42cqw;object-fit:contain;border-radius:1.5cqw}
 .verci-stage .nd-wa .chat-local-media-image[hidden]{display:none}
-.verci-stage .nd-wa .chat-sticker.has-stickerly-image>span,.verci-stage .nd-wa .chat-sticker.has-stickerly-image>strong{display:none}
+.verci-stage .nd-wa .chat-sticker.has-stickerly-image>span{display:none}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
 .verci-stage .nd-wa .chat-sticker .chat-stickerly-image[hidden]{display:none}
 
 /* Discord's official catalogue includes vector Lottie animations and raster stickers. */
 .verci-stage .nd-wa .chat-sticker.has-discord-sticker{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
-.verci-stage .nd-wa .chat-sticker.has-discord-sticker>span,.verci-stage .nd-wa .chat-sticker.has-discord-sticker>strong{display:none}
+.verci-stage .nd-wa .chat-sticker.has-discord-sticker>span{display:none}
 .verci-stage .nd-wa .chat-discord-media{width:100%;max-width:42cqw}
 .verci-stage .nd-wa .chat-discord-media[hidden]{display:none}
 .verci-stage .nd-wa .chat-discord-image{display:block;width:100%;max-height:42cqw;object-fit:contain}
