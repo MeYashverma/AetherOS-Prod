@@ -263,8 +263,30 @@ const AetherBridge = (() => {
                         break;
                     case 'CLIPBOARD':
                         if(navigator.clipboard) navigator.clipboard.writeText(data.text).catch(()=>{});
-                        Notifications.push('AETHER BRIDGE', 'Clipboard synced from remote device');
+                        Notifications.push('Device Sync', 'Clipboard synced from remote device');
                         break;
+                    case 'REQUEST_DEVPAD': {
+                        let notes = [];
+                        try { notes = JSON.parse(localStorage.getItem('AetherOS_DevPad_v1') || '[]'); } catch(e) {}
+                        send(devId, { type: 'DEVPAD_SYNC', notes: Array.isArray(notes) ? notes : [] });
+                        break;
+                    }
+                    case 'DEVPAD_SYNC': {
+                        if (Array.isArray(data.notes) && data.notes.length) {
+                            let local = [];
+                            try { local = JSON.parse(localStorage.getItem('AetherOS_DevPad_v1') || '[]'); } catch(e) {}
+                            if (!Array.isArray(local)) local = [];
+                            const ids = new Set(local.map(n => n && n.id));
+                            let added = 0;
+                            data.notes.forEach(n => {
+                                if (n && n.id && !ids.has(n.id)) { local.unshift(n); ids.add(n.id); added++; }
+                            });
+                            try { localStorage.setItem('AetherOS_DevPad_v1', JSON.stringify(local)); } catch(e) {}
+                            if (window.os && os.devpadInit) os.devpadInit();
+                            Notifications.push('Device Sync', `Synced ${added} new DevPad note(s)`);
+                        }
+                        break;
+                    }
                     case 'PING':
                         send(devId, {type:'PONG', ts: data.ts});
                         break;
@@ -721,17 +743,25 @@ const AetherBridge = (() => {
                     if(document.getElementById('ab-sync-documents')?.checked) folders.push('Documents');
                     if(document.getElementById('ab-sync-photos')?.checked) folders.push('Photos');
                     if(document.getElementById('ab-sync-notes')?.checked) folders.push('Notes');
-                    if(!folders.length){updateStatus('Select at least one folder');return;}
+                    const syncDevPad = !!document.getElementById('ab-sync-devpad')?.checked;
+                    if(!folders.length && !syncDevPad){updateStatus('Select at least one folder or DevPad Notes');return;}
                     state.syncFolders=folders;
                     document.getElementById('ab-sync-modal').style.display='none';
-                    // Request listings for each sync folder
                     folders.forEach(f=>{
                         if(state.activeDevice) send(state.activeDevice,{type:'REQUEST_LISTING',path:'/'+f});
                         addTransfer('/'+f+' (sync)',0,'down');
                     });
-                    updateStatus(`Syncing: ${folders.join(', ')}…`);
-                    Notifications.push('AETHER BRIDGE',`Sync started [${state.syncMode}]: ${folders.join(', ')}`);
-                    os.logTerminal(`Aether Bridge: Sync [${state.syncMode}] — ${folders.join(', ')}`);
+                    if (syncDevPad && state.activeDevice) {
+                        let notes = [];
+                        try { notes = JSON.parse(localStorage.getItem('AetherOS_DevPad_v1') || '[]'); } catch(e) {}
+                        send(state.activeDevice, { type: 'DEVPAD_SYNC', notes: Array.isArray(notes) ? notes : [] });
+                        send(state.activeDevice, { type: 'REQUEST_DEVPAD' });
+                        addTransfer('DevPad Notes', JSON.stringify(notes).length, 'up');
+                    }
+                    const summary = [...folders, ...(syncDevPad ? ['DevPad Notes'] : [])].join(', ');
+                    updateStatus(`Syncing: ${summary}…`);
+                    Notifications.push('Device Sync', `Sync started [${state.syncMode}]: ${summary}`);
+                    os.logTerminal(`Device Sync: [${state.syncMode}] — ${summary}`);
                 },
             };
 

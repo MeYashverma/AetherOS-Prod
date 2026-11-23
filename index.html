@@ -244,16 +244,16 @@
                         </div>
                         <div class="pt-1.5 border-t border-white/[0.05] flex justify-between items-center text-[8px] font-mono">
                             <span id="net-io-ul" class="text-gray-500">Upload: --</span>
-                            <span id="net-io-status" class="text-green-400 flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-green-400"></span>UPLINK_OK</span>
+                            <span id="net-io-status" class="text-emerald-400 flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-emerald-400"></span>Connected</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Combined Media Console (Last.FM + Radio) -->
+                <!-- Combined Media Widget (Music + World Radio) -->
                 <div class="rounded-xl border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] overflow-hidden" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15))">
                     <div class="flex justify-between items-center px-3.5 pt-3 pb-1.5">
-                        <span class="text-[10px] font-mono text-os-accent uppercase flex items-center gap-1.5">
-                            <i data-lucide="headphones" class="w-3.5 h-3.5 text-yellow-400/70"></i>Media Console
+                        <span class="text-[10.5px] font-medium text-white/80 flex items-center gap-1.5">
+                            <i data-lucide="headphones" class="w-3.5 h-3.5 text-amber-300/80"></i>Audio &amp; Radio
                         </span>
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" id="mini-stream-indicator"></span>
@@ -265,12 +265,12 @@
                         <div class="flex gap-2.5 items-center">
                             <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.06]">
                                 <img id="mini-cover-art" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Cover">
-                                <i id="mini-cover-fallback" data-lucide="music" class="w-4 h-4 text-white/20"></i>
+                                <i id="mini-cover-fallback" data-lucide="music" class="w-4 h-4 text-white/25"></i>
                             </div>
                             <div class="overflow-hidden flex-1 min-w-0">
-                                <div class="text-[10px] text-gray-500 font-mono uppercase">Now Playing</div>
-                                <div class="text-[11px] text-white font-semibold truncate" id="mini-track-title">Offline</div>
-                                <div class="text-[9px] text-gray-500 font-mono truncate" id="mini-artist-name">No telemetry linked</div>
+                                <div class="text-[10px] text-gray-500">Music &amp; Podcasts</div>
+                                <div class="text-[11px] text-white font-semibold truncate" id="mini-track-title">Not Playing</div>
+                                <div class="text-[10px] text-gray-500 truncate" id="mini-artist-name">Click to open player</div>
                             </div>
                         </div>
                     </div>
@@ -280,33 +280,33 @@
                         <div class="flex gap-2.5 items-center">
                             <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.08]" id="sidebar-radio-icon-container">
                                 <img id="sidebar-radio-icon" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Station">
-                                <i id="sidebar-radio-fallback" data-lucide="radio-tower" class="w-4 h-4 text-white/20"></i>
+                                <i id="sidebar-radio-fallback" data-lucide="radio-tower" class="w-4 h-4 text-white/25"></i>
                             </div>
                             <div class="overflow-hidden flex-1 min-w-0">
-                                <div class="text-[10px] text-gray-500 font-mono uppercase">Global Radio</div>
-                                <div class="text-[11px] text-white font-semibold truncate" id="sidebar-radio-name">Offline</div>
-                                <div class="text-[9px] text-gray-500 font-mono truncate" id="sidebar-radio-tags">Awaiting tuning...</div>
+                                <div class="text-[10px] text-gray-500">World Radio</div>
+                                <div class="text-[11px] text-white font-semibold truncate" id="sidebar-radio-name">Not Playing</div>
+                                <div class="text-[10px] text-gray-500 truncate" id="sidebar-radio-tags">Browse 30,000+ stations</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Discord Live Telemetry Sidebar Widget -->
+                <!-- Discord Presence Sidebar Widget -->
                 <div id="sidebar-discord-card" class="rounded-xl p-3.5 border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] cursor-none hover-target transition-all duration-200 hover:border-white/[0.12] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.03)]" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15));display:none" onclick="os.openWindow('presence')">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-mono text-os-accent uppercase flex items-center gap-1.5">
-                            <i data-lucide="user" class="w-3 h-3 text-indigo-400/70"></i>Discord Activity
+                        <span class="text-[10.5px] font-medium text-white/80 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-3 h-3 text-indigo-400/80"></i>Discord Presence
                         </span>
                         <span class="w-2 h-2 rounded-full bg-gray-600" id="sidebar-discord-status"></span>
                     </div>
                     <div class="flex gap-2.5 items-center">
                         <div class="w-11 h-11 rounded-full bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.08]" id="sidebar-discord-avatar-container">
                             <img id="sidebar-discord-avatar" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Avatar">
-                            <i id="sidebar-discord-fallback" data-lucide="user" class="w-5 h-5 text-white/20"></i>
+                            <i id="sidebar-discord-fallback" data-lucide="user" class="w-5 h-5 text-white/25"></i>
                         </div>
                         <div class="overflow-hidden flex-1 min-w-0">
-                            <div class="text-[11px] text-white font-semibold truncate" id="sidebar-discord-name">Offline</div>
-                            <div class="text-[9px] text-gray-500 font-mono truncate" id="sidebar-discord-activity">Standby for link</div>
+                            <div class="text-[11px] text-white font-semibold truncate" id="sidebar-discord-name">Not Connected</div>
+                            <div class="text-[10px] text-gray-500 truncate" id="sidebar-discord-activity">Click to set Discord ID</div>
                         </div>
                     </div>
                 </div>
@@ -413,33 +413,13 @@
             </div>
             <div style="padding:6px;max-height:64vh;overflow-y:auto" id="cmd-results">
                 <div style="padding:8px 10px 5px;font:500 9px 'JetBrains Mono',monospace;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:0.15em">Applications</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:settings"><i data-lucide="sliders" style="width:14px;height:14px;flex-shrink:0"></i> Settings</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:terminal"><i data-lucide="terminal" style="width:14px;height:14px;flex-shrink:0"></i> Terminal Matrix</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:media"><i data-lucide="radio" style="width:14px;height:14px;flex-shrink:0"></i> Media Player</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:radiobrowser"><i data-lucide="radio-tower" style="width:14px;height:14px;flex-shrink:0"></i> Global Radio Browser</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:sysmon"><i data-lucide="cpu" style="width:14px;height:14px;flex-shrink:0"></i> System Monitor</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:presence"><i data-lucide="user" style="width:14px;height:14px;flex-shrink:0"></i> Uplink Presence</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:feed"><i data-lucide="rss" style="width:14px;height:14px;flex-shrink:0"></i> Global Signal Feed</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:browser"><i data-lucide="globe" style="width:14px;height:14px;flex-shrink:0"></i> Web Proxy Interface</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:wplace"><i data-lucide="paintbrush" style="width:14px;height:14px;flex-shrink:0"></i> Wplace Live Canvas</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:floor796"><i data-lucide="building-2" style="width:14px;height:14px;flex-shrink:0"></i> Floor796 Explorer</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:globe"><i data-lucide="plane" style="width:14px;height:14px;flex-shrink:0"></i> 3D Global Tracker</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:market"><i data-lucide="trending-up" style="width:14px;height:14px;flex-shrink:0"></i> Live Market Matrix</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:memes"><i data-lucide="smile" style="width:14px;height:14px;flex-shrink:0"></i> Memetic Intelligence</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:ytchtv"><i data-lucide="tv" style="width:14px;height:14px;flex-shrink:0"></i> Retro TV (YTCH.TV)</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:entityscanner"><i data-lucide="scan" style="width:14px;height:14px;flex-shrink:0"></i> Universal Entity Scanner</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:filemanager"><i data-lucide="folder-tree" style="width:14px;height:14px;flex-shrink:0"></i> Living Archive File Manager</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:wikiboard"><i data-lucide="network" style="width:14px;height:14px;flex-shrink:0"></i> WikiBoard Research Canvas</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:weather"><i data-lucide="cloud-rain" style="width:14px;height:14px;flex-shrink:0"></i> Weather Station</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:nasa"><i data-lucide="telescope" style="width:14px;height:14px;flex-shrink:0"></i> NASA Deep Space</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:taskmanager"><i data-lucide="list-x" style="width:14px;height:14px;flex-shrink:0"></i> Task Manager</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:games"><i data-lucide="gamepad-2" style="width:14px;height:14px;flex-shrink:0"></i> Game Vault</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:anime"><i data-lucide="sparkles" style="width:14px;height:14px;flex-shrink:0"></i> Anime Discovery</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:manga"><i data-lucide="book-open" style="width:14px;height:14px;flex-shrink:0"></i> Manga Launcher</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:iss"><i data-lucide="satellite" style="width:14px;height:14px;flex-shrink:0"></i> ISS Tracker</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:about"><i data-lucide="info" style="width:14px;height:14px;flex-shrink:0"></i> System Encyclopedia</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:aetherbridge"><i data-lucide="radio-tower" style="width:14px;height:14px;flex-shrink:0"></i> Aether Bridge</div>
-                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:aetherlink"><i data-lucide="link-2" style="width:14px;height:14px;flex-shrink:0"></i> Aether Link</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:filemanager"><i data-lucide="folder-tree" style="width:14px;height:14px;flex-shrink:0"></i> Files</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:terminal"><i data-lucide="terminal" style="width:14px;height:14px;flex-shrink:0"></i> Terminal</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:devpad"><i data-lucide="code-2" style="width:14px;height:14px;flex-shrink:0"></i> Dev Studio</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:browser"><i data-lucide="globe" style="width:14px;height:14px;flex-shrink:0"></i> Web Browser</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:feed"><i data-lucide="rss" style="width:14px;height:14px;flex-shrink:0"></i> News &amp; RSS</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:winamp"><i data-lucide="disc-3" style="width:14px;height:14px;flex-shrink:0"></i> Winamp + SomaFM</div>
+                <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.72);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="open:settings"><i data-lucide="sliders" style="width:14px;height:14px;flex-shrink:0"></i> System Settings</div>
                 <div style="padding:8px 10px 5px;margin-top:4px;font:500 9px 'JetBrains Mono',monospace;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:0.15em">System</div>
                 <div class="cmd-item" style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;gap:10px;cursor:none;color:rgba(255,255,255,0.65);font:400 13px 'Inter',sans-serif;transition:background 0.1s,color 0.1s;letter-spacing:-0.01em" data-cmd="sys:reset"><i data-lucide="rotate-ccw" style="width:14px;height:14px;flex-shrink:0;color:rgba(248,113,113,0.7)"></i> <span style="color:rgba(248,113,113,0.85)">Reset System State</span></div>
             </div>
@@ -572,38 +552,20 @@
     <div id="calendar-popover" aria-label="Calendar and World Clocks"></div>
     <div id="desktop-context-menu" aria-label="Desktop Context Menu">
         <div class="space-y-0.5 text-xs select-none">
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('worldmuseums')">
-                <span class="flex items-center gap-2"><i data-lucide="landmark" class="w-3.5 h-3.5 text-amber-300"></i> World Museums Vault</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('spacexhub')">
-                <span class="flex items-center gap-2"><i data-lucide="rocket" class="w-3.5 h-3.5 text-sky-400"></i> Orbital Launch Control</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('stellarium')">
-                <span class="flex items-center gap-2"><i data-lucide="orbit" class="w-3.5 h-3.5 text-indigo-400"></i> NASA Eyes &amp; Planetarium</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('shadertoy')">
-                <span class="flex items-center gap-2"><i data-lucide="flame" class="w-3.5 h-3.5 text-emerald-400"></i> GLSL Shader Studio</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('georadar')">
-                <span class="flex items-center gap-2"><i data-lucide="compass" class="w-3.5 h-3.5 text-cyan-400"></i> GeoRadar Explorer</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('worldfactbook')">
-                <span class="flex items-center gap-2"><i data-lucide="flag" class="w-3.5 h-3.5 text-rose-400"></i> World Factbook &amp; FX</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('gutendex')">
-                <span class="flex items-center gap-2"><i data-lucide="library" class="w-3.5 h-3.5 text-amber-400"></i> Gutenberg Library</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('chiptune')">
-                <span class="flex items-center gap-2"><i data-lucide="boxes" class="w-3.5 h-3.5 text-violet-400"></i> Retro &amp; 3D Makers</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('photopea')">
-                <span class="flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400"></i> Photopea Layer Studio</span>
-            </button>
-            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('winamp')">
-                <span class="flex items-center gap-2"><i data-lucide="disc-3" class="w-3.5 h-3.5 text-orange-400"></i> Webamp + SomaFM</span>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('devpad')">
+                <span class="flex items-center gap-2"><i data-lucide="file-plus-2" class="w-3.5 h-3.5 text-sky-400"></i> New Markdown Document</span>
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();window.AetherVFS && AetherVFS.triggerUploadDialog()">
                 <span class="flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i> Upload Local Files...</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('filemanager')">
+                <span class="flex items-center gap-2"><i data-lucide="folder-tree" class="w-3.5 h-3.5 text-amber-300"></i> Open Files</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openWindow('terminal')">
+                <span class="flex items-center gap-2"><i data-lucide="terminal" class="w-3.5 h-3.5 text-gray-300"></i> Open Terminal</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.toggleFinder()">
+                <span class="flex items-center gap-2"><i data-lucide="layout-grid" class="w-3.5 h-3.5 text-indigo-400"></i> App Library</span>
             </button>
             <div class="my-1 border-t border-white/10"></div>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.tileSideBySide()">
@@ -619,6 +581,9 @@
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openSettingsSection('appearance')">
                 <span class="flex items-center gap-2"><i data-lucide="image" class="w-3.5 h-3.5 text-gray-300"></i> Wallpaper &amp; Appearance...</span>
+            </button>
+            <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.openSettingsSection('modules')">
+                <span class="flex items-center gap-2"><i data-lucide="blocks" class="w-3.5 h-3.5 text-emerald-400"></i> Manage App Modules...</span>
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.lockScreen()">
                 <span class="flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5 text-gray-300"></i> Lock Screen</span>

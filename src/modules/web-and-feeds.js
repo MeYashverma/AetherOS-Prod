@@ -142,24 +142,44 @@ window.extendOS({
             },
 
     renderPresenceOfflineSlate: (isError = false) => {
-                const root = document.getElementById('presence-console-panel');
-                if (!root) return;
-                root.innerHTML = `
-                    <div class="flex flex-col h-full justify-center items-center p-6 text-center bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),transparent_55%)]">
-                        <div class="w-24 h-24 rounded-full border border-white/10 mb-6 flex items-center justify-center relative shadow-[0_0_60px_rgba(255,255,255,0.06)] bg-os-800">
-                            <i data-lucide="${isError ? 'radio-tower' : 'user-x'}" class="w-11 h-11 ${isError ? 'text-red-400' : 'text-gray-500'}"></i>
-                        </div>
-                        <h3 class="font-display tracking-widest text-xl text-white uppercase">${isError ? 'Uplink Unreachable' : 'Discord Uplink Offline'}</h3>
-                        <p class="font-mono text-xs text-gray-500 mt-2 max-w-md leading-relaxed">
-                            ${isError ? 'Lanyard could not return presence data. Confirm the Discord ID is correct and that the account is registered with Lanyard.' : 'Configure your 17-20 digit Discord User ID in Settings → API Configuration. Lanyard must be enabled for realtime presence.'}
-                        </p>
-                        <div class="flex gap-2 mt-6">
-                            <button onclick="os.openWindow('settings')" class="px-4 py-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded hover:bg-white/10 hover-target cursor-none transition-colors">Configure Uplink</button>
-                            <button onclick="os.initLanyardPresence()" class="px-4 py-2 bg-white text-black text-xs font-mono uppercase rounded hover:bg-gray-200 hover-target cursor-none transition-colors">Retry</button><button onclick="os.setPresenceSubView('webhook')" class="px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-300 text-xs font-mono uppercase rounded hover:bg-green-500/20 hover-target cursor-none transition-colors">Webhook TX</button>
-                        </div>
-                    </div>`;
-                lucide.createIcons({root});
-            },
+        const root = document.getElementById('presence-console-panel');
+        if (!root) return;
+        const curId = os.webhookEscape(SystemState.settings.api_discord || '');
+        root.innerHTML = `
+            <div class="flex flex-col h-full justify-center items-center p-6 text-center">
+                <div class="w-16 h-16 rounded-2xl border border-white/10 mb-4 flex items-center justify-center bg-white/[0.04]">
+                    <i data-lucide="${isError ? 'alert-circle' : 'message-circle'}" class="w-8 h-8 ${isError ? 'text-rose-400' : 'text-indigo-400'}"></i>
+                </div>
+                <h3 class="font-display font-bold text-lg text-white">${isError ? 'Unable to Reach Lanyard' : 'Connect Discord Presence'}</h3>
+                <p class="text-xs text-gray-400 mt-1.5 max-w-md leading-relaxed">
+                    ${isError
+                        ? 'Make sure your Discord account has joined the Lanyard server (discord.gg/lanyard) so your live status and Spotify activity are public.'
+                        : 'Enter your 17–20 digit Discord User ID below to display live status, rich presence, and Spotify listening via Lanyard.'}
+                </p>
+                <div class="flex items-center gap-2 mt-4 w-full max-w-sm">
+                    <input id="presence-inline-id" type="text" value="${curId}" placeholder="Discord User ID (e.g. 94490510688792576)"
+                        class="flex-1 os-input py-2 px-3 text-xs font-mono cursor-text"
+                        onkeydown="if(event.key==='Enter') os.presenceSaveInlineId()">
+                    <button type="button" onclick="os.presenceSaveInlineId()" class="os-btn-primary py-2 px-4 text-xs cursor-none hover-target">Connect</button>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <button type="button" onclick="os.setPresenceSubView('webhook')" class="os-btn hover-target cursor-none">
+                        <i data-lucide="send" class="w-3.5 h-3.5 text-emerald-300"></i> Webhook Sender
+                    </button>
+                    <button type="button" onclick="os.openWindow('settings');setTimeout(()=>os.switchSettingsTab&&os.switchSettingsTab('api'),80)" class="os-btn hover-target cursor-none">
+                        Integrations Settings
+                    </button>
+                </div>
+            </div>`;
+        if (window.lucide) lucide.createIcons({ root });
+    },
+
+    presenceSaveInlineId: () => {
+        const val = (document.getElementById('presence-inline-id')?.value || '').trim();
+        SystemState.settings.api_discord = val;
+        SystemState.save();
+        os.initLanyardPresence();
+    },
 
     drawPresenceConsoleDOM: (data=os.lanyardData) => {
                 const root = document.getElementById('presence-console-panel');
@@ -906,129 +926,215 @@ window.extendOS({
             },
 
     browserFetchPreview: async (url, tabId, title) => {
-                os.browserShowPreview();
-                const content = document.getElementById('browser-preview-content');
-                const domainEl = document.getElementById('browser-preview-domain');
-                const titleEl  = document.getElementById('browser-preview-title');
-                if (domainEl) domainEl.innerText = os.browserDomain(url);
-                if (titleEl)  titleEl.innerText  = title;
-                if (content)  content.innerHTML  = `<div class="flex items-center justify-center h-full py-16"><div class="text-center text-gray-500 text-[10px] animate-pulse uppercase tracking-widest">Fetching preview…</div></div>`;
+        os.browserShowPreview();
+        const content = document.getElementById('browser-preview-content');
+        const domainEl = document.getElementById('browser-preview-domain');
+        const titleEl = document.getElementById('browser-preview-title');
+        const esc = (s) => os.escapeHtml ? os.escapeHtml(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-                // Try allorigins raw proxy to grab HTML, parse it for text
-                try {
-                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    const html = await res.text();
+        os.browser._currentUrl = url;
+        os.browser._currentReaderMd = '';
 
-                    // Parse out useful content
-                    const parser = new DOMParser();
-                    const doc    = parser.parseFromString(html, 'text/html');
+        if (domainEl) domainEl.innerText = os.browserDomain(url);
+        if (titleEl) titleEl.innerText = title;
+        if (content) content.innerHTML = `<div class="flex items-center justify-center h-full py-16"><div class="text-center text-gray-400 text-xs">Loading Reader View for ${esc(os.browserDomain(url))}...</div></div>`;
 
-                    // Get page title
-                    const pageTitle = doc.querySelector('title')?.textContent?.trim() || title;
-                    if (titleEl) titleEl.innerText = pageTitle;
+        // Sync live iframe if user toggled embed mode
+        const iframe = document.getElementById('browser-iframe-view');
+        if (iframe && os.browser._renderMode === 'embed') iframe.src = url;
 
-                    // Update tab title
-                    const tab = os.browser.tabs.find(t => t.id === tabId);
-                    if (tab) { tab.title = pageTitle; os.browserRenderTabs(); }
+        // Fast-path 1: Wikipedia REST API (zero proxy, instant, rich images & clean text)
+        const wikiMatch = url.match(/^https?:\/\/([a-z]{2,3})\.wikipedia\.org\/wiki\/([^#?]+)/i);
+        if (wikiMatch) {
+            try {
+                const lang = wikiMatch[1];
+                const slug = wikiMatch[2];
+                const [sumRes, extRes] = await Promise.all([
+                    fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`),
+                    fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${slug}&format=json&origin=*`)
+                ]);
+                if (sumRes.ok) {
+                    const sum = await sumRes.json();
+                    const extJson = extRes.ok ? await extRes.json() : null;
+                    const pages = extJson?.query?.pages || {};
+                    const fullText = Object.values(pages)[0]?.extract || sum.extract || '';
+                    const paras = String(fullText).split(/\n+/).map((p) => p.trim()).filter((p) => p.length > 25).slice(0, 45);
+                    if (titleEl) titleEl.innerText = sum.title || title;
+                    const tab = os.browser.tabs.find((t) => t.id === tabId);
+                    if (tab) { tab.title = sum.title || title; os.browserRenderTabs(); }
 
-                    // Extract meta description
-                    const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-
-                    // Extract main text content — try article/main/body progressively
-                    const mainEl = doc.querySelector('article, main, [role="main"], .content, #content, body');
-                    const paragraphs = Array.from(mainEl?.querySelectorAll('p, h1, h2, h3, h4, li') || [])
-                        .map(el => ({ tag: el.tagName.toLowerCase(), text: el.textContent.trim() }))
-                        .filter(x => x.text.length > 20)
-                        .slice(0, 60);
-
-                    // Extract OG image
-                    const ogImg = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
-
-                    // Render reader view
-                    let rendered = `<div class="max-w-2xl mx-auto space-y-4 text-[13px] leading-relaxed text-gray-300">`;
-
-                    // Hero image
-                    if (ogImg) {
-                        rendered += `<img src="${ogImg}" class="w-full rounded-lg object-cover max-h-48 opacity-80" onerror="this.style.display=&apos;none&apos;">`;
-                    }
-
-                    // Title + domain
-                    rendered += `
-                        <div class="border-b border-white/5 pb-3">
-                            <div class="text-white font-bold text-lg leading-snug mb-1">${pageTitle}</div>
-                            <div class="text-[10px] text-gray-500 font-mono">${url}</div>
-                            ${metaDesc ? `<div class="text-gray-400 text-sm mt-2 italic">${metaDesc}</div>` : ''}
-                        </div>`;
-
-                    // Body paragraphs
-                    paragraphs.forEach(({tag, text}) => {
-                        if (['h1','h2','h3'].includes(tag)) {
-                            rendered += `<h3 class="text-white font-bold text-base mt-4">${text}</h3>`;
-                        } else if (tag === 'h4') {
-                            rendered += `<h4 class="text-gray-200 font-semibold mt-3">${text}</h4>`;
-                        } else if (tag === 'li') {
-                            rendered += `<div class="flex gap-2 text-gray-300"><span class="text-os-accent mt-1">▸</span><span>${text}</span></div>`;
-                        } else {
-                            rendered += `<p class="text-gray-300">${text}</p>`;
-                        }
-                    });
-
-                    if (paragraphs.length === 0) {
-                        rendered += `<div class="text-gray-500 text-center py-8 text-[11px]">Preview extracted — no readable body content found.<br>Open in browser for full experience.</div>`;
-                    }
-
-                    rendered += `
-                        <div class="pt-4 border-t border-white/5">
-                            <button onclick="os.browserOpenExternal()"
-                                class="flex items-center gap-2 px-4 py-2 bg-white/8 border border-white/15 rounded-lg text-sm text-white hover:bg-white/15 transition cursor-none hover-target">
-                                <i data-lucide="external-link" class="w-4 h-4"></i>
-                                Open full page in browser
-                            </button>
-                        </div>
-                    </div>`;
+                    os.browser._currentReaderMd = `# ${sum.title}\n\n> ${sum.description || 'Wikipedia'}\n\nSource: ${url}\n\n` + paras.join('\n\n');
 
                     if (content) {
-                        content.innerHTML = rendered;
-                        lucide.createIcons({ root: content });
+                        content.innerHTML = `
+                            <article class="max-w-2xl mx-auto space-y-4 text-[13.5px] leading-relaxed text-gray-200">
+                                ${sum.thumbnail?.source ? `<img src="${esc(sum.thumbnail.source)}" class="w-full max-h-60 rounded-xl object-cover border border-white/10">` : ''}
+                                <header class="border-b border-white/[0.08] pb-3">
+                                    <h1 class="text-white font-display font-bold text-xl leading-snug">${esc(sum.title)}</h1>
+                                    ${sum.description ? `<div class="text-sky-300 text-xs mt-1">${esc(sum.description)}</div>` : ''}
+                                    <div class="text-[11px] text-gray-500 font-mono mt-1">${esc(url)}</div>
+                                </header>
+                                ${paras.map((p) => /^==.*==$/.test(p)
+                                    ? `<h2 class="text-white font-semibold text-base pt-3">${esc(p.replace(/^=+\s*|\s*=+$/g, ''))}</h2>`
+                                    : `<p class="text-gray-300">${esc(p)}</p>`).join('')}
+                            </article>`;
                     }
-                    os.browserSetStatus(`Preview loaded · ${os.browserDomain(url)}`);
-
-                } catch(e) {
-                    // Proxy failed → show a rich launch card instead
-                    os.browserShowLaunchCard(url, title, content, e.message);
-                    os.browserSetStatus(`Preview unavailable · ${os.browserDomain(url)}`);
+                    os.browserSetStatus(`Wikipedia Reader · ${sum.title}`);
+                    return;
                 }
-            },
+            } catch (_) {}
+        }
+
+        // General Reader extraction via CORS-friendly HTML relays
+        const proxies = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        ];
+
+        let html = null;
+        let lastErr = null;
+        for (const pUrl of proxies) {
+            try {
+                const res = await fetch(pUrl, { signal: AbortSignal.timeout(9000) });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                html = await res.text();
+                if (html && html.length > 80) break;
+            } catch (e) { lastErr = e; }
+        }
+
+        if (!html) {
+            os.browserShowLaunchCard(url, title, content, lastErr ? lastErr.message : 'Cross-origin restriction');
+            os.browserSetStatus(`External site · ${os.browserDomain(url)}`);
+            return;
+        }
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            doc.querySelectorAll('script, style, nav, footer, noscript, svg').forEach((n) => n.remove());
+
+            const pageTitle = doc.querySelector('title')?.textContent?.trim() || title;
+            if (titleEl) titleEl.innerText = pageTitle;
+
+            const tab = os.browser.tabs.find((t) => t.id === tabId);
+            if (tab) { tab.title = pageTitle; os.browserRenderTabs(); }
+
+            const metaDesc = doc.querySelector('meta[name="description"], meta[property="og:description"]')?.getAttribute('content') || '';
+            const mainEl = doc.querySelector('article, main, [role="main"], .content, #content, body');
+            const paragraphs = Array.from(mainEl?.querySelectorAll('p, h1, h2, h3, h4, li, pre') || [])
+                .map((el) => ({ tag: el.tagName.toLowerCase(), text: el.textContent.trim() }))
+                .filter((x) => x.text.length > 22)
+                .slice(0, 65);
+
+            const rawOg = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+            let ogImg = '';
+            if (rawOg) {
+                try { ogImg = new URL(rawOg, url).href; } catch (_) {}
+            }
+
+            os.browser._currentReaderMd = `# ${pageTitle}\n\nSource: ${url}\n\n${metaDesc ? `> ${metaDesc}\n\n` : ''}` +
+                paragraphs.map((p) => p.tag.startsWith('h') ? `## ${p.text}` : p.text).join('\n\n');
+
+            let rendered = `<article class="max-w-2xl mx-auto space-y-4 text-[13.5px] leading-relaxed text-gray-200">`;
+            if (ogImg && /^https?:\/\//i.test(ogImg)) {
+                rendered += `<img src="${esc(ogImg)}" class="w-full rounded-xl object-cover max-h-56 border border-white/10" onerror="this.style.display='none'">`;
+            }
+            rendered += `
+                <header class="border-b border-white/[0.08] pb-3">
+                    <h1 class="text-white font-display font-bold text-xl leading-snug mb-1">${esc(pageTitle)}</h1>
+                    <div class="text-[11px] text-gray-500 font-mono break-all">${esc(url)}</div>
+                    ${metaDesc ? `<div class="text-gray-400 text-xs mt-2 leading-relaxed">${esc(metaDesc)}</div>` : ''}
+                </header>`;
+
+            paragraphs.forEach(({ tag, text }) => {
+                if (['h1', 'h2', 'h3'].includes(tag)) rendered += `<h2 class="text-white font-semibold text-base pt-3">${esc(text)}</h2>`;
+                else if (tag === 'h4') rendered += `<h3 class="text-gray-200 font-semibold text-sm pt-2">${esc(text)}</h3>`;
+                else if (tag === 'pre') rendered += `<pre class="bg-black/60 border border-white/10 rounded-lg p-3 font-mono text-xs text-emerald-200 overflow-x-auto">${esc(text)}</pre>`;
+                else if (tag === 'li') rendered += `<div class="flex gap-2 text-gray-300"><span class="text-sky-400">•</span><span>${esc(text)}</span></div>`;
+                else rendered += `<p class="text-gray-300">${esc(text)}</p>`;
+            });
+
+            if (paragraphs.length === 0) {
+                rendered += `<div class="text-gray-400 text-center py-8 text-xs">This page uses client-side JavaScript rendering. Switch to <b>Live Embed</b> above or open in a new tab.</div>`;
+            }
+
+            rendered += `
+                <div class="pt-4 border-t border-white/[0.08] flex items-center gap-2">
+                    <button type="button" onclick="os.browserOpenExternal()" class="os-btn hover-target cursor-none">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open Original Site
+                    </button>
+                    <button type="button" onclick="os.browserClipToVFS()" class="os-btn hover-target cursor-none text-emerald-300">
+                        <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i> Save Markdown to Files
+                    </button>
+                </div>
+            </article>`;
+
+            if (content) {
+                content.innerHTML = rendered;
+                if (window.lucide) lucide.createIcons({ root: content });
+            }
+            os.browserSetStatus(`Reader View · ${os.browserDomain(url)}`);
+        } catch (e) {
+            os.browserShowLaunchCard(url, title, content, e.message);
+            os.browserSetStatus(`External site · ${os.browserDomain(url)}`);
+        }
+    },
+
+    browserSetRenderMode: (mode) => {
+        os.browser._renderMode = mode === 'embed' ? 'embed' : 'reader';
+        const rdrBtn = document.getElementById('browser-mode-reader');
+        const embBtn = document.getElementById('browser-mode-embed');
+        const content = document.getElementById('browser-preview-content');
+        const iframe = document.getElementById('browser-iframe-view');
+        if (rdrBtn) rdrBtn.classList.toggle('active', os.browser._renderMode === 'reader');
+        if (embBtn) embBtn.classList.toggle('active', os.browser._renderMode === 'embed');
+        if (content) content.classList.toggle('hidden', os.browser._renderMode === 'embed');
+        if (iframe) {
+            iframe.classList.toggle('hidden', os.browser._renderMode !== 'embed');
+            if (os.browser._renderMode === 'embed' && os.browser._currentUrl) {
+                iframe.src = os.browser._currentUrl;
+            }
+        }
+    },
+
+    browserClipToVFS: () => {
+        const url = os.browser._currentUrl || document.getElementById('browser-url-input')?.value?.trim();
+        if (!url) return;
+        const title = document.getElementById('browser-preview-title')?.innerText || os.browserDomain(url);
+        const body = os.browser._currentReaderMd || `# ${title}\n\n- **URL**: ${url}\n- **Saved**: ${new Date().toLocaleString()}\n`;
+        if (window.AetherVFS && AetherVFS.saveClipperItem) {
+            AetherVFS.saveClipperItem({ title, content: body, sourceUrl: url, tags: ['web-clip'] });
+        } else if (os.fmCreateNewFile) {
+            os.fmCreateNewFile(`${title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 40)}.md`, body, '/Archive/User Uploads');
+        }
+        window.Notifications && Notifications.push('Web Browser', `Saved "${title.slice(0, 36)}" to Files`);
+    },
 
     browserShowLaunchCard: (url, title, container, reason) => {
-                const domain = os.browserDomain(url);
-                const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-                if (!container) return;
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center py-12 space-y-5">
-                        <img src="${faviconUrl}" class="w-12 h-12 rounded-xl opacity-80" onerror="this.style.display=&apos;none&apos;">
-                        <div>
-                            <div class="text-white font-bold text-xl mb-1">${domain}</div>
-                            <div class="text-gray-500 text-[11px] font-mono max-w-sm">${url}</div>
-                        </div>
-                        <div class="text-[10px] text-yellow-500/70 bg-yellow-500/5 border border-yellow-500/10 rounded px-3 py-2 max-w-sm">
-                            Preview unavailable — site blocks cross-origin requests.<br>
-                            <span class="text-gray-500">${reason}</span>
-                        </div>
-                        <button onclick="window.open('${url.replace(/'/g,"\\'")}', '_blank')"
-                            class="flex items-center gap-2 px-5 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white hover:bg-white/20 transition cursor-none hover-target">
-                            <i data-lucide="external-link" class="w-4 h-4"></i>
-                            Open ${domain} in browser
-                        </button>
-                        <button onclick="os.browserShowHome()"
-                            class="text-[10px] text-gray-500 hover:text-gray-300 transition cursor-none hover-target">
-                            ← Back to home
-                        </button>
-                    </div>`;
-                lucide.createIcons({ root: container });
-            },
+        const domain = os.browserDomain(url);
+        const esc = (s) => os.escapeHtml ? os.escapeHtml(String(s ?? '')) : String(s ?? '');
+        const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+        if (!container) return;
+        const safeJsUrl = String(url).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full text-center py-12 space-y-4">
+                <img src="${faviconUrl}" class="w-12 h-12 rounded-xl opacity-90" onerror="this.style.display='none'">
+                <div>
+                    <div class="text-white font-display font-bold text-lg mb-1">${esc(domain)}</div>
+                    <div class="text-gray-500 text-xs font-mono max-w-md break-all">${esc(url)}</div>
+                </div>
+                <div class="text-xs text-amber-200/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 max-w-sm leading-relaxed">
+                    Reader extraction was blocked by cross-origin policy (${esc(reason)}). Try <b>Live Embed</b> above or open in a browser tab.
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="os.browserSetRenderMode('embed')" class="os-btn hover-target cursor-none">Try Live Embed</button>
+                    <button type="button" onclick="window.open('${safeJsUrl}', '_blank', 'noopener')" class="os-btn-primary px-4 py-2 text-xs hover-target cursor-none">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 inline mr-1"></i> Open ${esc(domain)}
+                    </button>
+                </div>
+            </div>`;
+        if (window.lucide) lucide.createIcons({ root: container });
+    },
 
     browserShowPreview: () => {
                 const home = document.getElementById('browser-home');
@@ -1095,34 +1201,34 @@ window.extendOS({
             },
 
     browserRenderHistory: () => {
-                const section = document.getElementById('browser-history-section');
-                const list    = document.getElementById('browser-history-list');
-                if (!list) return;
-                if (os.browser.history.length === 0) { if(section) section.classList.add('hidden'); return; }
-                if(section) section.classList.remove('hidden');
-                list.innerHTML = os.browser.history.slice(0, 15).map(h => `
-                    <button onclick="os.browserLoadURL('${h.url.replace(/'/g,'\\\'')}')"
-                        class="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 text-left transition cursor-none hover-target group">
-                        <img src="https://www.google.com/s2/favicons?domain=${os.browserDomain(h.url)}&sz=16" class="w-3.5 h-3.5 shrink-0 opacity-60 group-hover:opacity-100">
-                        <span class="flex-1 text-[10px] text-gray-400 group-hover:text-white truncate">${h.title || os.browserDomain(h.url)}</span>
-                        <span class="text-[8px] text-gray-600 shrink-0">${new Date(h.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})}</span>
-                    </button>`).join('');
-            },
+        const section = document.getElementById('browser-history-section');
+        const list = document.getElementById('browser-history-list');
+        if (!list) return;
+        if (os.browser.history.length === 0) { if (section) section.classList.add('hidden'); return; }
+        if (section) section.classList.remove('hidden');
+        list.innerHTML = os.browser.history.slice(0, 15).map((h) => `
+            <button type="button" onclick="os.browserLoadURL('${String(h.url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                class="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] text-left transition cursor-none hover-target group">
+                <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(os.browserDomain(h.url))}&sz=16" class="w-3.5 h-3.5 shrink-0 opacity-70 group-hover:opacity-100">
+                <span class="flex-1 text-xs text-gray-300 group-hover:text-white truncate">${os.escapeHtml(h.title || os.browserDomain(h.url))}</span>
+                <span class="text-[10.5px] font-mono text-gray-500 shrink-0 tabular-nums">${new Date(h.ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+            </button>`).join('');
+    },
 
     browserRenderBookmarks: () => {
-                const section = document.getElementById('browser-bookmarks-section');
-                const list    = document.getElementById('browser-bookmarks-list');
-                if (!list) return;
-                if (os.browser.bookmarks.length === 0) { if(section) section.classList.add('hidden'); return; }
-                if(section) section.classList.remove('hidden');
-                list.innerHTML = os.browser.bookmarks.map((b, i) => `
-                    <div class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 group">
-                        <img src="https://www.google.com/s2/favicons?domain=${os.browserDomain(b.url)}&sz=16" class="w-3.5 h-3.5 shrink-0 opacity-60">
-                        <button onclick="os.browserLoadURL('${b.url.replace(/'/g,'\\\'')}')"
-                            class="flex-1 text-[10px] text-gray-400 hover:text-white text-left truncate transition cursor-none hover-target">${b.title || os.browserDomain(b.url)}</button>
-                        <button onclick="os.browserRemoveBookmark(${i})" class="opacity-0 group-hover:opacity-100 text-red-500/60 hover:text-red-400 text-[9px] cursor-none hover-target">✕</button>
-                    </div>`).join('');
-            },
+        const section = document.getElementById('browser-bookmarks-section');
+        const list = document.getElementById('browser-bookmarks-list');
+        if (!list) return;
+        if (os.browser.bookmarks.length === 0) { if (section) section.classList.add('hidden'); return; }
+        if (section) section.classList.remove('hidden');
+        list.innerHTML = os.browser.bookmarks.map((b, i) => `
+            <div class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] group">
+                <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(os.browserDomain(b.url))}&sz=16" class="w-3.5 h-3.5 shrink-0 opacity-70">
+                <button type="button" onclick="os.browserLoadURL('${String(b.url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                    class="flex-1 text-xs text-gray-300 hover:text-white text-left truncate transition cursor-none hover-target">${os.escapeHtml(b.title || os.browserDomain(b.url))}</button>
+                <button type="button" onclick="os.browserRemoveBookmark(${i})" class="opacity-0 group-hover:opacity-100 text-rose-400/70 hover:text-rose-300 text-xs cursor-none hover-target">✕</button>
+            </div>`).join('');
+    },
 
     browserToggleFav: () => {
                 const input = document.getElementById('browser-url-input');
@@ -1207,194 +1313,372 @@ window.extendOS({
                 }
             },
 
-    initSignalFeed: () => {
-                if(!os.signalFeed.isLooping) {
-                    os.signalFeed.isLooping = true;
-                    os.renderSignalLoop();
-                }
-            },
+    _feedItems: [],
+    _feedSourceFilter: 'all',
+    _feedSearchQuery: '',
+    _feedSelectedId: null,
+    _feedSaved: null,
 
-    renderSignalLoop: () => {
-                const container = document.getElementById('signal-stream-container');
-                if (!container) {
-                    os.signalFeed.isLooping = false;
-                    return; 
-                }
+    _feedLoadSaved: () => {
+        if (!os._feedSaved) {
+            try { os._feedSaved = JSON.parse(localStorage.getItem('aether_feed_saved_v1') || '[]'); }
+            catch (_) { os._feedSaved = []; }
+        }
+        const badge = document.getElementById('feed-saved-count');
+        if (badge) badge.textContent = String(os._feedSaved.length);
+        return os._feedSaved;
+    },
 
-                if (os.signalFeed.buffer.length > 0) {
-                    if (container.children.length === 1 && (container.children[0].innerText.includes('TUNING') || container.children[0].innerText.includes('OFFLINE'))) {
-                        container.innerHTML = '';
-                    }
+    initSignalFeed: async (forceRefresh = false) => {
+        os._feedLoadSaved();
+        if (forceRefresh || !os._feedItems.length) {
+            await os.fetchSignals(true);
+        } else {
+            os.feedRenderList();
+        }
+    },
 
-                    const item = os.signalFeed.buffer.shift();
-                    os.signalFeed.renderedIds.add(item.id);
+    feedSetSource: (src) => {
+        os._feedSourceFilter = src || 'all';
+        document.querySelectorAll('#feed-source-tabs [data-feed-src]').forEach((b) => {
+            b.classList.toggle('active', b.getAttribute('data-feed-src') === os._feedSourceFilter);
+        });
+        os.feedRenderList();
+    },
 
-                    const el = document.createElement('div');
-                    const clickClasses = item.link ? 'cursor-none hover-target group hover:bg-white/10' : '';
-                    
-                    el.className = `border border-white/5 bg-black/60 rounded p-3 flex gap-3 items-start shadow-os-recessed transform transition-all duration-500 opacity-0 -translate-x-4 backdrop-blur-sm ${clickClasses}`;
-                    if (item.link) {
-                        el.addEventListener('click', () => os.openLinkInProxy(item.link));
-                    }
+    feedSetSearch: (q) => {
+        os._feedSearchQuery = String(q || '').trim().toLowerCase();
+        os.feedRenderList();
+    },
 
-                    el.innerHTML = `
-                        <div class="mt-0.5 ${item.color}"><i data-lucide="${item.icon}" class="w-4 h-4"></i></div>
-                        <div class="flex-1 overflow-hidden">
-                            <div class="flex justify-between items-center text-[9px] mb-1.5">
-                                <span class="text-os-accent font-bold uppercase tracking-wider">${os.escapeHtml(item.source)}</span>
-                                <span class="text-gray-500">${os.escapeHtml(item.time)}</span>
-                            </div>
-                            <div class="text-[11px] text-white font-medium leading-snug ${item.link ? 'group-hover:text-green-400 transition-colors' : ''}">${os.escapeHtml(item.title)}</div>
+    feedToggleSave: (id) => {
+        const saved = os._feedLoadSaved();
+        const idx = saved.findIndex((x) => x.id === id);
+        if (idx >= 0) {
+            saved.splice(idx, 1);
+        } else {
+            const item = os._feedItems.find((x) => x.id === id);
+            if (item) saved.unshift(item);
+        }
+        try { localStorage.setItem('aether_feed_saved_v1', JSON.stringify(saved.slice(0, 100))); } catch (_) {}
+        const badge = document.getElementById('feed-saved-count');
+        if (badge) badge.textContent = String(saved.length);
+        os.feedRenderList();
+    },
+
+    feedRenderList: () => {
+        const container = document.getElementById('signal-stream-container');
+        if (!container) return;
+        const saved = os._feedLoadSaved();
+        const savedIds = new Set(saved.map((x) => x.id));
+        const src = os._feedSourceFilter || 'all';
+        const q = os._feedSearchQuery || '';
+
+        const pool = src === 'saved' ? saved : os._feedItems;
+        const filtered = pool.filter((item) => {
+            if (src !== 'all' && src !== 'saved' && item.cat !== src) return false;
+            if (q && !(item.title + ' ' + item.source + ' ' + (item.author || '')).toLowerCase().includes(q)) return false;
+            return true;
+        });
+
+        const countEl = document.getElementById('signal-buffer-count');
+        if (countEl) countEl.textContent = `${filtered.length} stories`;
+
+        if (!filtered.length) {
+            container.innerHTML = `<div class="py-10 text-center text-gray-500 text-xs">${src === 'saved' ? 'No bookmarked stories yet. Click the star on any story to save it.' : 'No stories match your filter.'}</div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map((item) => {
+            const active = os._feedSelectedId === item.id;
+            const isSaved = savedIds.has(item.id);
+            return `
+                <div data-feed-id="${os.escapeHtml(item.id)}"
+                    class="rounded-xl p-3 border transition cursor-none hover-target group ${
+                        active ? 'bg-white/[0.09] border-white/20' : 'bg-white/[0.025] hover:bg-white/[0.06] border-white/[0.06]'
+                    }">
+                    <div class="flex items-center justify-between gap-2 text-[10.5px] mb-1">
+                        <span class="font-semibold ${item.color || 'text-sky-300'} flex items-center gap-1.5">
+                            <i data-lucide="${item.icon || 'newspaper'}" class="w-3 h-3"></i>
+                            ${os.escapeHtml(item.source)}
+                        </span>
+                        <div class="flex items-center gap-2 text-gray-500 font-mono text-[10px] tabular-nums">
+                            ${item.points ? `<span>▲ ${item.points}</span>` : ''}
+                            <span>${os.escapeHtml(item.time || '')}</span>
+                            <button type="button" data-save-story="${os.escapeHtml(item.id)}" title="Bookmark story"
+                                class="${isSaved ? 'text-amber-300' : 'text-gray-500 hover:text-amber-300'} cursor-none hover-target">★</button>
                         </div>
-                        <div class="flex items-center gap-1.5 mt-0.5 shrink-0">
-                            <button type="button" data-clip-feed="1" title="Save to File Explorer" class="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-emerald-300 transition cursor-none hover-target"><i data-lucide="bookmark-plus" class="w-3 h-3"></i></button>
-                            ${item.link ? '<i data-lucide="external-link" class="w-3 h-3 text-gray-500 group-hover:text-green-400 transition-colors"></i>' : ''}
-                        </div>
-                    `;
+                    </div>
+                    <div class="text-xs font-medium text-gray-100 leading-snug group-hover:text-white">${os.escapeHtml(item.title)}</div>
+                    ${item.subtitle ? `<div class="text-[11px] text-gray-400 mt-1 line-clamp-2">${os.escapeHtml(item.subtitle)}</div>` : ''}
+                </div>`;
+        }).join('');
 
-                    const clipBtn = el.querySelector('[data-clip-feed]');
-                    if (clipBtn) {
-                        clipBtn.addEventListener('click', (ev) => {
-                            ev.stopPropagation();
-                            window.AetherVFS && window.AetherVFS.saveClipperItem({
-                                title: item.title,
-                                content: `# ${item.title}\n\n- **Source**: ${item.source}\n- **Captured**: ${item.time}\n${item.link ? `- **Link**: ${item.link}\n` : ''}`,
-                                sourceUrl: item.link || '',
-                                tags: ['signal-feed', String(item.source || 'rss').toLowerCase()]
-                            });
-                        });
-                    }
+        container.querySelectorAll('[data-feed-id]').forEach((row) => {
+            row.addEventListener('click', (ev) => {
+                if (ev.target.closest('[data-save-story]')) return;
+                os.feedOpenItem(row.getAttribute('data-feed-id'));
+            });
+        });
+        container.querySelectorAll('[data-save-story]').forEach((btn) => {
+            btn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                os.feedToggleSave(btn.getAttribute('data-save-story'));
+            });
+        });
+        if (window.lucide) lucide.createIcons({ root: container });
 
-                    container.prepend(el);
-                    lucide.createIcons({root: el});
+        if (!os._feedSelectedId && filtered[0]) {
+            os.feedOpenItem(filtered[0].id);
+        }
+    },
 
-                    requestAnimationFrame(() => {
-                        el.classList.remove('opacity-0', '-translate-x-4');
+    feedOpenItem: async (id) => {
+        const pool = [...os._feedItems, ...(os._feedSaved || [])];
+        const item = pool.find((x) => x.id === id);
+        if (!item) return;
+        os._feedSelectedId = id;
+        os.feedRenderList();
+
+        const reader = document.getElementById('feed-reader-pane');
+        if (!reader) {
+            if (item.link) os.openLinkInProxy(item.link);
+            return;
+        }
+        const esc = (s) => os.escapeHtml(String(s ?? ''));
+        const safeLink = String(item.link || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+        reader.innerHTML = `
+            <div class="max-w-2xl space-y-4">
+                ${item.cover ? `<img src="${esc(item.cover)}" class="w-full max-h-52 object-cover rounded-xl border border-white/10" onerror="this.style.display='none'">` : ''}
+                <div class="border-b border-white/[0.08] pb-3.5 space-y-2">
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="os-badge ${item.color || 'text-sky-300'}">${esc(item.source)}</span>
+                        ${item.author ? `<span class="text-gray-400">by <b class="text-gray-200">${esc(item.author)}</b></span>` : ''}
+                        <span class="text-gray-500 font-mono text-[11px]">${esc(item.time || '')}</span>
+                    </div>
+                    <h2 class="text-white font-display font-bold text-lg leading-snug">${esc(item.title)}</h2>
+                    <div class="flex items-center gap-2 pt-1 flex-wrap">
+                        ${item.link ? `<button type="button" onclick="os.openLinkInProxy('${safeLink}')" class="os-btn hover-target cursor-none"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Open in Web Browser</button>
+                        <button type="button" onclick="window.open('${safeLink}','_blank','noopener')" class="os-btn hover-target cursor-none"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Original Link</button>` : ''}
+                        <button type="button" id="feed-clip-btn" class="os-btn text-emerald-300 hover-target cursor-none"><i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i> Save to Files</button>
+                    </div>
+                </div>
+                <div id="feed-reader-body" class="space-y-3 text-[13px] leading-relaxed text-gray-300">
+                    ${item.subtitle ? `<p class="text-gray-300">${esc(item.subtitle)}</p>` : '<div class="text-gray-400 text-xs">Loading article details...</div>'}
+                </div>
+            </div>`;
+
+        reader.querySelector('#feed-clip-btn')?.addEventListener('click', () => {
+            const bodyText = document.getElementById('feed-reader-body')?.innerText || item.subtitle || '';
+            window.AetherVFS && window.AetherVFS.saveClipperItem({
+                title: item.title,
+                content: `# ${item.title}\n\n- **Source**: ${item.source}\n- **Link**: ${item.link || 'N/A'}\n\n${bodyText}`,
+                sourceUrl: item.link || '',
+                tags: ['news', item.cat || 'rss']
+            });
+            window.Notifications && Notifications.push('News & RSS', 'Saved story to Files');
+        });
+        if (window.lucide) lucide.createIcons({ root: reader });
+
+        const bodyEl = document.getElementById('feed-reader-body');
+        if (!bodyEl) return;
+
+        // Enrich Dev.to full article markdown or Hacker News top comments
+        if (item.devtoId) {
+            try {
+                const r = await fetch(`https://dev.to/api/articles/${item.devtoId}`);
+                if (r.ok) {
+                    const full = await r.json();
+                    const paras = String(full.body_markdown || '').replace(/```[\s\S]*?```/g, (m) => `\n[Code Block]\n${m.replace(/```.*\n?/g, '')}\n`).split(/\n{2,}/).slice(0, 35);
+                    bodyEl.innerHTML = paras.map((p) => {
+                        const clean = p.trim();
+                        if (!clean) return '';
+                        if (clean.startsWith('#')) return `<h3 class="text-white font-semibold text-sm pt-2">${esc(clean.replace(/^#+\s*/, ''))}</h3>`;
+                        if (clean.startsWith('[Code Block]')) return `<pre class="bg-black/60 border border-white/10 rounded-lg p-3 font-mono text-xs text-emerald-200 overflow-x-auto">${esc(clean.replace('[Code Block]\n', ''))}</pre>`;
+                        return `<p>${esc(clean)}</p>`;
+                    }).join('');
+                }
+            } catch (_) {}
+        } else if (item.hnId) {
+            try {
+                const r = await fetch(`https://hacker-news.firebaseio.com/v0/item/${item.hnId}.json`);
+                if (r.ok) {
+                    const story = await r.json();
+                    const kids = (story.kids || []).slice(0, 6);
+                    const comments = (await Promise.all(kids.map((cid) =>
+                        fetch(`https://hacker-news.firebaseio.com/v0/item/${cid}.json`).then((x) => x.json()).catch(() => null)
+                    ))).filter((c) => c && c.text && !c.deleted);
+                    const stripHtml = (h) => {
+                        const d = new DOMParser().parseFromString(h, 'text/html');
+                        return d.body.textContent || '';
+                    };
+                    bodyEl.innerHTML = `
+                        ${story.text ? `<div class="os-card p-3.5 text-gray-200 whitespace-pre-wrap">${esc(stripHtml(story.text))}</div>` : ''}
+                        <div class="text-xs font-semibold text-gray-400 pt-1">Top Hacker News Comments (${story.descendants || comments.length})</div>
+                        ${comments.length ? comments.map((cm) => `
+                            <div class="os-card p-3 space-y-1">
+                                <div class="text-[11px] text-orange-300 font-medium">${esc(cm.by || 'user')}</div>
+                                <div class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">${esc(stripHtml(cm.text).slice(0, 700))}</div>
+                            </div>`).join('') : '<div class="text-xs text-gray-500">No comments posted yet.</div>'}`;
+                }
+            } catch (_) {}
+        }
+    },
+
+    fetchSignals: async (fromUI = false) => {
+        const activeSources = [];
+        const collected = [];
+        const relTime = (unixSec) => {
+            if (!unixSec) return 'Recent';
+            const m = Math.max(1, Math.floor((Date.now() / 1000 - unixSec) / 60));
+            return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`;
+        };
+
+        const tasks = [
+            // 1. Hacker News Top Stories (parallel fetch!)
+            (async () => {
+                const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', { signal: AbortSignal.timeout(8000) });
+                if (!hnRes.ok) return;
+                const hnIds = await hnRes.json();
+                if (!Array.isArray(hnIds)) return;
+                const stories = await Promise.all(hnIds.slice(0, 10).map((id) =>
+                    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((r) => r.json()).catch(() => null)
+                ));
+                stories.filter((s) => s && s.id && s.title).forEach((s) => {
+                    collected.push({
+                        id: `hn-${s.id}`,
+                        hnId: s.id,
+                        cat: 'hn',
+                        source: 'Hacker News',
+                        icon: 'flame',
+                        color: 'text-orange-400',
+                        title: s.title,
+                        author: s.by || '',
+                        points: s.score || 0,
+                        subtitle: `${s.descendants || 0} comments${s.url ? ' · ' + os.browserDomain(s.url) : ''}`,
+                        time: relTime(s.time),
+                        link: s.url || `https://news.ycombinator.com/item?id=${s.id}`
                     });
+                });
+                activeSources.push('Hacker News');
+            })().catch(() => {}),
 
-                    if (container.children.length > 40) {
-                        container.removeChild(container.lastChild);
-                    }
-                }
-
-                const bufferCounter = document.getElementById('signal-buffer-count');
-                if(bufferCounter) bufferCounter.innerText = `BUFFER: ${os.signalFeed.buffer.length}`;
-
-                setTimeout(os.renderSignalLoop, 1500 + Math.random() * 2500); 
-            },
-
-    fetchSignals: async () => {
-                let activeSources = [];
-
-                try {
-                    const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
-                    if (!hnRes.ok) throw new Error(`HTTP ${hnRes.status}`);
-                    const hnIds = await hnRes.json();
-                    if (!Array.isArray(hnIds)) throw new Error('Invalid HN payload');
-                    for(let i=0; i<Math.min(3, hnIds.length); i++) {
-                        const storyRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${hnIds[i]}.json`);
-                        if (!storyRes.ok) continue;
-                        const story = await storyRes.json();
-                        if(story && story.id && !os.signalFeed.renderedIds.has(`hn-${story.id}`)) {
-                            os.signalFeed.buffer.push({
-                                id: `hn-${story.id}`,
-                                source: 'Hacker News',
-                                icon: 'triangle',
-                                title: story.title,
-                                color: 'text-orange-500',
-                                time: 'LIVE',
-                                link: story.url || `https://news.ycombinator.com/item?id=${story.id}`
-                            });
-                        }
-                    }
-                    activeSources.push('HN');
-                } catch(e) { console.warn('Signal Intercept: HN core failure', e); }
-
-                try {
-                    const redRes = await fetch('https://www.reddit.com/r/technology/new.json?limit=3');
-                    if (!redRes.ok) throw new Error(`HTTP ${redRes.status}`);
-                    const redData = await redRes.json();
-                    (redData?.data?.children || []).forEach(child => {
-                        if(child?.data?.id && !os.signalFeed.renderedIds.has(`red-${child.data.id}`)) {
-                            os.signalFeed.buffer.push({
-                                id: `red-${child.data.id}`,
-                                source: 'r/technology',
-                                icon: 'message-square',
-                                title: child.data.title,
-                                color: 'text-red-400',
-                                time: 'LIVE',
-                                link: `https://reddit.com${child.data.permalink}`
-                            });
-                        }
+            // 2. Dev.to Featured Articles (100% CORS enabled, full Markdown!)
+            (async () => {
+                const r = await fetch('https://dev.to/api/articles?per_page=10&top=7', { signal: AbortSignal.timeout(8000) });
+                if (!r.ok) return;
+                const list = await r.json();
+                if (!Array.isArray(list)) return;
+                list.forEach((a) => {
+                    collected.push({
+                        id: `devto-${a.id}`,
+                        devtoId: a.id,
+                        cat: 'devto',
+                        source: 'Dev.to',
+                        icon: 'code-2',
+                        color: 'text-emerald-300',
+                        title: a.title,
+                        author: a.user?.name || a.user?.username || '',
+                        points: a.public_reactions_count || 0,
+                        subtitle: a.description || '',
+                        cover: a.cover_image || a.social_image || '',
+                        time: `${a.reading_time_minutes || 3}m read`,
+                        link: a.url
                     });
-                    activeSources.push('REDDIT');
-                } catch(e) { console.warn('Signal Intercept: Reddit core failure', e); }
+                });
+                activeSources.push('Dev.to');
+            })().catch(() => {}),
 
-                try {
-                    const ghUser = SystemState.settings.api_github;
-                    const ghUrl = ghUser ? `https://api.github.com/users/${ghUser}/events/public` : 'https://api.github.com/events';
-                    const ghRes = await fetch(ghUrl);
-                    if (ghRes.ok) {
-                        const ghData = await ghRes.json();
-                        const events = ghData.filter(e => e.type === 'PushEvent' || e.type === 'WatchEvent' || e.type === 'CreateEvent').slice(0, 3);
-                        events.forEach(ev => {
-                            if(!os.signalFeed.renderedIds.has(`gh-${ev.id}`)) {
-                                let actionText = ev.type;
-                                if (ev.type === 'PushEvent') actionText = `Pushed updates to ${ev.repo.name}`;
-                                else if (ev.type === 'WatchEvent') actionText = `Starred repository ${ev.repo.name}`;
-                                else if (ev.type === 'CreateEvent') actionText = `Created resource ${ev.repo.name}`;
-                                
-                                os.signalFeed.buffer.push({
-                                    id: `gh-${ev.id}`,
-                                    source: ghUser ? `GitHub: ${ghUser}` : 'GitHub Network',
-                                    icon: 'github',
-                                    title: actionText,
-                                    color: 'text-gray-300',
-                                    time: 'LIVE',
-                                    link: `https://github.com/${ev.repo.name}`
-                                });
-                            }
+            // 3. GitHub Trending / Popular Active Repos (safe Array guard!)
+            (async () => {
+                const ghUser = (SystemState.settings.api_github || '').trim();
+                if (ghUser) {
+                    const r = await fetch(`https://api.github.com/users/${encodeURIComponent(ghUser)}/events/public?per_page=8`, { signal: AbortSignal.timeout(8000) });
+                    if (!r.ok) return;
+                    const data = await r.json();
+                    if (!Array.isArray(data)) return;
+                    data.slice(0, 6).forEach((ev) => {
+                        collected.push({
+                            id: `gh-${ev.id}`,
+                            cat: 'github',
+                            source: `GitHub · ${ghUser}`,
+                            icon: 'git-branch',
+                            color: 'text-violet-300',
+                            title: `${ev.type.replace('Event', '')} in ${ev.repo?.name || 'repository'}`,
+                            subtitle: ev.payload?.commits?.[0]?.message || 'Public GitHub activity',
+                            time: 'GitHub',
+                            link: `https://github.com/${ev.repo?.name || ''}`
                         });
-                        activeSources.push('GITHUB');
-                    }
-                } catch(e) { console.warn('Signal Intercept: Github core failure', e); }
-
-                try {
-                    const rssUrlRaw = SystemState.settings.api_rss || 'https://techcrunch.com/feed/';
-                    const rssUrl = encodeURIComponent(rssUrlRaw);
-                    const rssRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
-                    const rssData = await rssRes.json();
-                    if (rssData.status === 'ok') {
-                        const items = rssData.items.slice(0, 3);
-                        items.forEach(item => {
-                            const id = `rss-${item.link.replace(/[^a-z0-9]/gi, '')}`;
-                            if(!os.signalFeed.renderedIds.has(id)) {
-                                os.signalFeed.buffer.push({
-                                    id: id,
-                                    source: rssData.feed.title || 'RSS Intercept',
-                                    icon: 'rss',
-                                    title: item.title,
-                                    color: 'text-blue-400',
-                                    time: 'LIVE',
-                                    link: item.link
-                                });
-                            }
+                    });
+                } else {
+                    const r = await fetch('https://api.github.com/search/repositories?q=stars:>1500+pushed:>2026-01-01&sort=updated&order=desc&per_page=8', { signal: AbortSignal.timeout(8000) });
+                    if (!r.ok) return;
+                    const data = await r.json();
+                    if (!Array.isArray(data?.items)) return;
+                    data.items.forEach((repo) => {
+                        collected.push({
+                            id: `gh-${repo.id}`,
+                            cat: 'github',
+                            source: 'GitHub',
+                            icon: 'git-branch',
+                            color: 'text-violet-300',
+                            title: repo.full_name,
+                            author: repo.owner?.login || '',
+                            points: repo.stargazers_count || 0,
+                            subtitle: `${repo.description || 'Open-source repository'}${repo.language ? ` · ${repo.language}` : ''}`,
+                            time: repo.language || 'OSS',
+                            link: repo.html_url
                         });
-                        activeSources.push('RSS');
-                    }
-                } catch(e) { console.warn('Signal Intercept: RSS core failure', e); }
+                    });
+                }
+                activeSources.push('GitHub');
+            })().catch(() => {}),
 
-                const srcLbl = document.getElementById('signal-sources-lbl');
-                if (srcLbl) {
-                    srcLbl.innerText = activeSources.length > 0
-                        ? `SOURCES: ${activeSources.join(', ')}`
-                        : 'SOURCES: OFFLINE (FEEDS UNREACHABLE)';
-                }
-                if (activeSources.length === 0 && os.signalFeed.buffer.length === 0) {
-                    const container = document.getElementById('signal-stream-container');
-                    if (container && container.children.length <= 1) {
-                        container.innerHTML = '<div class="p-6 text-center text-gray-500 font-mono text-[10px]">SIGNAL FEED OFFLINE — Live HN / Reddit / GitHub / RSS endpoints unreachable.</div>';
-                    }
-                }
-            }
+            // 4. Reddit r/technology
+            (async () => {
+                const r = await fetch('https://www.reddit.com/r/technology/hot.json?limit=8', { signal: AbortSignal.timeout(8000) });
+                if (!r.ok) return;
+                const redData = await r.json();
+                const kids = redData?.data?.children;
+                if (!Array.isArray(kids)) return;
+                kids.forEach((child) => {
+                    const d = child?.data;
+                    if (!d || !d.id || d.stickied) return;
+                    collected.push({
+                        id: `red-${d.id}`,
+                        cat: 'reddit',
+                        source: 'r/technology',
+                        icon: 'message-square',
+                        color: 'text-rose-300',
+                        title: d.title,
+                        author: d.author || '',
+                        points: d.ups || 0,
+                        subtitle: `${d.num_comments || 0} comments · ${d.domain || 'reddit'}`,
+                        time: relTime(d.created_utc),
+                        link: d.url_overridden_by_dest || `https://reddit.com${d.permalink}`
+                    });
+                });
+                activeSources.push('Reddit');
+            })().catch(() => {})
+        ];
+
+        await Promise.all(tasks);
+
+        if (collected.length) {
+            // Interleave sources so "All" tab feels balanced
+            os._feedItems = collected;
+            os.signalFeed.buffer = collected.slice(0, 15);
+        }
+
+        const srcLbl = document.getElementById('signal-sources-lbl');
+        if (srcLbl) {
+            srcLbl.innerText = activeSources.length > 0
+                ? `Connected: ${activeSources.join(' · ')}`
+                : 'Offline — unable to reach public feeds';
+        }
+        if (fromUI || document.getElementById('signal-stream-container')) {
+            os.feedRenderList();
+        }
+    }
 });

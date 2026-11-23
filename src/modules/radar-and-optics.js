@@ -127,211 +127,187 @@ window.extendOS({
 
                     os.fetchGlobeData();
                     os.globeDataTimer = setInterval(os.fetchGlobeData, 30000);
-                    os.radarProxyEndpoints = os.buildRadarProxyChain('https://map.opensky-network.org/');
                     os.switchRadarView('leaflet');
-                    lucide.createIcons({ root: document.getElementById('globe-root') });
-                    os.logTerminal('Radar: Leaflet ADS-B map engaged. Fetching OpenSky feed...');
+                    if (window.lucide) lucide.createIcons({ root: document.getElementById('globe-root') });
+                    os.logTerminal('Flight Radar: Live ADS-B map initialized.');
                 });
             },
 
-    buildRadarProxyChain: (targetUrl) => {
-                const target = new URL(targetUrl);
-                const q = `${target.pathname}${target.search}${target.hash}`;
-                const encoded = encodeURIComponent(target.toString());
-                const originEncoded = encodeURIComponent(target.origin);
-                const targetNoScheme = target.toString().replace(/^https?:\/\//i, '');
-                const relay = [
-                    (u) => `https://browser.rammerhead.org/?url=${encodeURIComponent(u)}`,
-                    (u) => `https://browser.rammerhead.org/${targetNoScheme}`,
-                    (u) => `https://browser.rammerhead.org/newsession?url=${encodeURIComponent(u)}`,
-                    (u) => `https://browser.rammerhead.org/session?url=${encodeURIComponent(u)}`,
-                    (u) => `https://browser.rammerhead.org/go/${encodeURIComponent(u)}`,
-                    () => `https://browser.rammerhead.org/?origin=${originEncoded}&path=${encodeURIComponent(q)}`,
-                    (u) => `https://r.jina.ai/http://${u.replace(/^https?:\/\//i, '')}`,
-                    (u) => `https://cors.isomorphic-git.org/${u}`,
-                    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-                    (u) => `https://r.jina.ai/http://${target.host}${q}`,
-                    () => `https://r.jina.ai/http://${target.host}/`,
-                    () => `https://thingproxy.freeboard.io/fetch/${target.toString()}`,
-                    () => `https://r.jina.ai/http://${target.host}/?target=${encoded}`,
-                    () => `https://r.jina.ai/http://${target.host}/?origin=${originEncoded}&path=${encodeURIComponent(q)}`
-                ];
-                return relay;
-            },
-
-    resolveRadarEmbedUrl: () => {
-                const targetUrl = 'https://map.opensky-network.org/';
-                const builders = Array.isArray(os.radarProxyEndpoints) && os.radarProxyEndpoints.length
-                    ? os.radarProxyEndpoints
-                    : os.buildRadarProxyChain(targetUrl);
-                return builders
-                    .map(fn => {
-                        try { return fn(targetUrl); } catch { return null; }
-                    })
-                    .filter(Boolean);
-            },
+    radarJumpRegion: (lat, lon, zoom = 4) => {
+        if (!os.radarMap) return;
+        os.radarMap.setView([lat, lon], zoom, { animate: true, duration: 0.7 });
+        os._radarFocusCenter = { lat, lon, zoom };
+        os.fetchGlobeData();
+    },
 
     initRadarEmbed: async () => {
-                const frame = document.getElementById('radar-embed-frame');
-                if (!frame) return false;
-                if (os.radarEmbedReady && os.radarEmbedLastUrl) {
-                    frame.src = os.radarEmbedLastUrl;
-                    return true;
-                }
-                const candidates = os.resolveRadarEmbedUrl();
-                for (const candidate of candidates) {
-                    const loaded = await new Promise((resolve) => {
-                        const onLoad = () => { cleanup(); resolve(true); };
-                        const onError = () => { cleanup(); resolve(false); };
-                        const cleanup = () => {
-                            clearTimeout(timer);
-                            frame.removeEventListener('load', onLoad);
-                            frame.removeEventListener('error', onError);
-                        };
-                        frame.addEventListener('load', onLoad, { once: true });
-                        frame.addEventListener('error', onError, { once: true });
-                        const timer = setTimeout(() => { cleanup(); resolve(false); }, 7000);
-                        frame.src = candidate;
-                    });
-                    if (loaded) {
-                        os.radarEmbedReady = true;
-                        os.radarEmbedLastUrl = candidate;
-                        os.logTerminal(`Radar: Embed relay locked -> ${new URL(candidate).host}`);
-                        return true;
-                    }
-                }
-                os.radarEmbedReady = false;
-                os.radarEmbedLastUrl = '';
-                os.logTerminal('Radar Warning: embed relays unavailable; reverting to vector mode.');
-                return false;
-            },
+        const frame = document.getElementById('radar-embed-frame');
+        if (!frame) return false;
+        const target = 'https://globe.adsbexchange.com/';
+        if (frame.src !== target) frame.src = target;
+        os.radarEmbedReady = true;
+        os.radarEmbedLastUrl = target;
+        return true;
+    },
 
     switchRadarView: async (mode) => {
-                const nextMode = mode === 'embed' ? 'embed' : 'leaflet';
-                const leafletEl = document.getElementById('radar-leaflet-map');
-                const embedShell = document.getElementById('radar-embed-shell');
-                const warnStrip = document.getElementById('radar-embed-warning');
-                const detailPanel = document.getElementById('radar-detail-panel');
-                const manifest = document.getElementById('flight-manifest-list');
-                const btnLeaflet = document.getElementById('radar-mode-leaflet-btn');
-                const btnEmbed = document.getElementById('radar-mode-embed-btn');
+        const nextMode = mode === 'embed' ? 'embed' : 'leaflet';
+        const leafletEl = document.getElementById('radar-leaflet-map');
+        const embedShell = document.getElementById('radar-embed-shell');
+        const warnStrip = document.getElementById('radar-embed-warning');
+        const detailPanel = document.getElementById('radar-detail-panel');
+        const btnLeaflet = document.getElementById('radar-mode-leaflet-btn');
+        const btnEmbed = document.getElementById('radar-mode-embed-btn');
 
-                if (!leafletEl || !embedShell) return;
+        if (!leafletEl || !embedShell) return;
 
-                if (btnLeaflet && btnEmbed) {
-                    btnLeaflet.className = `bg-black/70 border rounded px-2 py-1 text-[9px] transition cursor-none hover-target ${nextMode === 'leaflet' ? 'border-white/20 text-white' : 'border-white/10 text-gray-400 hover:text-white hover:bg-white/10'}`;
-                    btnEmbed.className = `bg-black/70 border rounded px-2 py-1 text-[9px] transition cursor-none hover-target ${nextMode === 'embed' ? 'border-white/20 text-white' : 'border-white/10 text-gray-400 hover:text-white hover:bg-white/10'}`;
-                }
+        if (btnLeaflet) btnLeaflet.classList.toggle('active', nextMode === 'leaflet');
+        if (btnEmbed) btnEmbed.classList.toggle('active', nextMode === 'embed');
 
-                if (nextMode === 'embed') {
-                    const ok = await os.initRadarEmbed();
-                    if (!ok) {
-                        os.switchRadarView('leaflet');
-                        if (manifest) {
-                            manifest.insertAdjacentHTML('afterbegin', '<div class="text-[9px] text-yellow-400 px-2 py-1 border border-yellow-500/30 rounded mb-1">Embed unavailable; continued in LIVE FEED mode.</div>');
-                        }
-                        return;
-                    }
-                    leafletEl.classList.add('hidden');
-                    embedShell.classList.remove('hidden');
-                    if (warnStrip) warnStrip.classList.remove('hidden');
-                    if (os.globeDataTimer) { clearInterval(os.globeDataTimer); os.globeDataTimer = null; }
-                    const embedNote = document.getElementById('radar-detail-embed-note');
-                    if (detailPanel) detailPanel.classList.remove('hidden');
-                    if (embedNote) embedNote.classList.remove('hidden');
-                    if (detailPanel) detailPanel.classList.add('opacity-60');
-                    os.radarViewMode = 'embed';
-                    os.logTerminal('Radar: switched to EMBED VIEW (proxied client).');
-                    return;
-                }
+        if (nextMode === 'embed') {
+            await os.initRadarEmbed();
+            leafletEl.classList.add('hidden');
+            embedShell.classList.remove('hidden');
+            if (warnStrip) warnStrip.classList.remove('hidden');
+            if (os.globeDataTimer) { clearInterval(os.globeDataTimer); os.globeDataTimer = null; }
+            const embedNote = document.getElementById('radar-detail-embed-note');
+            if (embedNote) embedNote.classList.remove('hidden');
+            os.radarViewMode = 'embed';
+            return;
+        }
 
-                leafletEl.classList.remove('hidden');
-                embedShell.classList.add('hidden');
-                if (warnStrip) warnStrip.classList.add('hidden');
-                if (!os.globeDataTimer) {
-                    os.fetchGlobeData();
-                    os.globeDataTimer = setInterval(os.fetchGlobeData, 30000);
-                }
-                const embedNote = document.getElementById('radar-detail-embed-note');
-                if (embedNote) embedNote.classList.add('hidden');
-                if (detailPanel) detailPanel.classList.remove('opacity-60');
-                os.radarViewMode = 'leaflet';
-                os.renderFlightManifest();
-                os.deselectFlight();
-                os.logTerminal('Radar: switched to LIVE FEED vector mode.');
-            },
+        leafletEl.classList.remove('hidden');
+        embedShell.classList.add('hidden');
+        if (warnStrip) warnStrip.classList.add('hidden');
+        if (!os.globeDataTimer) {
+            os.fetchGlobeData();
+            os.globeDataTimer = setInterval(os.fetchGlobeData, 30000);
+        }
+        const embedNote = document.getElementById('radar-detail-embed-note');
+        if (embedNote) embedNote.classList.add('hidden');
+        if (detailPanel) detailPanel.classList.remove('opacity-60');
+        os.radarViewMode = 'leaflet';
+        os.renderFlightManifest();
+        os.deselectFlight();
+    },
 
     fetchGlobeData: async () => {
-                if (!os._leafletLoaded || !os.radarMap) return;
+        if (!os._leafletLoaded || !os.radarMap) return;
 
-                const refreshBtn = document.getElementById('globe-refresh-btn');
-                if (refreshBtn) {
-                    const ic = refreshBtn.querySelector('i');
-                    if (ic) ic.classList.add('animate-spin');
-                }
+        const refreshBtn = document.getElementById('globe-refresh-btn');
+        if (refreshBtn) {
+            const ic = refreshBtn.querySelector('i');
+            if (ic) ic.classList.add('animate-spin');
+        }
 
+        const applyFlights = (flights, providerLabel) => {
+            os.activeFlights = flights;
+            os.redrawMarkers();
+            os.renderFlightManifest();
+            const titleEl = document.getElementById('globe-event-title');
+            const magEl = document.getElementById('globe-event-mag');
+            const timeEl = document.getElementById('globe-event-time');
+            const cntEl = document.getElementById('globe-flight-count');
+            if (titleEl && !os.selectedFlight) titleEl.innerText = providerLabel;
+            if (magEl) magEl.innerText = `${flights.length} aircraft`;
+            if (timeEl) timeEl.innerText = new Date().toLocaleTimeString('en-US', { hour12: false });
+            if (cntEl) cntEl.innerText = `${flights.length} live`;
+        };
+
+        try {
+            // Try OpenSky global feed first when zoomed out, or Airplanes.live regional feed when zoomed in / rate-limited
+            const center = os.radarMap.getCenter();
+            const zoom = os.radarMap.getZoom();
+            let loaded = false;
+
+            if (zoom <= 3) {
                 try {
                     const res = await fetch('https://opensky-network.org/api/states/all', {
-                        signal: AbortSignal.timeout(15000),
+                        signal: AbortSignal.timeout(9000),
                         cache: 'no-store'
                     });
-                    if (!res.ok) throw new Error(`OpenSky HTTP ${res.status}`);
-                    const raw = await res.json();
-                    if (!raw || !raw.states) throw new Error('No state data returned');
-
-                    // s[0]=icao24 s[1]=callsign s[2]=origin_country s[3]=time_position
-                    // s[4]=last_contact s[5]=lon s[6]=lat s[7]=baro_alt s[8]=on_ground
-                    // s[9]=velocity(m/s) s[10]=true_track s[11]=vertical_rate
-                    // s[13]=geo_alt s[14]=squawk s[15]=spi s[16]=position_source
-                    os.activeFlights = raw.states
-                        .filter(s => s[5] != null && s[6] != null && s[7] != null && s[7] > 50)
-                        .slice(0, 1500)
-                        .map(s => ({
-                            icao:    s[0] || '------',
-                            callsign:(s[1] || '').trim() || s[0],
-                            origin:  s[2] || 'Unknown',
-                            lon:     s[5],
-                            lat:     s[6],
-                            baroAlt: s[7]  || 0,
-                            geoAlt:  s[13] || s[7] || 0,
-                            onGround:s[8],
-                            speed:   s[9]  ? Math.round(s[9] * 1.94384) : 0,
-                            track:   s[10] || 0,
-                            vRate:   s[11] || 0,
-                            squawk:  s[14] || '----',
-                            posSource: ['ADS-B','ASTERIX','MLAT','FLARM'][s[16]] || 'ADS-B',
-                        }));
-
-                    os.redrawMarkers();
-                    os.renderFlightManifest();
-
-                    const titleEl = document.getElementById('globe-event-title');
-                    const magEl   = document.getElementById('globe-event-mag');
-                    const timeEl  = document.getElementById('globe-event-time');
-                    const cntEl   = document.getElementById('globe-flight-count');
-                    if (titleEl && !os.selectedFlight) titleEl.innerText = 'LIVE RADAR';
-                    if (magEl)   magEl.innerText   = `${os.activeFlights.length} VECTORS`;
-                    if (timeEl)  timeEl.innerText  = new Date().toLocaleTimeString('en-US',{hour12:false});
-                    if (cntEl)   cntEl.innerText   = `${os.activeFlights.length} LIVE`;
-
-                    os.logTerminal(`Radar: ${os.activeFlights.length} vectors from OpenSky.`);
-                } catch(err) {
-                    os.logTerminal(`Radar Warning: ${err.message} — OpenSky ADS-B unavailable.`);
-                    os.activeFlights = [];
-                    os.redrawMarkers();
-                    os._radarLastError = err.message || 'OpenSky rate-limited or unreachable';
-                    os.renderFlightManifest();
-                    const cntEl = document.getElementById('globe-flight-count');
-                    const magEl = document.getElementById('globe-event-mag');
-                    if (cntEl) cntEl.innerText = 'OFFLINE';
-                    if (magEl) magEl.innerText = 'ADS-B UNAVAILABLE';
-                } finally {
-                    if (refreshBtn) {
-                        const ic = refreshBtn.querySelector('i');
-                        if (ic) ic.classList.remove('animate-spin');
+                    if (res.ok) {
+                        const raw = await res.json();
+                        if (Array.isArray(raw?.states) && raw.states.length) {
+                            const parsed = raw.states
+                                .filter((s) => s[5] != null && s[6] != null && s[7] != null && s[7] > 50)
+                                .slice(0, 1200)
+                                .map((s) => ({
+                                    icao: s[0] || '------',
+                                    callsign: (s[1] || '').trim() || s[0],
+                                    origin: s[2] || 'Unknown',
+                                    lon: s[5],
+                                    lat: s[6],
+                                    baroAlt: s[7] || 0,
+                                    geoAlt: s[13] || s[7] || 0,
+                                    onGround: s[8],
+                                    speed: s[9] ? Math.round(s[9] * 1.94384) : 0,
+                                    track: s[10] || 0,
+                                    vRate: s[11] || 0,
+                                    squawk: s[14] || '----',
+                                    posSource: ['ADS-B', 'ASTERIX', 'MLAT', 'FLARM'][s[16]] || 'ADS-B'
+                                }));
+                            applyFlights(parsed, 'OpenSky ADS-B');
+                            loaded = true;
+                        }
                     }
-                }
-            },
+                } catch (_) {}
+            }
+
+            if (!loaded) {
+                // Airplanes.live CORS-open regional ADS-B feed (250 NM radius around current map center or busy hubs)
+                const hubs = zoom > 3
+                    ? [[center.lat, center.lng]]
+                    : [[51.47, -0.45], [40.64, -73.78], [28.55, 77.10], [35.55, 139.78]];
+                const seen = new Set();
+                const merged = [];
+                await Promise.all(hubs.map(async ([la, lo]) => {
+                    try {
+                        const r = await fetch(`https://api.airplanes.live/v2/point/${la.toFixed(2)}/${lo.toFixed(2)}/250`, { signal: AbortSignal.timeout(9000) });
+                        if (!r.ok) return;
+                        const data = await r.json();
+                        (data?.ac || []).forEach((ac) => {
+                            if (ac.lat == null || ac.lon == null || seen.has(ac.hex)) return;
+                            seen.add(ac.hex);
+                            const altFt = typeof ac.alt_baro === 'number' ? ac.alt_baro : 0;
+                            merged.push({
+                                icao: ac.hex || '------',
+                                callsign: String(ac.flight || ac.r || ac.hex || '').trim(),
+                                origin: ac.desc || ac.t || 'Civil Aviation',
+                                lon: ac.lon,
+                                lat: ac.lat,
+                                baroAlt: altFt / 3.28084,
+                                geoAlt: (typeof ac.alt_geom === 'number' ? ac.alt_geom : altFt) / 3.28084,
+                                onGround: ac.alt_baro === 'ground',
+                                speed: Math.round(ac.gs || 0),
+                                track: ac.track || 0,
+                                vRate: (ac.baro_rate || 0) / 196.85,
+                                squawk: ac.squawk || '----',
+                                posSource: 'Airplanes.live ADS-B'
+                            });
+                        });
+                    } catch (_) {}
+                }));
+
+                if (!merged.length) throw new Error('Both OpenSky and Airplanes.live endpoints unreachable');
+                applyFlights(merged.slice(0, 1200), 'Airplanes.live ADS-B');
+            }
+        } catch (err) {
+            os._radarLastError = err.message || 'ADS-B feeds unreachable';
+            os.activeFlights = [];
+            os.redrawMarkers();
+            os.renderFlightManifest();
+            const cntEl = document.getElementById('globe-flight-count');
+            const magEl = document.getElementById('globe-event-mag');
+            if (cntEl) cntEl.innerText = 'Offline';
+            if (magEl) magEl.innerText = 'Unavailable';
+        } finally {
+            if (refreshBtn) {
+                const ic = refreshBtn.querySelector('i');
+                if (ic) ic.classList.remove('animate-spin');
+            }
+        }
+    },
 
     redrawMarkers: () => {
                 if (!os.radarMarkersLayer || !os.radarMap) return;
@@ -621,134 +597,416 @@ window.extendOS({
             },
 
     marketWs: null,
-
     marketData: [],
-
     marketResizeObserver: null,
+    _marketSymbol: 'BTCUSDT',
+    _marketInterval: '15m',
+    _marketChartStyle: 'candles',
+    _marketHoverIdx: -1,
+    _marketTickers: {},
 
-    initMarket: () => {
-                if (os.marketWs) return;
+    _marketCoins: [
+        { symbol: 'BTCUSDT', kraken: 'XXBTZUSD', code: 'BTC', name: 'Bitcoin', badge: '₿', fallback: 92400 },
+        { symbol: 'ETHUSDT', kraken: 'XETHZUSD', code: 'ETH', name: 'Ethereum', badge: 'Ξ', fallback: 3180 },
+        { symbol: 'SOLUSDT', kraken: 'SOLUSD',   code: 'SOL', name: 'Solana',   badge: '◎', fallback: 194 },
+        { symbol: 'BNBUSDT', kraken: 'BNBUSD',   code: 'BNB', name: 'BNB',      badge: '◆', fallback: 640 },
+        { symbol: 'XRPUSDT', kraken: 'XXRPZUSD', code: 'XRP', name: 'XRP',      badge: '✕', fallback: 2.38 },
+        { symbol: 'ADAUSDT', kraken: 'ADAUSD',   code: 'ADA', name: 'Cardano',  badge: '₳', fallback: 0.94 },
+        { symbol: 'DOGEUSDT',kraken: 'XDGUSD',   code: 'DOGE',name: 'Dogecoin', badge: 'Ð', fallback: 0.34 },
+        { symbol: 'AVAXUSDT',kraken: 'AVAXUSD',  code: 'AVAX',name: 'Avalanche',badge: '▲', fallback: 38.5 }
+    ],
 
-                const canvas = document.getElementById('market-canvas');
-                if (!canvas) return;
-                
-                const resize = () => {
-                    const c = document.getElementById('market-canvas');
-                    if(!c) return;
-                    const rect = c.parentElement.getBoundingClientRect();
-                    c.width = rect.width;
-                    c.height = rect.height;
-                    os.drawMarketChart();
-                };
-                
-                if (!os.marketResizeObserver) {
-                    os.marketResizeObserver = new ResizeObserver(resize);
-                    os.marketResizeObserver.observe(canvas.parentElement);
-                }
-                resize(); 
+    marketFormatPrice: (val) => {
+        const n = Number(val);
+        if (!Number.isFinite(n)) return '--';
+        if (n >= 1000) return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (n >= 1) return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+        return n.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 5 });
+    },
 
-                const statusLbl = document.getElementById('market-status-lbl');
-                if(statusLbl) statusLbl.innerText = 'CONNECTING WSS...';
+    initMarket: async () => {
+        const canvas = document.getElementById('market-canvas');
+        if (!canvas) return;
 
-                os.marketWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m');
-                
-                os.marketWs.onopen = () => {
-                    os.logTerminal("Market Node: Binance uplink secured.");
-                    if(statusLbl) statusLbl.innerText = 'BINANCE WSS STREAM (1M)';
-                };
-                
-                os.marketWs.onmessage = (event) => {
-                    if (window._networkBytes !== undefined) window._networkBytes += event.data.length;
-                    const msg = JSON.parse(event.data);
-                    const k = msg.k;
-                    const candle = {
-                        t: k.t,
-                        o: parseFloat(k.o),
-                        h: parseFloat(k.h),
-                        l: parseFloat(k.l),
-                        c: parseFloat(k.c)
-                    };
+        const resize = () => {
+            const c = document.getElementById('market-canvas');
+            if (!c || !c.parentElement) return;
+            const rect = c.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            c.width = Math.max(200, Math.floor(rect.width * dpr));
+            c.height = Math.max(140, Math.floor(rect.height * dpr));
+            c.style.width = rect.width + 'px';
+            c.style.height = rect.height + 'px';
+            os.drawMarketChart();
+        };
 
-                    const priceEl = document.getElementById('market-price');
-                    const changeEl = document.getElementById('market-change');
-                    
-                    if (priceEl) {
-                        priceEl.innerText = `$${candle.c.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                        const isUp = candle.c >= candle.o;
-                        priceEl.className = `text-2xl font-mono font-bold leading-none tracking-tight ${isUp ? 'text-green-500' : 'text-red-500'}`;
-                        
-                        const diff = candle.c - candle.o;
-                        const pct = (diff / candle.o) * 100;
-                        changeEl.innerText = `${diff > 0 ? '+' : ''}${diff.toFixed(2)} (${pct.toFixed(3)}%)`;
-                        changeEl.className = `text-[10px] font-mono uppercase mt-1 ${isUp ? 'text-green-500/80' : 'text-red-500/80'}`;
-                    }
+        if (!os.marketResizeObserver && window.ResizeObserver) {
+            os.marketResizeObserver = new ResizeObserver(resize);
+            os.marketResizeObserver.observe(canvas.parentElement);
+        }
+        resize();
 
-                    if (os.marketData.length === 0 || os.marketData[os.marketData.length-1].t !== candle.t) {
-                        os.marketData.push(candle);
-                        if(os.marketData.length > 60) os.marketData.shift(); 
-                    } else {
-                        os.marketData[os.marketData.length-1] = candle;
-                    }
+        if (!canvas.dataset.boundHover) {
+            canvas.dataset.boundHover = '1';
+            canvas.addEventListener('mousemove', (ev) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = ev.clientX - rect.left;
+                const data = os.marketData || [];
+                if (!data.length) return;
+                const padRight = 64;
+                const padLeft = 12;
+                const plotW = Math.max(40, rect.width - padLeft - padRight);
+                const idx = Math.max(0, Math.min(data.length - 1, Math.floor(((x - padLeft) / plotW) * data.length)));
+                os._marketHoverIdx = idx;
+                os.drawMarketChart();
+            });
+            canvas.addEventListener('mouseleave', () => {
+                os._marketHoverIdx = -1;
+                os.drawMarketChart();
+            });
+        }
 
-                    os.drawMarketChart();
-                };
+        os.marketRenderWatchlist();
+        os.marketRefreshWatchlistTickers();
+        await os.marketSelectSymbol(os._marketSymbol || 'BTCUSDT', os._marketInterval || '15m');
+    },
 
-                os.marketWs.onerror = () => {
-                    if(statusLbl) statusLbl.innerText = 'WSS CONNECTION FAILED';
-                    os.logTerminal("Market Node: Binance WSS failed.");
-                };
-            },
+    marketRenderWatchlist: () => {
+        const el = document.getElementById('market-watchlist');
+        if (!el) return;
+        el.innerHTML = os._marketCoins.map((c) => {
+            const active = c.symbol === os._marketSymbol;
+            const tk = os._marketTickers[c.symbol];
+            const pct = tk ? Number(tk.pct) : null;
+            return `
+                <button type="button" onclick="os.marketSelectSymbol('${c.symbol}')"
+                    class="w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between gap-2 transition cursor-none hover-target border ${
+                        active ? 'bg-white/[0.09] border-white/20' : 'bg-white/[0.02] hover:bg-white/[0.05] border-transparent'
+                    }">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-6 h-6 rounded-lg bg-white/[0.06] flex items-center justify-center font-mono font-bold text-[11px] text-amber-300 shrink-0">${c.badge}</span>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">${c.code}</div>
+                            <div class="text-[10px] text-gray-500 truncate">${c.name}</div>
+                        </div>
+                    </div>
+                    <div class="text-right font-mono tabular-nums shrink-0">
+                        <div class="text-xs text-gray-100">${tk ? '$' + os.marketFormatPrice(tk.last) : '--'}</div>
+                        <div class="text-[10px] ${pct == null ? 'text-gray-500' : pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pct == null ? '' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}</div>
+                    </div>
+                </button>`;
+        }).join('');
+    },
 
-    drawMarketChart: () => {
-                const canvas = document.getElementById('market-canvas');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                if (os.marketData.length === 0) return;
-
-                const data = os.marketData;
-                const min = Math.min(...data.map(d => d.l));
-                const max = Math.max(...data.map(d => d.h));
-                const range = max - min || 1;
-
-                const paddingY = 20;
-                const paddingX = 10;
-                const drawAreaHeight = canvas.height - paddingY * 2;
-                const candleWidth = Math.max(3, ((canvas.width - paddingX*2) / 60) - 2);
-
-                data.forEach((d, i) => {
-                    const xOffset = canvas.width - paddingX - ((data.length - 1 - i) * (candleWidth + 2)) - candleWidth;
-                    const getY = (val) => canvas.height - paddingY - ((val - min) / range) * drawAreaHeight;
-                    
-                    const yO = getY(d.o);
-                    const yC = getY(d.c);
-                    const yH = getY(d.h);
-                    const yL = getY(d.l);
-
-                    const color = d.c >= d.o ? '#22c55e' : '#ef4444'; 
-                    ctx.strokeStyle = color;
-                    ctx.fillStyle = color;
-
-                    ctx.beginPath();
-                    ctx.moveTo(xOffset + candleWidth/2, yH);
-                    ctx.lineTo(xOffset + candleWidth/2, yL);
-                    ctx.stroke();
-
-                    const bodyY = Math.min(yO, yC);
-                    const bodyHeight = Math.max(1, Math.abs(yO - yC));
-                    ctx.fillRect(xOffset, bodyY, candleWidth, bodyHeight);
-                });
-            },
-
-    killMarket: () => {
-                if (os.marketWs) {
-                    os.marketWs.close();
-                    os.marketWs = null;
-                }
-                if (os.marketResizeObserver) {
-                    os.marketResizeObserver.disconnect();
-                    os.marketResizeObserver = null;
+    marketRefreshWatchlistTickers: async () => {
+        try {
+            const syms = encodeURIComponent(JSON.stringify(os._marketCoins.map((c) => c.symbol)));
+            const r = await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbols=${syms}`, { signal: AbortSignal.timeout(8000) });
+            if (r.ok) {
+                const arr = await r.json();
+                if (Array.isArray(arr)) {
+                    arr.forEach((item) => {
+                        os._marketTickers[item.symbol] = {
+                            last: parseFloat(item.lastPrice),
+                            pct: parseFloat(item.priceChangePercent),
+                            high: parseFloat(item.highPrice),
+                            low: parseFloat(item.lowPrice)
+                        };
+                    });
+                    os.marketRenderWatchlist();
+                    os.marketSyncHeaderPrice();
                 }
             }
+        } catch (_) {}
+    },
+
+    marketSetInterval: (tf) => {
+        os._marketInterval = tf;
+        document.querySelectorAll('#market-tf-group [data-mkt-tf]').forEach((b) => {
+            b.classList.toggle('active', b.getAttribute('data-mkt-tf') === tf);
+        });
+        os.marketSelectSymbol(os._marketSymbol, tf);
+    },
+
+    marketSetChartStyle: (style) => {
+        os._marketChartStyle = style === 'area' ? 'area' : 'candles';
+        document.getElementById('mkt-style-candles')?.classList.toggle('active', os._marketChartStyle === 'candles');
+        document.getElementById('mkt-style-area')?.classList.toggle('active', os._marketChartStyle === 'area');
+        os.drawMarketChart();
+    },
+
+    marketSelectSymbol: async (symbol, interval = os._marketInterval) => {
+        const coin = os._marketCoins.find((c) => c.symbol === symbol) || os._marketCoins[0];
+        os._marketSymbol = coin.symbol;
+        os._marketInterval = interval || '15m';
+        os.marketRenderWatchlist();
+
+        const titleEl = document.getElementById('market-symbol-title');
+        const badgeEl = document.getElementById('market-coin-badge');
+        const symConv = document.getElementById('market-conv-sym');
+        const statusLbl = document.getElementById('market-status-lbl');
+        if (titleEl) titleEl.textContent = `${coin.code} / USDT`;
+        if (badgeEl) badgeEl.textContent = coin.badge;
+        if (symConv) symConv.textContent = coin.code;
+        if (statusLbl) statusLbl.textContent = `Loading ${os._marketInterval}...`;
+
+        // Close previous WS
+        if (os.marketWs) {
+            try { os.marketWs.onclose = null; os.marketWs.close(); } catch (_) {}
+            os.marketWs = null;
+        }
+
+        // Preload 60 historical OHLC candles immediately!
+        let loaded = false;
+        try {
+            const kRes = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${coin.symbol}&interval=${os._marketInterval}&limit=60`, { signal: AbortSignal.timeout(8000) });
+            if (kRes.ok) {
+                const raw = await kRes.json();
+                if (Array.isArray(raw) && raw.length) {
+                    os.marketData = raw.map((k) => ({
+                        t: k[0], o: parseFloat(k[1]), h: parseFloat(k[2]), l: parseFloat(k[3]), c: parseFloat(k[4])
+                    }));
+                    loaded = true;
+                    if (statusLbl) statusLbl.textContent = `Live · ${os._marketInterval}`;
+                }
+            }
+        } catch (_) {}
+
+        // Fallback to Kraken public OHLC if Binance Vision was blocked
+        if (!loaded) {
+            const krakenTf = { '1m': 1, '15m': 15, '1h': 60, '4h': 240, '1d': 1440 }[os._marketInterval] || 15;
+            try {
+                const kr = await fetch(`https://api.kraken.com/0/public/OHLC?pair=${coin.kraken}&interval=${krakenTf}`, { signal: AbortSignal.timeout(8000) });
+                if (kr.ok) {
+                    const kj = await kr.json();
+                    const key = Object.keys(kj?.result || {}).find((k) => k !== 'last');
+                    const rows = key ? kj.result[key] : null;
+                    if (Array.isArray(rows) && rows.length) {
+                        os.marketData = rows.slice(-60).map((k) => ({
+                            t: k[0] * 1000, o: parseFloat(k[1]), h: parseFloat(k[2]), l: parseFloat(k[3]), c: parseFloat(k[4])
+                        }));
+                        loaded = true;
+                        if (statusLbl) statusLbl.textContent = `Kraken · ${os._marketInterval}`;
+                    }
+                }
+            } catch (_) {}
+        }
+
+        if (!loaded && !os.marketData.length) {
+            if (statusLbl) statusLbl.textContent = 'Offline';
+        }
+
+        os.marketSyncHeaderPrice();
+        os.marketConvert('coin');
+        os.drawMarketChart();
+
+        // Connect live WebSocket stream (Binance Vision global stream -> fallback stream.binance.com)
+        const streamPath = `${coin.symbol.toLowerCase()}@kline_${os._marketInterval}`;
+        const connectWs = (wsBase, isFallback = false) => {
+            if (os._marketSymbol !== coin.symbol) return;
+            try {
+                const ws = new WebSocket(`${wsBase}/${streamPath}`);
+                os.marketWs = ws;
+                ws.onopen = () => {
+                    if (statusLbl) statusLbl.textContent = `Live WS · ${os._marketInterval}`;
+                };
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        const k = msg.k;
+                        if (!k) return;
+                        const candle = { t: k.t, o: parseFloat(k.o), h: parseFloat(k.h), l: parseFloat(k.l), c: parseFloat(k.c) };
+                        if (!os.marketData.length || os.marketData[os.marketData.length - 1].t !== candle.t) {
+                            os.marketData.push(candle);
+                            if (os.marketData.length > 60) os.marketData.shift();
+                        } else {
+                            os.marketData[os.marketData.length - 1] = candle;
+                        }
+                        os._marketTickers[coin.symbol] = {
+                            ...(os._marketTickers[coin.symbol] || {}),
+                            last: candle.c
+                        };
+                        os.marketSyncHeaderPrice();
+                        os.drawMarketChart();
+                    } catch (_) {}
+                };
+                ws.onerror = () => {
+                    if (!isFallback) {
+                        try { ws.close(); } catch (_) {}
+                        connectWs('wss://stream.binance.com:9443/ws', true);
+                    }
+                };
+            } catch (_) {}
+        };
+        connectWs('wss://data-stream.binance.vision/ws');
+    },
+
+    marketSyncHeaderPrice: () => {
+        const priceEl = document.getElementById('market-price');
+        const changeEl = document.getElementById('market-change');
+        const rangeEl = document.getElementById('market-24h-range');
+        const data = os.marketData || [];
+        const last = data.length ? data[data.length - 1].c : os._marketTickers[os._marketSymbol]?.last;
+        const first = data.length ? data[0].o : last;
+        if (priceEl && last != null) {
+            const diff = last - (first || last);
+            const pct = first ? (diff / first) * 100 : (os._marketTickers[os._marketSymbol]?.pct || 0);
+            const isUp = diff >= 0;
+            priceEl.textContent = `$${os.marketFormatPrice(last)}`;
+            priceEl.className = `text-lg font-mono font-bold leading-none tabular-nums ${isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+            if (changeEl) {
+                changeEl.textContent = `${isUp ? '+' : ''}${pct.toFixed(2)}% (${os._marketInterval} window)`;
+                changeEl.className = `text-[11px] font-mono mt-0.5 tabular-nums ${isUp ? 'text-emerald-400/90' : 'text-rose-400/90'}`;
+            }
+        }
+        const tk = os._marketTickers[os._marketSymbol];
+        if (rangeEl && tk?.high && tk?.low) {
+            rangeEl.textContent = `24h High $${os.marketFormatPrice(tk.high)} · Low $${os.marketFormatPrice(tk.low)}`;
+        }
+    },
+
+    marketConvert: (source) => {
+        const coinInput = document.getElementById('market-conv-coin');
+        const usdInput = document.getElementById('market-conv-usd');
+        if (!coinInput || !usdInput) return;
+        const price = (os.marketData.length ? os.marketData[os.marketData.length - 1].c : null)
+            || os._marketTickers[os._marketSymbol]?.last || 0;
+        if (!price) return;
+        if (source === 'coin') {
+            const qty = parseFloat(coinInput.value) || 0;
+            usdInput.value = (qty * price).toFixed(2);
+        } else {
+            const usd = parseFloat(usdInput.value) || 0;
+            coinInput.value = (usd / price).toFixed(6);
+        }
+    },
+
+    drawMarketChart: () => {
+        const canvas = document.getElementById('market-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+
+        const data = os.marketData || [];
+        if (!data.length) {
+            ctx.fillStyle = 'rgba(148,163,184,0.55)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading market candles...', w / 2, h / 2);
+            ctx.restore();
+            return;
+        }
+
+        const min = Math.min(...data.map((d) => d.l));
+        const max = Math.max(...data.map((d) => d.h));
+        const range = (max - min) || (max * 0.01) || 1;
+
+        const padTop = 18;
+        const padBottom = 22;
+        const padLeft = 12;
+        const padRight = 64;
+        const plotW = Math.max(40, w - padLeft - padRight);
+        const plotH = Math.max(40, h - padTop - padBottom);
+        const getY = (val) => padTop + plotH - ((val - min) / range) * plotH;
+
+        // Horizontal price grid + right-axis price labels
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillStyle = 'rgba(148,163,184,0.7)';
+        ctx.textAlign = 'left';
+        for (let i = 0; i <= 4; i++) {
+            const y = padTop + (plotH / 4) * i;
+            const pVal = max - (range / 4) * i;
+            ctx.beginPath();
+            ctx.moveTo(padLeft, y);
+            ctx.lineTo(padLeft + plotW, y);
+            ctx.stroke();
+            ctx.fillText(os.marketFormatPrice(pVal), padLeft + plotW + 6, y + 3);
+        }
+
+        const stepX = plotW / data.length;
+        const candleW = Math.max(2.5, stepX * 0.66);
+
+        if (os._marketChartStyle === 'area') {
+            const isUpOverall = data[data.length - 1].c >= data[0].o;
+            const strokeCol = isUpOverall ? '#34d399' : '#fb7185';
+            const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+            grad.addColorStop(0, isUpOverall ? 'rgba(52,211,153,0.28)' : 'rgba(251,113,133,0.28)');
+            grad.addColorStop(1, 'rgba(4,6,11,0.0)');
+
+            ctx.beginPath();
+            data.forEach((d, i) => {
+                const x = padLeft + i * stepX + stepX / 2;
+                const y = getY(d.c);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = strokeCol;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.lineTo(padLeft + (data.length - 1) * stepX + stepX / 2, padTop + plotH);
+            ctx.lineTo(padLeft + stepX / 2, padTop + plotH);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+        } else {
+            data.forEach((d, i) => {
+                const cx = padLeft + i * stepX + stepX / 2;
+                const yO = getY(d.o);
+                const yC = getY(d.c);
+                const yH = getY(d.h);
+                const yL = getY(d.l);
+                const color = d.c >= d.o ? '#34d399' : '#f87171';
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(cx, yH);
+                ctx.lineTo(cx, yL);
+                ctx.stroke();
+                ctx.fillRect(cx - candleW / 2, Math.min(yO, yC), candleW, Math.max(1.5, Math.abs(yO - yC)));
+            });
+        }
+
+        // Hover crosshair + OHLC bar
+        const ohlcBar = document.getElementById('market-ohlc-bar');
+        const hIdx = os._marketHoverIdx;
+        if (hIdx >= 0 && hIdx < data.length) {
+            const hd = data[hIdx];
+            const hx = padLeft + hIdx * stepX + stepX / 2;
+            const hy = getY(hd.c);
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.beginPath();
+            ctx.moveTo(hx, padTop);
+            ctx.lineTo(hx, padTop + plotH);
+            ctx.moveTo(padLeft, hy);
+            ctx.lineTo(padLeft + plotW, hy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            if (ohlcBar) {
+                const ts = new Date(hd.t).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+                ohlcBar.firstElementChild.textContent = `${ts}  ·  O ${os.marketFormatPrice(hd.o)}  H ${os.marketFormatPrice(hd.h)}  L ${os.marketFormatPrice(hd.l)}  C ${os.marketFormatPrice(hd.c)}`;
+            }
+        }
+
+        ctx.restore();
+    },
+
+    killMarket: () => {
+        if (os.marketWs) {
+            try { os.marketWs.onclose = null; os.marketWs.close(); } catch (_) {}
+            os.marketWs = null;
+        }
+        if (os.marketResizeObserver) {
+            os.marketResizeObserver.disconnect();
+            os.marketResizeObserver = null;
+        }
+    }
 });

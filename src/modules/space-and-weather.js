@@ -1,201 +1,244 @@
 // AetherOS — Weather Station, NASA Explorer, ISS 3D Orbital Tracker & Game Vault
 window.extendOS({
     searchWeather: async (cityName) => {
-                const query = String(cityName || '').trim();
-                if (!query) return;
-                
-                os.logTerminal && os.logTerminal(`Geocoding: Searching coordinates for [${query}]...`);
-                try {
-                    const ctrl = new AbortController();
-                    const t = setTimeout(() => ctrl.abort(), 5000);
-                    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`, { signal: ctrl.signal });
-                    clearTimeout(t);
-                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                    const data = await r.json();
-                    const result = data.results && data.results[0];
-                    if (result && result.latitude && result.longitude) {
-                        const lat = result.latitude;
-                        const lon = result.longitude;
-                        const city = result.name;
-                        const country = result.country || '';
-                        
-                        os.logTerminal && os.logTerminal(`Geocoding: Found [${city}, ${country}] at (${lat}, ${lon})`);
-                        
-                        os._weatherManualOverride = { lat, lon, city, country };
-                        os.initWeatherStation();
-                    } else {
-                        alert(`City "${query}" not found in Geocoding matrix.`);
-                    }
-                } catch(e) {
-                    os.logTerminal && os.logTerminal(`Geocoding Error: ${e.message}`);
-                    alert(`Geocoding uplink failed: ${e.message}`);
-                }
-            },
+        const query = String(cityName || '').trim();
+        if (!query) return;
+
+        os.logTerminal && os.logTerminal(`Weather: Searching coordinates for "${query}"...`);
+        try {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 6000);
+            const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`, { signal: ctrl.signal });
+            clearTimeout(t);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const data = await r.json();
+            const result = data.results && data.results[0];
+            if (result && result.latitude != null && result.longitude != null) {
+                os._weatherManualOverride = {
+                    lat: result.latitude,
+                    lon: result.longitude,
+                    city: result.name,
+                    country: result.country || ''
+                };
+                os._weatherCache = null;
+                os.initWeatherStation(true);
+            } else if (window.Notifications) {
+                Notifications.push('Weather', `Location "${query}" not found.`);
+            }
+        } catch (e) {
+            if (window.Notifications) Notifications.push('Weather', `Location lookup failed: ${e.message}`);
+        }
+    },
+
+    resetWeatherLocation: () => {
+        os._weatherManualOverride = null;
+        os._weatherCache = null;
+        os.initWeatherStation(true);
+    },
+
+    toggleWeatherUnit: () => {
+        os._weatherUnit = (os._weatherUnit || localStorage.getItem('aether_weather_unit') || 'C') === 'C' ? 'F' : 'C';
+        try { localStorage.setItem('aether_weather_unit', os._weatherUnit); } catch (e) {}
+        if (os._weatherCache && os._weatherCache.wd) {
+            const cached = os._weatherCache;
+            const content = document.getElementById('weather-content');
+            const bgGif = document.getElementById('weather-bg-gif');
+            if (content) os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
+        }
+    },
 
     _weatherData: null,
+    _weatherUnit: (typeof localStorage !== 'undefined' && localStorage.getItem('aether_weather_unit')) || 'C',
 
-    initWeatherStation: async () => {
-                const content = document.getElementById('weather-content');
-                const bgGif = document.getElementById('weather-bg-gif');
-                if (!content) return;
-                content.innerHTML = '<div class="text-white/40 text-xs animate-pulse text-center mt-20">Acquiring atmospheric telemetry...</div>';
+    initWeatherStation: async (force = false) => {
+        const content = document.getElementById('weather-content');
+        const bgGif = document.getElementById('weather-bg-gif');
+        if (!content) return;
 
-                // Use cached weather if < 10 minutes old
-                const now = Date.now();
-                if (os._weatherCache && os._weatherCache.timestamp && (now - os._weatherCache.timestamp) < 600000) {
-                    const cached = os._weatherCache;
-                    os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif);
-                    return;
-                }
+        const now = Date.now();
+        if (!force && os._weatherCache && os._weatherCache.timestamp && (now - os._weatherCache.timestamp) < 600000) {
+            const cached = os._weatherCache;
+            os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
+            return;
+        }
+        content.innerHTML = '<div class="text-gray-400 text-xs text-center mt-20">Loading local forecast &amp; air quality...</div>';
 
-                // Robust fetch with manual timeout (cross-browser) + retry
-                const tryFetch = async (url, timeoutMs, retries = 2) => {
-                    for (let attempt = 0; attempt <= retries; attempt++) {
-                        const ctrl = new AbortController();
-                        const t = setTimeout(() => ctrl.abort(), timeoutMs);
-                        try {
-                            const res = await fetch(url, { signal: ctrl.signal });
-                            clearTimeout(t);
-                            if (res.status === 429 && attempt < retries) {
-                                await new Promise(r => setTimeout(r, (attempt + 1) * 2000));
-                                continue;
-                            }
-                            return res;
-                        } catch (e) {
-                            clearTimeout(t);
-                            if (attempt < retries) {
-                                await new Promise(r => setTimeout(r, (attempt + 1) * 1500));
-                                continue;
-                            }
-                            throw e;
-                        }
-                    }
-                    return null;
-                };
-
+        const tryFetch = async (url, timeoutMs, retries = 2) => {
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), timeoutMs);
                 try {
-                    let lat = 28.6139, lon = 77.2090, city = 'New Delhi', country = 'India';
-                    if (os._weatherManualOverride) {
-                        lat = os._weatherManualOverride.lat;
-                        lon = os._weatherManualOverride.lon;
-                        city = os._weatherManualOverride.city;
-                        country = os._weatherManualOverride.country;
-                    } else {
-                        try {
-                            const g = await tryFetch('https://ipwho.is/', 4000, 1);
-                            const gd = await g.json();
-                            if (gd && gd.success !== false && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country || country; }
-                        } catch {
-                            try {
-                                const g = await tryFetch('https://ipapi.co/json/', 4000, 1);
-                                const gd = await g.json();
-                                if (gd && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country_name || country; }
-                            } catch(_) {}
-                        }
+                    const res = await fetch(url, { signal: ctrl.signal });
+                    clearTimeout(t);
+                    if (res.status === 429 && attempt < retries) {
+                        await new Promise((r) => setTimeout(r, (attempt + 1) * 1500));
+                        continue;
                     }
-
-                    const wr = await tryFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code,relative_humidity_2m,apparent_temperature,precipitation,surface_pressure&hourly=temperature_2m,precipitation_probability,wind_speed_10m,uv_index,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_sum&forecast_days=7&timezone=auto`, 10000, 2);
-                    if (!wr || !wr.ok) throw new Error('Open-Meteo HTTP ' + (wr ? wr.status : 'unreachable'));
-                    const wd = await wr.json();
-                    os._weatherCache = { wd, lat, lon, city, country, timestamp: Date.now() };
-                    os._renderWeatherData(wd, lat, lon, city, country, content, bgGif);
-                    const c = wd.current || {};
-                    const code = c.weather_code ?? c.weathercode ?? 0;
-                    const wmoLabel = {0:'Clear Sky',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Icy Fog',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Showers',81:'Heavy Showers',82:'Violent Showers',85:'Light Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Hail Storm',99:'Heavy Hail Storm'};
-                    Notifications.push('WEATHER', `${city}: ${c.temperature_2m}°C ${wmoLabel[code] || 'Clear'}`);
-                } catch(err) {
-                    // Fallback to cached data if available
-                    if (os._weatherCache && os._weatherCache.wd) {
-                        const cached = os._weatherCache;
-                        os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif);
-                        os.logTerminal(`Weather: API failed (${err.message}), serving cached data.`);
-                        return;
+                    return res;
+                } catch (e) {
+                    clearTimeout(t);
+                    if (attempt < retries) {
+                        await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
+                        continue;
                     }
-                    if (content) content.innerHTML = `<div class="text-center mt-20"><div class="text-red-400 font-mono text-xs">Atmospheric link failed</div><div class="text-gray-500 text-[10px] mt-2">${os._html(err.message)}</div><button onclick="os.initWeatherStation()" class="mt-4 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded text-white text-[10px] cursor-none hover-target">Retry</button></div>`;
+                    throw e;
                 }
-            },
+            }
+            return null;
+        };
 
-    _renderWeatherData: (wd, lat, lon, city, country, content, bgGif) => {
-                const c = wd.current || {};
-                const code = c.weather_code ?? c.weathercode ?? 0;
-                os._weatherData = { lat, lon, city, country, ...wd };
-                const wmoLucide = {0:'sun',1:'cloud-sun',2:'cloud-sun',3:'cloud',45:'cloud-fog',48:'cloud-fog',51:'cloud-drizzle',53:'cloud-drizzle',55:'cloud-rain',61:'cloud-rain',63:'cloud-rain',65:'cloud-rain',71:'snowflake',73:'snowflake',75:'snowflake',77:'snowflake',80:'cloud-drizzle',81:'cloud-rain',82:'cloud-lightning',85:'snowflake',86:'snowflake',95:'cloud-lightning',96:'cloud-lightning',99:'cloud-lightning'};
-                const wmoLabel = {0:'Clear Sky',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Icy Fog',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Showers',81:'Heavy Showers',82:'Violent Showers',85:'Light Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Hail Storm',99:'Heavy Hail Storm'};
-                const iconName = wmoLucide[code] || 'thermometer';
-                const label = wmoLabel[code] || 'Clear';
-                const tbIcon = document.getElementById('topbar-weather-icon');
-                const tbTemp = document.getElementById('topbar-weather-temp');
-                const tbDesc = document.getElementById('topbar-weather-desc');
-                const tbWrap = document.getElementById('top-weather-wrap');
-                if (tbIcon) tbIcon.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 text-sky-300"></i>`;
-                if (tbTemp) tbTemp.textContent = Math.round(c.temperature_2m) + '°C';
-                if (tbDesc) tbDesc.textContent = label;
-                if (tbWrap && window.lucide) lucide.createIcons({root: tbWrap});
-                const moodQuery = os._weatherGifQuery(code);
-                os._loadWeatherGif(bgGif, moodQuery);
-                const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-                const dailyHtml = (wd.daily?.time || []).map((date, i) => {
-                    const d = new Date(date);
-                    const dCode = (wd.daily.weather_code || wd.daily.weathercode || [])[i];
-                    const di = wmoLucide[dCode] || 'cloud-sun';
-                    return `<div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/5 border border-white/5 flex-1 min-w-0">
-                        <div class="text-[9px] text-gray-500 uppercase">${days[d.getDay()]}</div>
-                        <i data-lucide="${di}" class="w-4 h-4 text-sky-300 my-0.5"></i>
-                        <div class="text-[10px] text-white font-bold">${Math.round(wd.daily.temperature_2m_max?.[i] ?? 0)}°</div>
-                        <div class="text-[9px] text-blue-400">${Math.round(wd.daily.temperature_2m_min?.[i] ?? 0)}°</div>
-                        <div class="text-[8px] text-blue-300/60">${Math.round(wd.daily.precipitation_sum?.[i] ?? 0)}mm</div>
-                    </div>`;
-                }).join('');
-                const hourlyTemps = (wd.hourly?.temperature_2m || []).slice(0, 24);
-                const hourlyPrec = (wd.hourly?.precipitation_probability || []).slice(0, 24);
-                const tMin = Math.min(...hourlyTemps), tMax = Math.max(...hourlyTemps) || tMin + 1;
-                const hourlyBars = hourlyTemps.map((t, i) => {
-                    const h = Math.max(8, Math.round(((t - tMin) / (tMax - tMin)) * 48 + 8));
-                    const pp = hourlyPrec[i] || 0;
-                    const col = pp > 60 ? 'rgba(96,165,250,0.7)' : pp > 30 ? 'rgba(74,222,128,0.6)' : 'rgba(255,255,255,0.4)';
-                    return `<div style="height:${h}px;flex:1;background:${col};border-radius:2px 2px 0 0;min-width:2px;" title="${i}:00 — ${t}°C | Rain: ${pp}%"></div>`;
-                }).join('');
-                const sunrise = wd.daily?.sunrise?.[0]?.split('T')[1] || '--';
-                const sunset = wd.daily?.sunset?.[0]?.split('T')[1] || '--';
-                const safeCity = os._html(city);
-                const safeCountry = os._html(country);
-                content.innerHTML = `
-                    <div class="flex items-center justify-between gap-4 mb-4 pb-2 border-b border-white/5 relative z-20">
-                        <span class="text-[10px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1.5"><i data-lucide="cloud-rain" class="w-3 h-3 text-cyan-400"></i> METEOROLOGICAL TELEMETRY</span>
-                        <div class="flex items-center gap-1.5">
-                            <input type="text" id="weather-search-city" placeholder="Search City..." class="bg-black/60 border border-white/10 rounded px-2.5 py-1 text-[9px] text-white focus:outline-none focus:border-cyan-500/30 outline-none w-28 cursor-text" onkeydown="if(event.key==='Enter') os.searchWeather(this.value)">
-                            <button onclick="os.searchWeather(document.getElementById('weather-search-city').value)" class="p-1 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-white hover-target cursor-none" aria-label="Search city"><i data-lucide="search" class="w-3 h-3"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <div class="text-[10px] text-gray-400 font-mono mb-1 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i> ${safeCity}, ${safeCountry}</div>
-                            <div class="text-6xl font-black text-white leading-none">${c.temperature_2m}°<span class="text-3xl text-gray-400">C</span></div>
-                            <div class="text-lg text-white/70 mt-1 font-mono flex items-center gap-2"><i data-lucide="${iconName}" class="w-5 h-5 text-sky-300"></i> ${label}</div>
-                            <div class="text-xs text-gray-500 mt-0.5">Feels like ${c.apparent_temperature}°C</div>
-                        </div>
-                        <div class="text-right text-[10px] font-mono space-y-1">
-                            <div class="text-gray-500">UV Index <span class="text-white font-bold">${wd.hourly?.uv_index?.[0] ?? '--'}</span></div>
-                            <div class="text-gray-500">Humidity <span class="text-blue-400 font-bold">${c.relative_humidity_2m}%</span></div>
-                            <div class="text-gray-500">Wind <span class="text-white font-bold">${c.wind_speed_10m} km/h</span></div>
-                            <div class="text-gray-500">Pressure <span class="text-white font-bold">${c.surface_pressure ?? '--'} hPa</span></div>
-                            <div class="text-gray-500">Precipitation <span class="text-blue-400 font-bold">${c.precipitation ?? 0} mm</span></div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mb-4 text-[10px] font-mono">
-                        <div class="p-2.5 bg-white/5 border border-white/5 rounded-lg flex items-center gap-2"><i data-lucide="sunrise" class="w-5 h-5 text-amber-300 shrink-0"></i><div><div class="text-gray-500">Sunrise</div><div class="text-white font-bold">${os._html(sunrise)}</div></div></div>
-                        <div class="p-2.5 bg-white/5 border border-white/5 rounded-lg flex items-center gap-2"><i data-lucide="sunset" class="w-5 h-5 text-orange-400 shrink-0"></i><div><div class="text-gray-500">Sunset</div><div class="text-white font-bold">${os._html(sunset)}</div></div></div>
-                    </div>
-                    <div class="mb-4">
-                        <div class="text-[9px] text-gray-500 uppercase tracking-widest font-mono mb-2">24h Temperature & Rain Probability</div>
-                        <div class="flex items-end gap-0.5 h-14 w-full bg-white/3 rounded-lg p-1.5">${hourlyBars}</div>
-                        <div class="flex justify-between text-[8px] text-gray-600 font-mono mt-0.5"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
-                    </div>
-                    <div><div class="text-[9px] text-gray-500 uppercase tracking-widest font-mono mb-2">7-Day Forecast</div><div class="flex gap-1.5">${dailyHtml}</div></div>
-                    <div class="mt-3 text-[8px] text-gray-600 font-mono text-right">Source: Open-Meteo API · WMO Compliant · Auto-updated</div>
-                `;
-                if (window.lucide) lucide.createIcons({root: content});
-            },
+        try {
+            let lat = 28.6139, lon = 77.2090, city = 'New Delhi', country = 'India';
+            if (os._weatherManualOverride) {
+                lat = os._weatherManualOverride.lat;
+                lon = os._weatherManualOverride.lon;
+                city = os._weatherManualOverride.city;
+                country = os._weatherManualOverride.country;
+            } else {
+                try {
+                    const g = await tryFetch('https://ipwho.is/', 4000, 1);
+                    const gd = await g.json();
+                    if (gd && gd.success !== false && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country || country; }
+                } catch {
+                    try {
+                        const g = await tryFetch('https://ipapi.co/json/', 4000, 1);
+                        const gd = await g.json();
+                        if (gd && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country_name || country; }
+                    } catch (_) {}
+                }
+            }
+
+            const [wr, aqiRes] = await Promise.all([
+                tryFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code,relative_humidity_2m,apparent_temperature,precipitation,surface_pressure&hourly=temperature_2m,precipitation_probability,wind_speed_10m,uv_index,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_sum&forecast_days=7&timezone=auto`, 10000, 2),
+                tryFetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10`, 6000, 1).catch(() => null)
+            ]);
+            if (!wr || !wr.ok) throw new Error('Open-Meteo HTTP ' + (wr ? wr.status : 'unreachable'));
+            const wd = await wr.json();
+            let aqi = null;
+            try { if (aqiRes && aqiRes.ok) aqi = (await aqiRes.json())?.current || null; } catch (e) {}
+
+            os._weatherCache = { wd, lat, lon, city, country, aqi, timestamp: Date.now() };
+            os._renderWeatherData(wd, lat, lon, city, country, content, bgGif, aqi);
+        } catch (err) {
+            if (os._weatherCache && os._weatherCache.wd) {
+                const cached = os._weatherCache;
+                os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
+                return;
+            }
+            if (content) content.innerHTML = `<div class="text-center mt-20"><div class="text-rose-300 font-semibold text-xs">Weather service unavailable</div><div class="text-gray-500 text-[11px] mt-1.5">${os._html(err.message)}</div><button type="button" onclick="os.initWeatherStation(true)" class="mt-4 os-btn mx-auto cursor-none hover-target">Retry</button></div>`;
+        }
+    },
+
+    _renderWeatherData: (wd, lat, lon, city, country, content, bgGif, aqi = null) => {
+        const c = wd.current || {};
+        const unit = os._weatherUnit || 'C';
+        const fmtT = (val) => {
+            const n = Number(val);
+            if (!Number.isFinite(n)) return '--';
+            return unit === 'F' ? Math.round(n * 9 / 5 + 32) : Math.round(n);
+        };
+        const code = c.weather_code ?? c.weathercode ?? 0;
+        os._weatherData = { lat, lon, city, country, ...wd };
+        const wmoLucide = {0:'sun',1:'cloud-sun',2:'cloud-sun',3:'cloud',45:'cloud-fog',48:'cloud-fog',51:'cloud-drizzle',53:'cloud-drizzle',55:'cloud-rain',61:'cloud-rain',63:'cloud-rain',65:'cloud-rain',71:'snowflake',73:'snowflake',75:'snowflake',77:'snowflake',80:'cloud-drizzle',81:'cloud-rain',82:'cloud-lightning',85:'snowflake',86:'snowflake',95:'cloud-lightning',96:'cloud-lightning',99:'cloud-lightning'};
+        const wmoLabel = {0:'Clear Sky',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Icy Fog',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Showers',81:'Heavy Showers',82:'Violent Showers',85:'Light Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Hail Storm',99:'Heavy Hail Storm'};
+        const iconName = wmoLucide[code] || 'thermometer';
+        const label = wmoLabel[code] || 'Clear';
+
+        const tbIcon = document.getElementById('topbar-weather-icon');
+        const tbTemp = document.getElementById('topbar-weather-temp');
+        const tbDesc = document.getElementById('topbar-weather-desc');
+        const tbWrap = document.getElementById('top-weather-wrap');
+        if (tbIcon) tbIcon.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 text-sky-300"></i>`;
+        if (tbTemp) tbTemp.textContent = fmtT(c.temperature_2m) + '°' + unit;
+        if (tbDesc) tbDesc.textContent = label;
+        if (tbWrap && window.lucide) lucide.createIcons({ root: tbWrap });
+
+        const moodQuery = os._weatherGifQuery(code);
+        os._loadWeatherGif(bgGif, moodQuery);
+
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dailyHtml = (wd.daily?.time || []).map((date, i) => {
+            const d = new Date(date);
+            const dCode = (wd.daily.weather_code || wd.daily.weathercode || [])[i];
+            const di = wmoLucide[dCode] || 'cloud-sun';
+            return `<div class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] flex-1 min-w-0">
+                <div class="text-[10.5px] text-gray-400 font-medium">${i === 0 ? 'Today' : days[d.getDay()]}</div>
+                <i data-lucide="${di}" class="w-4 h-4 text-sky-300 my-0.5"></i>
+                <div class="text-xs text-white font-semibold tabular-nums">${fmtT(wd.daily.temperature_2m_max?.[i])}°</div>
+                <div class="text-[11px] text-sky-300/80 tabular-nums">${fmtT(wd.daily.temperature_2m_min?.[i])}°</div>
+                <div class="text-[10px] text-gray-500 font-mono">${Math.round(wd.daily.precipitation_sum?.[i] ?? 0)}mm</div>
+            </div>`;
+        }).join('');
+
+        const hourlyTemps = (wd.hourly?.temperature_2m || []).slice(0, 24);
+        const hourlyPrec = (wd.hourly?.precipitation_probability || []).slice(0, 24);
+        const tMin = Math.min(...hourlyTemps), tMax = Math.max(...hourlyTemps) || tMin + 1;
+        const hourlyBars = hourlyTemps.map((t, i) => {
+            const h = Math.max(8, Math.round(((t - tMin) / Math.max(1, tMax - tMin)) * 46 + 8));
+            const pp = hourlyPrec[i] || 0;
+            const col = pp > 60 ? 'rgba(56,189,248,0.8)' : pp > 25 ? 'rgba(52,211,153,0.65)' : 'rgba(255,255,255,0.38)';
+            return `<div style="height:${h}px;flex:1;background:${col};border-radius:3px 3px 0 0;min-width:3px;" title="${String(i).padStart(2, '0')}:00 — ${fmtT(t)}°${unit} · Rain ${pp}%"></div>`;
+        }).join('');
+
+        const sunrise = wd.daily?.sunrise?.[0]?.split('T')[1] || '--';
+        const sunset = wd.daily?.sunset?.[0]?.split('T')[1] || '--';
+        const usAqi = aqi?.us_aqi != null ? Math.round(aqi.us_aqi) : null;
+        const aqiBadge = usAqi == null
+            ? '<span class="text-gray-500">N/A</span>'
+            : usAqi <= 50 ? `<span class="text-emerald-400 font-semibold">${usAqi} Good</span>`
+            : usAqi <= 100 ? `<span class="text-amber-300 font-semibold">${usAqi} Moderate</span>`
+            : `<span class="text-rose-400 font-semibold">${usAqi} Unhealthy</span>`;
+
+        const quickCities = ['Tokyo', 'London', 'New York', 'Paris', 'Mumbai', 'Sydney'];
+
+        content.innerHTML = `
+            <div class="flex items-center justify-between gap-2 mb-2.5 pb-2.5 border-b border-white/[0.08] relative z-20 flex-wrap">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" onclick="os.resetWeatherLocation()" class="os-btn px-2 py-1 text-[11px] hover-target cursor-none" title="Detect local city"><i data-lucide="locate-fixed" class="w-3 h-3 text-sky-400"></i> Local</button>
+                    ${quickCities.map((q) => `<button type="button" onclick="os.searchWeather('${q}')" class="px-2 py-1 rounded-lg text-[11px] border ${city === q ? 'bg-white/15 border-white/25 text-white font-medium' : 'bg-white/[0.03] border-white/[0.07] text-gray-400 hover:text-white'} transition cursor-none hover-target">${q}</button>`).join('')}
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <input type="text" id="weather-search-city" placeholder="Search city..." class="os-input px-2.5 py-1 text-xs w-32 cursor-text" onkeydown="if(event.key==='Enter') os.searchWeather(this.value)">
+                    <button type="button" onclick="os.searchWeather(document.getElementById('weather-search-city').value)" class="os-btn px-2 py-1 hover-target cursor-none" aria-label="Search city"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
+                    <button type="button" onclick="os.toggleWeatherUnit()" class="os-btn px-2.5 py-1 font-mono font-semibold text-sky-300 hover-target cursor-none" title="Switch °C / °F">°${unit}</button>
+                </div>
+            </div>
+
+            <div class="flex items-start justify-between mb-4 gap-4">
+                <div>
+                    <div class="text-xs text-gray-300 font-medium mb-1 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-400"></i> ${os._html(city)}${country ? ', ' + os._html(country) : ''}</div>
+                    <div class="text-5xl font-display font-bold text-white leading-none tabular-nums">${fmtT(c.temperature_2m)}°<span class="text-2xl text-gray-400 font-medium">${unit}</span></div>
+                    <div class="text-sm text-gray-200 mt-1.5 font-medium flex items-center gap-2"><i data-lucide="${iconName}" class="w-4 h-4 text-sky-300"></i> ${label}</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Feels like ${fmtT(c.apparent_temperature)}°${unit}</div>
+                </div>
+                <div class="os-card p-3 text-right text-xs space-y-1 min-w-[165px]">
+                    <div class="flex justify-between gap-3"><span class="text-gray-400">Air Quality</span>${aqiBadge}</div>
+                    <div class="flex justify-between gap-3"><span class="text-gray-400">Humidity</span><span class="text-sky-300 font-mono font-semibold">${c.relative_humidity_2m ?? '--'}%</span></div>
+                    <div class="flex justify-between gap-3"><span class="text-gray-400">Wind</span><span class="text-white font-mono">${c.wind_speed_10m ?? '--'} km/h</span></div>
+                    <div class="flex justify-between gap-3"><span class="text-gray-400">UV Index</span><span class="text-white font-mono">${wd.hourly?.uv_index?.[new Date().getHours()] ?? wd.hourly?.uv_index?.[0] ?? '--'}</span></div>
+                    <div class="flex justify-between gap-3"><span class="text-gray-400">Pressure</span><span class="text-gray-300 font-mono">${c.surface_pressure ? Math.round(c.surface_pressure) : '--'} hPa</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 mb-4 text-xs">
+                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="sunrise" class="w-4 h-4 text-amber-300 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">Sunrise</div><div class="text-white font-mono font-semibold">${os._html(sunrise)}</div></div></div>
+                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="sunset" class="w-4 h-4 text-orange-400 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">Sunset</div><div class="text-white font-mono font-semibold">${os._html(sunset)}</div></div></div>
+                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="wind" class="w-4 h-4 text-emerald-300 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">PM2.5</div><div class="text-white font-mono font-semibold">${aqi?.pm2_5 != null ? aqi.pm2_5 + ' µg/m³' : '--'}</div></div></div>
+            </div>
+
+            <div class="mb-4">
+                <div class="text-[11px] text-gray-400 font-semibold mb-1.5">24-Hour Temperature &amp; Rain Chance</div>
+                <div class="flex items-end gap-0.5 h-14 w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-2">${hourlyBars}</div>
+                <div class="flex justify-between text-[10px] text-gray-500 font-mono mt-1"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+            </div>
+
+            <div>
+                <div class="text-[11px] text-gray-400 font-semibold mb-1.5">7-Day Forecast</div>
+                <div class="flex gap-1.5">${dailyHtml}</div>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons({ root: content });
+    },
 
     _weatherGifQuery: (code) => {
                 // Return a NEKOS.BEST GIF category (docs: https://docs.nekos.best/)
@@ -236,123 +279,183 @@ window.extendOS({
                 return r.json();
             },
 
-    nasaRenderError: (el, title, err, fallbackAction='os.nasaLoadAPOD()') => {
-                el.innerHTML = `<div class="h-full flex items-center justify-center text-center p-6"><div><div class="text-red-300 font-bold uppercase tracking-widest">${os._html(title)} offline</div><div class="text-gray-500 mt-2 text-[10px]">${os._html(err.message || err)}</div><button onclick="${fallbackAction}" class="mt-4 px-3 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-none hover-target">Retry / Fallback</button></div></div>`;
-            },
+    _nasaSetActiveTab: (key) => {
+        document.querySelectorAll('#nasa-tabs [data-nasa-tab]').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.nasaTab === key);
+        });
+    },
 
-    nasaLoadAPOD: async () => {
-                const el = document.getElementById('nasa-content');
-                if (!el) return;
-                el.innerHTML = '<div class="text-center text-gray-500 animate-pulse mt-10">ACQUIRING DEEP SPACE TELEMETRY...</div>';
-                try {
-                    let d;
-                    try { d = await os.nasaFetchJSON('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true', 10000); }
-                    catch(primaryErr) {
-                        const search = await os.nasaFetchJSON('https://images-api.nasa.gov/search?q=nebula%20galaxy&media_type=image&page_size=12', 10000);
-                        const item = search.collection?.items?.[Math.floor(Math.random()*Math.min(8, search.collection.items.length))];
-                        d = { title:item?.data?.[0]?.title || 'NASA Deep Space Archive', date:item?.data?.[0]?.date_created?.split('T')[0] || '', explanation:item?.data?.[0]?.description || 'Loaded from NASA Image and Video Library fallback feed.', url:item?.links?.[0]?.href, hdurl:item?.links?.[0]?.href, media_type:'image', copyright:'NASA Image Library' };
-                    }
-                    os._lastNasaApod = d;
-                    const media = d.media_type === 'video' ? `<iframe src="${os._html(d.url)}" class="w-full h-72 border-0" allowfullscreen></iframe>` : `<img src="${os._html(d.hdurl || d.url)}" class="w-full max-h-80 object-cover" alt="${os._html(d.title)}" loading="lazy">`;
-                    el.innerHTML = `
-                        <div class="rounded-2xl overflow-hidden border border-white/10 mb-4 relative bg-black shadow-os-recessed">${media}<div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-transparent"></div></div>
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <div class="text-white font-display text-xl uppercase tracking-wide mb-1">${os._html(d.title)}</div>
-                                <div class="text-[9px] text-os-accent font-mono mb-2">${os._html(d.date)} · ${os._html(d.copyright || 'NASA')}</div>
-                            </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                ${d.media_type !== 'video' ? `<button onclick="SystemState.settings.wallpaper_custom_url = os._lastNasaApod.hdurl || os._lastNasaApod.url; os.setOption('wallpaper_mode','custom'); Notifications && Notifications.push('WALLPAPER','Applied NASA APOD backdrop');" class="px-2 py-1 bg-white/5 hover:bg-white/12 border border-white/10 rounded cursor-none hover-target text-[9px] text-sky-300">Set Wallpaper</button>` : ''}
-                                <button onclick="window.AetherVFS && AetherVFS.saveClipperItem({ title: os._lastNasaApod.title, content: os._lastNasaApod.explanation, imageUrl: os._lastNasaApod.media_type !== 'video' ? (os._lastNasaApod.hdurl || os._lastNasaApod.url) : '', sourceUrl: os._lastNasaApod.hdurl || os._lastNasaApod.url, tags: ['nasa','apod'] })" class="px-2 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 rounded cursor-none hover-target text-[9px] text-emerald-200">Save to Files</button>
-                                <button onclick="os.nasaLoadAPOD()" class="px-2 py-1 bg-white/5 border border-white/10 rounded cursor-none hover-target text-[9px]">Refresh</button>
-                            </div>
-                        </div>
-                        <div class="text-[11px] text-gray-300 leading-relaxed max-h-36 overflow-y-auto pr-2 select-text">${os._html(d.explanation || '').slice(0,1200)}</div>
-                        <a href="${os._html(d.hdurl || d.url)}" target="_blank" class="inline-block mt-3 text-[9px] text-blue-300 hover:underline">Open NASA Asset ↗</a>`;
-                } catch(e) { os.nasaRenderError(el, 'APOD', e); }
-            },
+    nasaRenderError: (el, title, err, fallbackAction = 'os.nasaLoadAPOD()') => {
+        el.innerHTML = `<div class="h-full flex items-center justify-center text-center p-6"><div><div class="text-rose-300 font-semibold text-xs">${os._html(title)} unavailable</div><div class="text-gray-500 mt-1.5 text-[11px]">${os._html(err.message || err)}</div><button type="button" onclick="${fallbackAction}" class="mt-3.5 os-btn mx-auto cursor-none hover-target">Retry</button></div></div>`;
+    },
+
+    nasaLoadAPOD: async (dateStr = '') => {
+        os._nasaSetActiveTab('apod');
+        const el = document.getElementById('nasa-content');
+        if (!el) return;
+        el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading Astronomy Picture of the Day...</div>';
+        try {
+            let d;
+            const dateParam = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? `&date=${encodeURIComponent(dateStr)}` : '';
+            try {
+                d = await os.nasaFetchJSON(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true${dateParam}`, 10000);
+            } catch (primaryErr) {
+                const search = await os.nasaFetchJSON('https://images-api.nasa.gov/search?q=nebula%20galaxy%20james%20webb&media_type=image&page_size=16', 10000);
+                const items = search.collection?.items || [];
+                const item = items[Math.floor(Math.random() * Math.min(12, Math.max(1, items.length)))];
+                d = {
+                    title: item?.data?.[0]?.title || 'NASA Deep Space Archive',
+                    date: item?.data?.[0]?.date_created?.split('T')[0] || '',
+                    explanation: item?.data?.[0]?.description || 'Loaded from the NASA Image and Video Library archive.',
+                    url: item?.links?.[0]?.href,
+                    hdurl: item?.links?.[0]?.href,
+                    media_type: 'image',
+                    copyright: 'NASA Image Library'
+                };
+            }
+            os._lastNasaApod = d;
+            const dateInput = document.getElementById('nasa-apod-date');
+            if (dateInput && d.date) dateInput.value = d.date;
+            const media = d.media_type === 'video'
+                ? `<iframe src="${os._html(d.url)}" class="w-full h-72 border-0" allowfullscreen></iframe>`
+                : `<img src="${os._html(d.hdurl || d.url)}" class="w-full max-h-80 object-cover" alt="${os._html(d.title)}" loading="lazy">`;
+            el.innerHTML = `
+                <div class="rounded-2xl overflow-hidden border border-white/10 mb-3.5 relative bg-black shadow-lg">${media}</div>
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <div class="text-white font-display font-bold text-lg leading-snug mb-0.5">${os._html(d.title)}</div>
+                        <div class="text-[11px] text-sky-300 font-mono mb-2">${os._html(d.date)} · ${os._html(d.copyright || 'NASA')}</div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${d.media_type !== 'video' ? `<button type="button" onclick="SystemState.settings.wallpaper_custom_url = os._lastNasaApod.hdurl || os._lastNasaApod.url; os.setOption('wallpaper_mode','custom'); window.Notifications && Notifications.push('Wallpaper','Applied NASA APOD backdrop');" class="os-btn text-sky-300 cursor-none hover-target">Set Wallpaper</button>` : ''}
+                        <button type="button" onclick="window.AetherVFS && AetherVFS.saveClipperItem({ title: os._lastNasaApod.title, content: os._lastNasaApod.explanation, imageUrl: os._lastNasaApod.media_type !== 'video' ? (os._lastNasaApod.hdurl || os._lastNasaApod.url) : '', sourceUrl: os._lastNasaApod.hdurl || os._lastNasaApod.url, tags: ['nasa','apod'] })" class="os-btn text-emerald-300 cursor-none hover-target">Save to Files</button>
+                        <button type="button" onclick="os.nasaLoadAPOD()" class="os-btn cursor-none hover-target">Today</button>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-300 leading-relaxed select-text">${os._html(d.explanation || '').slice(0, 1400)}</div>
+                <a href="${os._html(d.hdurl || d.url)}" target="_blank" rel="noopener" class="inline-block mt-2 text-xs text-sky-300 hover:underline">Open Full Resolution ↗</a>`;
+        } catch (e) { os.nasaRenderError(el, 'APOD', e); }
+    },
 
     nasaLoadEPIC: async () => {
-                const el = document.getElementById('nasa-content'); if (!el) return;
-                el.innerHTML = '<div class="text-center text-gray-500 animate-pulse mt-10">QUERYING EARTH POLYCHROMATIC IMAGING CAMERA...</div>';
-                try {
-                    let imgs=[];
-                    try { imgs = await os.nasaFetchJSON('https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY', 10000); }
-                    catch(e) { imgs = await os.nasaFetchJSON('https://api.nasa.gov/EPIC/api/natural?api_key=DEMO_KEY', 10000); }
-                    const latest = (imgs||[]).slice(0, 9);
-                    if (!latest.length) throw new Error('No EPIC images returned');
-                    el.innerHTML = `<div class="text-[9px] text-os-accent font-mono mb-3 uppercase tracking-widest">DSCOVR:EPIC Earth Images — ${latest[0]?.date?.split(' ')[0] || ''}</div>
-                    <div class="grid grid-cols-3 gap-3">${latest.map(img => { const [y,m,d] = img.date.split(' ')[0].split('-'); const url = `https://api.nasa.gov/EPIC/archive/natural/${y}/${m}/${d}/png/${img.image}.png?api_key=DEMO_KEY`; return `<div class="rounded-xl overflow-hidden border border-white/10 bg-white/[0.035] cursor-none hover-target" onclick="window.open('${url}','_blank')"><img src="${url}" class="w-full h-28 object-cover" loading="lazy" alt="${os._html(img.image)}"><div class="text-[8px] text-gray-500 p-2 truncate">${os._html(img.caption || img.image)}</div></div>`; }).join('')}</div>`;
-                } catch(e) { os.nasaRenderError(el, 'EPIC', e, 'os.nasaLoadAPOD()'); }
-            },
+        os._nasaSetActiveTab('epic');
+        const el = document.getElementById('nasa-content'); if (!el) return;
+        el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading DSCOVR Earth EPIC imagery...</div>';
+        try {
+            let imgs = [];
+            try { imgs = await os.nasaFetchJSON('https://epic.gsfc.nasa.gov/api/natural', 10000); }
+            catch (e) { imgs = await os.nasaFetchJSON('https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY', 10000); }
+            const latest = (imgs || []).slice(0, 9);
+            if (!latest.length) throw new Error('No EPIC images returned');
+            el.innerHTML = `<div class="text-xs text-gray-300 font-semibold mb-2.5">DSCOVR Earth Polychromatic Camera — <span class="text-sky-300 font-mono">${os._html(latest[0]?.date?.split(' ')[0] || '')}</span></div>
+            <div class="grid grid-cols-3 gap-3">${latest.map((img) => {
+                const [y, m, d] = img.date.split(' ')[0].split('-');
+                const url = `https://epic.gsfc.nasa.gov/archive/natural/${y}/${m}/${d}/png/${img.image}.png`;
+                return `<div class="rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] cursor-none hover-target hover:border-white/25 transition" onclick="window.open('${url}','_blank')"><img src="${url}" class="w-full h-28 object-cover bg-black" loading="lazy" alt="${os._html(img.image)}"><div class="text-[11px] text-gray-400 p-2 truncate">${os._html(img.caption || img.image)}</div></div>`;
+            }).join('')}</div>`;
+        } catch (e) { os.nasaRenderError(el, 'Earth EPIC', e, 'os.nasaLoadAPOD()'); }
+    },
 
     nasaLoadMars: async () => {
-                const el = document.getElementById('nasa-content'); if (!el) return;
-                el.innerHTML = '<div class="text-center text-gray-500 animate-pulse mt-10">QUERYING MARS ROVER TELEMETRY...</div>';
-                try {
-                    let d;
-                    try { d = await os.nasaFetchJSON('https://api.nasa.gov/mars-photos/api/v1/rovers/perseverance/latest_photos?api_key=DEMO_KEY&page=1', 12000); }
-                    catch(e) { d = await os.nasaFetchJSON('https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=DEMO_KEY&page=1', 12000); d.latest_photos = d.photos; }
-                    const photos = (d.latest_photos || d.photos || []).slice(0, 12);
-                    if (!photos.length) throw new Error('No rover photos returned');
-                    el.innerHTML = `<div class="text-[9px] text-os-accent font-mono mb-3 uppercase tracking-widest">Mars Rover · Sol ${photos[0]?.sol || '--'} · ${photos[0]?.rover?.name || 'Rover'}</div><div class="grid grid-cols-4 gap-2">${photos.map(p => `<div class="rounded-lg overflow-hidden border border-white/10 bg-white/[0.035] cursor-none hover-target" onclick="window.open('${p.img_src}','_blank')"><img src="${p.img_src}" class="w-full h-24 object-cover" loading="lazy" alt="${os._html(p.camera?.full_name || '')}"><div class="text-[8px] text-gray-500 p-1 truncate">${os._html(p.camera?.name || 'CAM')}</div></div>`).join('')}</div>`;
-                } catch(e) { os.nasaRenderError(el, 'Mars Rover', e, 'os.nasaLoadAPOD()'); }
-            },
+        os._nasaSetActiveTab('mars');
+        const el = document.getElementById('nasa-content'); if (!el) return;
+        el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading Mars Rover surface photography...</div>';
+        try {
+            let photos = [];
+            let subtitle = '';
+            try {
+                const d = await os.nasaFetchJSON('https://api.nasa.gov/mars-photos/api/v1/rovers/perseverance/latest_photos?api_key=DEMO_KEY&page=1', 10000);
+                photos = (d.latest_photos || []).slice(0, 12).map((p) => ({ url: p.img_src, label: p.camera?.name || 'Mastcam-Z', title: p.camera?.full_name || 'Perseverance' }));
+                if (photos.length) subtitle = `Perseverance · Sol ${d.latest_photos[0]?.sol || '--'}`;
+            } catch (e) {}
+            if (!photos.length) {
+                const arch = await os.nasaFetchJSON('https://images-api.nasa.gov/search?q=perseverance%20mars%20surface%20rover&media_type=image&page_size=12', 10000);
+                photos = (arch.collection?.items || []).slice(0, 12).map((item) => ({
+                    url: item.links?.[0]?.href || '',
+                    label: (item.data?.[0]?.date_created || '').slice(0, 10) || 'Mars Archive',
+                    title: item.data?.[0]?.title || 'Mars Surface'
+                })).filter((p) => p.url);
+                subtitle = 'Perseverance & Curiosity Archive · NASA Image Library';
+            }
+            if (!photos.length) throw new Error('No rover photos returned');
+            el.innerHTML = `<div class="text-xs text-gray-300 font-semibold mb-2.5">${os._html(subtitle)}</div><div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">${photos.map((p) => `<div class="rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] cursor-none hover-target hover:border-white/25 transition" onclick="window.open('${os._html(p.url)}','_blank')"><img src="${os._html(p.url)}" class="w-full h-24 object-cover bg-black" loading="lazy" alt="${os._html(p.title)}"><div class="text-[11px] text-gray-400 p-1.5 truncate">${os._html(p.label)}</div></div>`).join('')}</div>`;
+        } catch (e) { os.nasaRenderError(el, 'Mars Rover', e, 'os.nasaLoadAPOD()'); }
+    },
 
     nasaLoadDONKI: async () => {
-                const el = document.getElementById('nasa-content'); if (!el) return;
-                el.innerHTML = '<div class="text-center text-gray-500 animate-pulse mt-10">SCANNING SOLAR WIND UPLINK...</div>';
-                try {
-                    const end = new Date().toISOString().split('T')[0]; const start = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-                    let flares=[], cme=[];
-                    try { [flares, cme] = await Promise.all([os.nasaFetchJSON(`https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=DEMO_KEY`), os.nasaFetchJSON(`https://api.nasa.gov/DONKI/CME?startDate=${start}&endDate=${end}&api_key=DEMO_KEY`)]); }
-                    catch(e) { const kp = await os.nasaFetchJSON('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'); flares = kp.slice(-12).map(r=>({classType:'Kp '+r[1], peakTime:r[0], sourceLocation:'NOAA SWPC'})); cme=[]; }
-                    const classColor = (cls) => String(cls||'').includes('X') ? 'text-red-400' : String(cls||'').includes('M') ? 'text-orange-400' : 'text-yellow-300';
-                    el.innerHTML = `<div class="grid grid-cols-2 gap-3 mb-3 text-[10px] font-mono"><div class="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl"><div class="text-orange-300 font-bold text-xs mb-1 flex items-center gap-1.5"><i data-lucide="sun" class="w-3.5 h-3.5"></i> Solar/Kp Events</div><div class="text-4xl font-black text-white">${flares.length}</div></div><div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl"><div class="text-blue-300 font-bold text-xs mb-1 flex items-center gap-1.5"><i data-lucide="orbit" class="w-3.5 h-3.5"></i> CME Events</div><div class="text-4xl font-black text-white">${cme.length}</div></div></div><div class="text-[9px] text-os-accent font-mono uppercase tracking-widest mb-2">Recent Space Weather</div><div class="space-y-1 max-h-72 overflow-y-auto">${(flares.slice(-14).reverse()).map(f => `<div class="flex items-center justify-between p-2 bg-white/[0.03] border border-white/5 rounded text-[10px] font-mono"><span class="${classColor(f.classType)} font-bold">${os._html(f.classType || '--')}</span><span class="text-gray-400">${os._html((f.peakTime||'').split('T')[0] || '--')}</span><span class="text-gray-500 truncate max-w-[160px]">${os._html(f.sourceLocation || 'Unknown')}</span></div>`).join('')}</div>`;
-                    if (window.lucide) lucide.createIcons({root: el});
-                } catch(e) { os.nasaRenderError(el, 'Space Weather', e, 'os.nasaLoadAPOD()'); }
-            },
+        os._nasaSetActiveTab('donki');
+        const el = document.getElementById('nasa-content'); if (!el) return;
+        el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading NOAA &amp; NASA space weather...</div>';
+        try {
+            const end = new Date().toISOString().split('T')[0];
+            const start = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+            let flares = [], cme = [];
+            try {
+                [flares, cme] = await Promise.all([
+                    os.nasaFetchJSON(`https://api.nasa.gov/DONKI/FLR?startDate=${start}&endDate=${end}&api_key=DEMO_KEY`),
+                    os.nasaFetchJSON(`https://api.nasa.gov/DONKI/CME?startDate=${start}&endDate=${end}&api_key=DEMO_KEY`)
+                ]);
+            } catch (e) {
+                const kp = await os.nasaFetchJSON('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+                flares = kp.slice(-14).map((r) => ({ classType: 'Kp ' + r[1], peakTime: r[0], sourceLocation: 'NOAA SWPC Planetary K-Index' }));
+                cme = [];
+            }
+            const classColor = (cls) => String(cls || '').includes('X') ? 'text-rose-400' : String(cls || '').includes('M') ? 'text-amber-400' : 'text-sky-300';
+            el.innerHTML = `
+                <div class="grid grid-cols-2 gap-3 mb-3 text-xs">
+                    <div class="os-card p-3.5">
+                        <div class="text-amber-300 font-semibold text-xs mb-1 flex items-center gap-1.5"><i data-lucide="sun" class="w-3.5 h-3.5"></i> Solar Flare / Kp Readings</div>
+                        <div class="text-3xl font-display font-bold text-white tabular-nums">${flares.length}</div>
+                    </div>
+                    <div class="os-card p-3.5">
+                        <div class="text-sky-300 font-semibold text-xs mb-1 flex items-center gap-1.5"><i data-lucide="orbit" class="w-3.5 h-3.5"></i> Coronal Mass Ejections (30d)</div>
+                        <div class="text-3xl font-display font-bold text-white tabular-nums">${cme.length}</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-300 font-semibold mb-2">Recent Solar Events</div>
+                <div class="space-y-1.5 max-h-72 overflow-y-auto">${(flares.slice(-14).reverse()).map((f) => `<div class="flex items-center justify-between px-3 py-2 os-card text-xs"><span class="${classColor(f.classType)} font-mono font-semibold">${os._html(f.classType || '--')}</span><span class="text-gray-400 font-mono">${os._html((f.peakTime || '').split('T')[0] || '--')}</span><span class="text-gray-400 truncate max-w-[200px]">${os._html(f.sourceLocation || 'Solar Disk')}</span></div>`).join('')}</div>`;
+            if (window.lucide) lucide.createIcons({ root: el });
+        } catch (e) { os.nasaRenderError(el, 'Solar Weather', e, 'os.nasaLoadAPOD()'); }
+    },
 
     _gameCatalog: [],
 
     initGames: () => {
-                const lib = document.getElementById('games-library');
-                if (!lib) return;
-                const esc = (v='') => String(v).replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
-                const games = [
-                    // Only iframe-playable entries are kept here. External/CSP-blocked games were removed.
-                    { id:'tetris', name:'Tetris', icon:'🟦', tag:'Official', desc:'Official Tetris web player', url:'https://play.tetris.com', color:'#3b82f6', source:'Tetris.com', note:'Official browser player' },
-                    { id:'krunker', name:'Krunker', icon:'🎯', tag:'3D FPS', desc:'Fast browser FPS arena', url:'https://krunker.io/', color:'#f97316', source:'Krunker', note:'Pointer-lock enabled' },
-                    { id:'slowroads', name:'Slow Roads', icon:'🏎️', tag:'3D Racing', desc:'High-graphics procedural driving', url:'https://slowroads.io/', color:'#22d3ee', source:'Slow Roads', note:'WebGL driving' },
-                    { id:'supertux', name:'SuperTux Classic', icon:'🐧', tag:'Open Source', desc:'Legal open-source platformer slot', url:'https://www.retrogames.cc/embed/41696-supertux.html', color:'#60a5fa', source:'SuperTux GPL', note:'Open-source platformer build' },
-                    { id:'pacman', name:'PAC-MAN', icon:'👾', tag:'Arcade', desc:'Classic arcade maze', url:'https://freepacman.org/', color:'#f59e0b', source:'Free Pacman', note:'Iframe-safe arcade' },
-                    { id:'minesweep', name:'Minesweeper', icon:'💣', tag:'Puzzle', desc:'Classic mine detection', url:'https://minesweeper.online/', color:'#9ca3af', source:'minesweeper.online', note:'Iframe-safe puzzle' },
-                    { id:'solitaire', name:'Solitaire', icon:'🃏', tag:'Cards', desc:'Klondike Solitaire', url:'https://www.solitaire.org/', color:'#0ea5e9', source:'solitaire.org', note:'Iframe-safe cards' }
-                ];
-                os._gameCatalog = games;
-                lib.className = 'flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 content-start';
-                lib.innerHTML = games.map(g => `
-                    <div class="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-white/[0.08] to-black/70 min-h-[155px] p-4 hover:border-white/25 hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 cursor-none hover-target" style="box-shadow: inset 0 0 0 1px ${g.color}22, 0 18px 40px -26px ${g.color};">
-                        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style="background:radial-gradient(circle at top right, ${g.color}35, transparent 45%);"></div>
-                        <div class="relative z-10 flex flex-col h-full">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-3xl border border-white/10 bg-black/40" style="background:linear-gradient(135deg, ${g.color}22, rgba(0,0,0,.5));">${g.icon}</div>
-                                <span class="px-2 py-1 rounded-full text-[8px] uppercase tracking-widest border border-white/10 text-gray-300 bg-black/40">${esc(g.tag)}</span>
-                            </div>
-                            <div class="mt-3 text-white font-display text-lg uppercase tracking-wide leading-tight">${esc(g.name)}</div>
-                            <div class="text-gray-400 text-[10px] mt-1 leading-snug flex-1">${esc(g.desc)}</div>
-                            <div class="mt-3 flex items-center justify-between gap-2">
-                                <div class="text-[8px] text-gray-600 truncate">${esc(g.source)} · ${esc(g.note)}</div>
-                                <div class="flex gap-1">
-                                    <button onclick="event.stopPropagation();os.openGameExternal('${g.id}')" class="px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[9px] text-gray-300 cursor-none hover-target">Open</button>
-                                    <button onclick="event.stopPropagation();os.launchGame('${g.id}')" class="px-2.5 py-1 rounded text-[9px] text-black font-bold cursor-none hover-target" style="background:${g.color}">Play</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`).join('');
-                const header = document.querySelector('#games-root .h-9 span:last-child');
-                if (header) header.textContent = 'Iframe-playable vault · Tetris · Krunker · Slow Roads · SuperTux';
-            },
+        const lib = document.getElementById('games-library');
+        if (!lib) return;
+        const esc = (v = '') => String(v).replace(/[&<>'"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m]));
+        const games = [
+            { id: '2048', name: '2048', icon: '🔢', tag: 'Puzzle', desc: 'Classic sliding tile number puzzle', url: 'https://play2048.co/', color: '#eab308', source: 'play2048.co', note: 'Keyboard arrows' },
+            { id: 'hexgl', name: 'HexGL', icon: '🚀', tag: '3D Wipeout', desc: 'Futuristic HTML5/WebGL anti-gravity racer', url: 'https://hexgl.bkcore.com/play/', color: '#38bdf8', source: 'BKcore OSS', note: 'WebGL 60fps' },
+            { id: 'slowroads', name: 'Slow Roads', icon: '🏎️', tag: '3D Driving', desc: 'Endless procedural zen driving simulator', url: 'https://slowroads.io/', color: '#22d3ee', source: 'slowroads.io', note: 'WebGL driving' },
+            { id: 'tetris', name: 'Tetris', icon: '🟦', tag: 'Arcade', desc: 'Official Tetris browser game', url: 'https://play.tetris.com', color: '#3b82f6', source: 'Tetris.com', note: 'Official web build' },
+            { id: 'pacman', name: 'PAC-MAN', icon: '👾', tag: 'Retro', desc: 'Classic arcade maze chase', url: 'https://freepacman.org/', color: '#f59e0b', source: 'Free Pacman', note: 'Arrow keys' },
+            { id: 'minesweep', name: 'Minesweeper', icon: '💣', tag: 'Logic', desc: 'Classic grid mine sweeper', url: 'https://minesweeper.online/', color: '#94a3b8', source: 'minesweeper.online', note: 'Mouse click' },
+            { id: 'krunker', name: 'Krunker', icon: '🎯', tag: '3D FPS', desc: 'Fast-paced browser arena shooter', url: 'https://krunker.io/', color: '#f97316', source: 'krunker.io', note: 'Pointer lock' },
+            { id: 'supertux', name: 'SuperTux', icon: '🐧', tag: 'Platformer', desc: 'Open-source 2D jump-and-run classic', url: 'https://www.retrogames.cc/embed/41696-supertux.html', color: '#60a5fa', source: 'SuperTux GPL', note: 'Retro build' },
+            { id: 'solitaire', name: 'Solitaire', icon: '🃏', tag: 'Cards', desc: 'Klondike Solitaire card deck', url: 'https://www.solitaire.org/', color: '#10b981', source: 'solitaire.org', note: 'Drag & drop' }
+        ];
+        os._gameCatalog = games;
+        lib.className = 'flex-1 overflow-y-auto p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 content-start';
+        lib.innerHTML = games.map((g) => `
+            <div onclick="os.launchGame('${g.id}')" class="group relative rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-3.5 hover:border-white/25 transition-all cursor-none hover-target flex flex-col justify-between min-h-[140px]">
+                <div>
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-2xl border border-white/10 bg-black/40">${g.icon}</div>
+                        <span class="os-badge text-gray-300">${esc(g.tag)}</span>
+                    </div>
+                    <div class="mt-2.5 text-white font-display font-bold text-sm leading-tight">${esc(g.name)}</div>
+                    <div class="text-gray-400 text-[11px] mt-1 leading-snug">${esc(g.desc)}</div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                    <span class="text-[10.5px] text-gray-500 truncate">${esc(g.note)}</span>
+                    <div class="flex gap-1.5">
+                        <button type="button" onclick="event.stopPropagation();os.openGameExternal('${g.id}')" class="os-btn px-2 py-0.5 text-[10.5px] cursor-none hover-target">Tab ↗</button>
+                        <button type="button" onclick="event.stopPropagation();os.launchGame('${g.id}')" class="os-btn-primary px-2.5 py-0.5 text-[10.5px] cursor-none hover-target">Play</button>
+                    </div>
+                </div>
+            </div>`).join('');
+    },
 
     launchGame: (id, name, url) => {
                 const g = os._gameCatalog.find(x => x.id === id) || { id, name, url };

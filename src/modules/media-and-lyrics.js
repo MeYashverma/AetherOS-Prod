@@ -150,21 +150,17 @@ window.extendOS({
             },
 
     _updateMediaModeButtons: () => {
-                const panel = document.getElementById('media-console-panel');
-                if (!panel) return;
-                const btns = panel.querySelectorAll('button[onclick*="setMediaPlayerMode"]');
-                btns.forEach(btn => {
-                    const onclick = btn.getAttribute('onclick') || '';
-                    const isMonitor = onclick.includes('monitor');
-                    const isPlayer = onclick.includes('player');
-                    const active = (isMonitor && SystemState.settings.media_player_mode === 'monitor') || (isPlayer && SystemState.settings.media_player_mode === 'player');
-                    if (isMonitor) {
-                        btn.className = active ? 'hover-target cursor-none text-white font-bold' : 'hover-target cursor-none text-gray-600 hover:text-white';
-                    } else if (isPlayer) {
-                        btn.className = active ? 'hover-target cursor-none text-green-400 font-bold' : 'hover-target cursor-none text-gray-600 hover:text-white';
-                    }
-                });
-            },
+        const panel = document.getElementById('media-console-panel');
+        if (!panel) return;
+        const btns = panel.querySelectorAll('button[onclick*="setMediaPlayerMode"]');
+        btns.forEach((btn) => {
+            const onclick = btn.getAttribute('onclick') || '';
+            const isMonitor = onclick.includes('monitor');
+            const isPlayer = onclick.includes('player');
+            const active = (isMonitor && SystemState.settings.media_player_mode === 'monitor') || (isPlayer && SystemState.settings.media_player_mode === 'player');
+            btn.className = `os-seg-btn hover-target cursor-none ${active ? 'active' : ''}`;
+        });
+    },
 
     _pipedAudioCache: {},
 
@@ -548,23 +544,23 @@ window.extendOS({
 
                 const activeStation = SystemState.settings.media_tuner_station || 'lastfm';
                 let tunerHeaderHtml = `
-                    <div class="h-10 border-b border-white/5 px-4 flex justify-between items-center text-[9px] font-mono text-os-accent uppercase flex-shrink-0 bg-black/20">
-                        <div class="flex gap-4">
-                            <button onclick="os.setMediaView('stream')" class="hover-target cursor-none ${os.mediaView === 'stream' ? 'text-white font-semibold border-b border-white pb-0.5' : 'text-gray-500 hover:text-white'}">Monitor</button>
+                    <div class="os-toolbar">
+                        <div class="os-segmented">
+                            <button type="button" onclick="os.setMediaView('stream')" class="os-seg-btn hover-target cursor-none ${os.mediaView === 'stream' ? 'active' : ''}">Now Playing</button>
                             ${activeStation === 'lastfm' ? `
-                            <button onclick="os.setMediaView('metrics')" class="hover-target cursor-none ${os.mediaView === 'metrics' ? 'text-white font-semibold border-b border-white pb-0.5' : 'text-gray-500 hover:text-white'}">Profile Metrics</button>
-                            <button onclick="os.setMediaView('history')" class="hover-target cursor-none ${os.mediaView === 'history' ? 'text-white font-semibold border-b border-white pb-0.5' : 'text-gray-500 hover:text-white'}">History Archive (${SystemState.history.length})</button>
+                            <button type="button" onclick="os.setMediaView('metrics')" class="os-seg-btn hover-target cursor-none ${os.mediaView === 'metrics' ? 'active' : ''}">Listening Stats</button>
+                            <button type="button" onclick="os.setMediaView('history')" class="os-seg-btn hover-target cursor-none ${os.mediaView === 'history' ? 'active' : ''}">History (${SystemState.history.length})</button>
                             ` : ''}
                         </div>
-                        <div class="flex items-center gap-3 bg-os-900 border border-white/5 px-2 py-0.5 rounded">
-                            <span class="text-gray-600">STN_BAND:</span>
-                            <button onclick="os.setStation('lastfm')" class="hover-target cursor-none ${activeStation === 'lastfm' ? 'text-white font-bold' : 'text-gray-600 hover:text-white'}">LASTFM</button>
-                            <button onclick="os.setStation('plaza')" class="hover-target cursor-none ${activeStation === 'plaza' ? 'text-white font-bold' : 'text-gray-600 hover:text-white'}">PLAZA.ONE</button>
-                        </div>
-                        <div class="flex items-center gap-2 bg-os-900 border border-white/5 px-2 py-0.5 rounded">
-                            <span class="text-gray-600">MODE:</span>
-                            <button onclick="os.setMediaPlayerMode('monitor')" class="hover-target cursor-none ${SystemState.settings.media_player_mode === 'monitor' ? 'text-white font-bold' : 'text-gray-600 hover:text-white'}">MONITOR</button>
-                            <button onclick="os.setMediaPlayerMode('player')" class="hover-target cursor-none ${SystemState.settings.media_player_mode === 'player' ? 'text-green-400 font-bold' : 'text-gray-600 hover:text-white'}">PLAYER</button>
+                        <div class="flex items-center gap-2">
+                            <div class="os-segmented">
+                                <button type="button" onclick="os.setStation('lastfm')" class="os-seg-btn hover-target cursor-none ${activeStation === 'lastfm' ? 'active' : ''}">Last.fm</button>
+                                <button type="button" onclick="os.setStation('plaza')" class="os-seg-btn hover-target cursor-none ${activeStation === 'plaza' ? 'active' : ''}">Nightwave Plaza</button>
+                            </div>
+                            <div class="os-segmented">
+                                <button type="button" onclick="os.setMediaPlayerMode('monitor')" class="os-seg-btn hover-target cursor-none ${SystemState.settings.media_player_mode === 'monitor' ? 'active' : ''}">Scrobbler</button>
+                                <button type="button" onclick="os.setMediaPlayerMode('player')" class="os-seg-btn hover-target cursor-none ${SystemState.settings.media_player_mode === 'player' ? 'active' : ''}">Audio Player</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -573,16 +569,22 @@ window.extendOS({
                     const user = SystemState.settings.api_lastfm_user;
                     if (!user) {
                         container.innerHTML = tunerHeaderHtml + `
-                            <div class="flex flex-col h-full justify-center items-center p-6 text-center">
-                                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.8)_0%,transparent_60%)]"></div>
-                                <div class="w-20 h-20 rounded-full border border-white/10 mb-6 flex items-center justify-center relative shadow-[0_0_50px_rgba(255,255,255,0.05)] bg-os-800">
-                                    <i data-lucide="radio" class="w-8 h-8 text-gray-600"></i>
+                            <div class="flex flex-col flex-1 justify-center items-center p-6 text-center relative">
+                                <div class="w-16 h-16 rounded-2xl border border-white/10 mb-4 flex items-center justify-center bg-white/[0.04]">
+                                    <i data-lucide="disc-3" class="w-8 h-8 text-sky-300"></i>
                                 </div>
-                                <h3 class="font-display tracking-widest text-lg text-white uppercase">Aether Console Offline</h3>
-                                <p class="font-mono text-xs text-gray-500 mt-2 max-w-sm">Please link your Last.fm username in System Configuration to enable scrobble mapping.</p>
-                                <button onclick="os.openWindow('settings')" class="mt-6 px-4 py-2 bg-white/5 border border-white/10 text-xs font-mono uppercase rounded hover:bg-white/10 hover-target transition-colors">
-                                    Open Config Parameters
-                                </button>
+                                <h3 class="font-display font-bold text-lg text-white">Connect Last.fm or Stream Radio</h3>
+                                <p class="text-xs text-gray-400 mt-1.5 max-w-sm leading-relaxed">Enter any public Last.fm username for live scrobble tracking, synced LRCLIB lyrics, and listening charts — or tune straight into Nightwave Plaza.</p>
+                                <div class="mt-5 flex items-center gap-2 w-full max-w-xs">
+                                    <input id="media-inline-lastfm" type="text" placeholder="Last.fm username..."
+                                        class="flex-1 os-input px-3 py-2 text-xs cursor-text"
+                                        onkeydown="if(event.key==='Enter' && this.value.trim()){ SystemState.settings.api_lastfm_user = this.value.trim(); SystemState.save(); os.renderMediaDashboard(); os.fetchLastFmData && os.fetchLastFmData(); }">
+                                    <button type="button" onclick="const v=document.getElementById('media-inline-lastfm')?.value.trim(); if(v){ SystemState.settings.api_lastfm_user=v; SystemState.save(); os.renderMediaDashboard(); os.fetchLastFmData && os.fetchLastFmData(); }" class="os-btn-primary px-3.5 py-2 text-xs cursor-none hover-target">Connect</button>
+                                </div>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <button type="button" onclick="os.setStation('plaza')" class="os-btn text-sky-300 px-3.5 py-1.5 cursor-none hover-target"><i data-lucide="radio" class="w-3.5 h-3.5"></i> Play Nightwave Plaza 24/7</button>
+                                    <button type="button" onclick="os.openWindow('settings')" class="os-btn px-3 py-1.5 cursor-none hover-target">API Settings</button>
+                                </div>
                             </div>
                         `;
                     } else {
@@ -592,131 +594,120 @@ window.extendOS({
                         } else if (os.mediaView === 'stream') {
                             container.innerHTML = tunerHeaderHtml + `
                                 <div class="flex-1 flex overflow-hidden relative min-h-0" id="media-command-center">
-                                    <!-- Cinematic Blurry Ambient Background -->
                                     <div id="media-ambient-bg" class="absolute inset-0 opacity-[0.18] filter blur-[40px] transition-all duration-1000 bg-cover bg-center pointer-events-none" style="background-image: url('');"></div>
 
-                                    <!-- Left Column: Audio deck + Procedural Visualizer (42% width) -->
-                                    <div class="w-[42%] min-w-[300px] p-4 border-r border-white/5 flex flex-col justify-between bg-black/30 relative z-10">
+                                    <!-- Left Column: Audio deck -->
+                                    <div class="w-[38%] min-w-[280px] p-4 border-r border-white/[0.08] flex flex-col justify-between bg-black/30 relative z-10">
                                         <div class="flex justify-between items-start">
-                                            <div class="space-y-1">
-                                                <div class="text-[9px] font-mono text-os-accent tracking-widest uppercase">AUD_CH_1 // MAIN_STATION</div>
+                                            <div>
+                                                <div class="text-[11px] text-sky-300 font-semibold">Last.fm Live</div>
                                                 <div class="flex items-center gap-2">
-                                                    <div class="font-display text-base tracking-wider text-white">NOW TRANSMITTING</div>
-                                                    <i id="media-loved-icon" data-lucide="heart" class="w-3.5 h-3.5 text-red-500 hidden fill-current animate-pulse"></i>
+                                                    <div class="font-display font-bold text-base text-white">Now Playing</div>
+                                                    <i id="media-loved-icon" data-lucide="heart" class="w-3.5 h-3.5 text-rose-500 hidden fill-current"></i>
                                                 </div>
                                             </div>
-                                            <!-- Reactive Equalizer Spectrum (12 bars!) -->
                                             <div class="flex gap-0.5 h-6 items-end w-20" id="media-spectrograph"></div>
                                         </div>
 
-                                        <!-- Substantially Enlarged Vinyl Deck -->
                                         <div class="my-auto flex flex-col items-center py-3 relative">
-                                            <div class="w-44 h-44 xl:w-52 xl:h-52 rounded-full border border-white/10 flex items-center justify-center relative bg-gradient-to-b from-os-700 to-black overflow-hidden group shadow-[0_0_50px_rgba(255,255,255,0.04)]" id="vinyl-deck">
-                                                <div id="media-art-cover" class="absolute inset-0 bg-cover bg-center opacity-50 spinning-reel hidden"></div>
+                                            <div class="w-44 h-44 xl:w-52 xl:h-52 rounded-full border border-white/10 flex items-center justify-center relative bg-gradient-to-b from-slate-800 to-black overflow-hidden group shadow-xl" id="vinyl-deck">
+                                                <div id="media-art-cover" class="absolute inset-0 bg-cover bg-center opacity-55 spinning-reel hidden"></div>
                                                 <div class="absolute inset-2 rounded-full border border-white/5 pointer-events-none"></div>
                                                 <div class="absolute inset-4 rounded-full border border-white/5 pointer-events-none"></div>
                                                 <div class="absolute inset-8 rounded-full border border-white/5 pointer-events-none"></div>
                                                 <div class="absolute inset-12 rounded-full border border-white/5 spinning-reel pointer-events-none" id="spinning-spokes">
                                                     <div class="absolute top-1 left-1/2 -ml-0.5 w-1 h-3 bg-white/40 rounded"></div>
                                                 </div>
-                                                <div class="w-10 h-10 rounded-full bg-os-600 border border-white/10 flex items-center justify-center z-10">
-                                                    <div class="w-2.5 h-2.5 rounded-full bg-white shadow-glow"></div>
+                                                <div class="w-10 h-10 rounded-full bg-slate-800 border border-white/15 flex items-center justify-center z-10">
+                                                    <div class="w-2.5 h-2.5 rounded-full bg-white"></div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="space-y-3">
-                                            <div class="space-y-1">
-                                                <div class="font-mono text-xs text-white uppercase tracking-wider truncate text-glow" id="media-track">Telemetry loading...</div>
-                                                <div class="font-mono text-[10px] text-gray-400 uppercase truncate" id="media-artist">Standby...</div>
+                                            <div class="space-y-0.5">
+                                                <div class="text-sm font-semibold text-white truncate" id="media-track">Loading track...</div>
+                                                <div class="text-xs text-gray-400 truncate" id="media-artist">Connecting to Last.fm...</div>
                                             </div>
-                                            
-                                            <!-- Interactive Progress Bar -->
-                                            <div class="space-y-1 text-[8px] font-mono text-gray-500">
+
+                                            <div class="space-y-1 text-[11px] font-mono text-gray-400">
                                                 <div class="flex justify-between">
                                                     <span id="media-playback-time">0:00</span>
                                                     <span id="media-total-time">3:40</span>
                                                 </div>
-                                                <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden relative cursor-none hover-target" onclick="os.seekMedia(event)">
-                                                    <div id="media-progress-bar" class="absolute left-0 top-0 bottom-0 bg-white/40 w-[20%] transition-all duration-300"></div>
+                                                <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative cursor-none hover-target" onclick="os.seekMedia(event)">
+                                                    <div id="media-progress-bar" class="absolute left-0 top-0 bottom-0 bg-sky-400 w-[20%] transition-all duration-300"></div>
                                                 </div>
                                             </div>
 
-                                            <!-- High-End Playback Controls -->
-                                            <div class="flex items-center justify-between border-t border-white/5 pt-3">
-                                                <div class="flex items-center gap-3">
-                                                    <button onclick="os.toggleAudioPlayback()" id="media-console-play-btn" class="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-gray-200 transition shadow-os-btn cursor-none hover-target"><i data-lucide="play" class="w-4.5 h-4.5 text-black ml-0.5"></i></button>
-                                                    <span class="text-[9px] text-gray-500 uppercase tracking-widest font-mono">LIVE TUNER</span>
+                                            <div class="flex items-center justify-between border-t border-white/[0.08] pt-3">
+                                                <div class="flex items-center gap-2.5">
+                                                    <button type="button" onclick="os.toggleAudioPlayback()" id="media-console-play-btn" class="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-gray-200 transition shadow cursor-none hover-target"><i data-lucide="play" class="w-4 h-4 text-black ml-0.5"></i></button>
+                                                    <span class="text-xs text-gray-400 font-medium">Audio Stream</span>
                                                 </div>
-                                                <div class="flex items-center gap-1.5 text-[9px]">
-                                                    <i data-lucide="volume-2" class="w-3.5 h-3.5 text-os-accent"></i>
-                                                    <input type="range" min="0" max="1" step="0.01" value="0.7" oninput="os.adjustVolume(this.value)" class="w-16 h-1 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
+                                                <div class="flex items-center gap-1.5">
+                                                    <i data-lucide="volume-2" class="w-3.5 h-3.5 text-gray-400"></i>
+                                                    <input type="range" min="0" max="1" step="0.01" value="${SystemState.settings.media_tuner_volume ?? 0.7}" oninput="os.adjustVolume(this.value)" class="w-20 h-1.5 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Middle Column: Synced Lyric Stream with BetterLyrics themes (28% width) -->
-                                    <div class="w-[33%] min-w-[300px] border-r border-white/5 bg-black/20 flex flex-col relative z-10 font-mono overflow-hidden" id="media-lyrics-panel">
-                                        <div class="px-3 pt-2 pb-1 border-b border-white/5 flex items-center justify-between flex-shrink-0">
-                                            <div class="text-[8px] text-os-accent tracking-widest uppercase">Lyric Stream</div>
-                                            <div class="flex items-center gap-1">
-                                                <span class="text-[7px] text-gray-600 uppercase">Theme:</span>
-                                                <select id="lyrics-theme-select" onchange="os.setLyricsTheme(this.value)" class="bg-black/60 border border-white/10 text-[7px] text-gray-300 rounded px-1 py-0.5 outline-none cursor-none font-mono uppercase">
-                                                    <option value="default">Default</option>
-                                                    <option value="spotlight">Spotlight</option>
-                                                    <option value="ebl">Even Better</option>
-                                                    <option value="minimal">Minimal</option>
-                                                    <option value="dynbg">Dyn. BG</option>
-                                                    <option value="apple">Apple Music</option>
-                                                </select>
-                                            </div>
+                                    <!-- Middle Column: Synced Lyrics -->
+                                    <div class="w-[32%] min-w-[260px] border-r border-white/[0.08] bg-black/20 flex flex-col relative z-10 overflow-hidden" id="media-lyrics-panel">
+                                        <div class="px-3 py-2 border-b border-white/[0.07] flex items-center justify-between shrink-0">
+                                            <div class="text-xs font-semibold text-white">Synced Lyrics</div>
+                                            <select id="lyrics-theme-select" onchange="os.setLyricsTheme(this.value)" class="os-input text-[11px] py-0.5 px-2 cursor-none">
+                                                <option value="default">Default</option>
+                                                <option value="spotlight">Spotlight</option>
+                                                <option value="ebl">Glow</option>
+                                                <option value="minimal">Minimal</option>
+                                                <option value="dynbg">Dynamic</option>
+                                                <option value="apple">Apple Music</option>
+                                            </select>
                                         </div>
-                                        
-                                        <!-- Scrollable Lyric Container -->
+
                                         <div class="flex-1 overflow-y-auto no-scrollbar select-text relative" id="media-lyric-scroller" data-lyrics-theme="default">
-                                            <div class="space-y-2 animate-pulse py-4 px-3" id="media-lyric-placeholder">
+                                            <div class="space-y-2 py-4 px-3" id="media-lyric-placeholder">
                                                 <div class="h-3 bg-white/5 rounded w-[90%]"></div>
                                                 <div class="h-3 bg-white/10 rounded w-[80%]"></div>
                                                 <div class="h-3 bg-white/5 rounded w-[85%]"></div>
                                             </div>
                                         </div>
 
-                                        <div class="border-t border-white/5 px-3 py-1.5 text-[7px] text-os-accent flex justify-between flex-shrink-0">
-                                            <span id="lyrics-src-label">SRC: LRCLIB</span>
-                                            <span class="text-green-500" id="lyrics-sync-label">SYNCED</span>
+                                        <div class="border-t border-white/[0.07] px-3 py-1.5 text-[11px] text-gray-400 flex justify-between shrink-0">
+                                            <span id="lyrics-src-label">LRCLIB</span>
+                                            <span class="text-emerald-400 font-medium" id="lyrics-sync-label">Synced</span>
                                         </div>
                                     </div>
 
-                                    <!-- Right Column: Profile Diagnostics & Recent Activity (30% width) -->
-                                    <div class="w-[33%] min-w-[300px] p-4 flex flex-col overflow-hidden bg-black/40 text-xs relative z-10">
+                                    <!-- Right Column: Profile & Recent Scrobble History -->
+                                    <div class="flex-1 min-w-[260px] p-4 flex flex-col overflow-hidden bg-black/35 text-xs relative z-10">
                                         <div class="space-y-3 flex-1 min-h-0 flex flex-col">
-                                            <div class="rounded-xl overflow-hidden border border-white/10 bg-black/55 relative h-56 xl:h-64 shadow-os-recessed flex-shrink-0" id="spotify-canvas-shell">
+                                            <div class="rounded-xl overflow-hidden border border-white/10 bg-black/55 relative h-48 xl:h-56 shrink-0" id="spotify-canvas-shell">
                                                 <div id="spotify-canvas-bg" class="absolute inset-0 bg-cover bg-center opacity-[0.18] blur-md scale-110"></div>
                                                 <canvas id="spotify-canvas-visual" class="absolute inset-0 w-full h-full"></canvas>
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"></div>
-                                                <div class="absolute top-2 left-2 right-2 flex items-center justify-between text-[7px] uppercase tracking-widest opacity-75 hover:opacity-100 transition-opacity gap-2"><span id="spotify-canvas-state" class="text-green-300 bg-black/30 border border-white/5 rounded-full px-2 py-0.5 truncate">procedural</span><div class="flex items-center gap-1 pointer-events-auto"><select id="spotify-gif-provider-select" onchange="os.setSpotifyGifProvider(this.value)" class="bg-black/45 border border-white/10 rounded-full px-1 py-0.5 text-gray-300 outline-none cursor-none hover-target uppercase"><option value="mixed">Mixed</option><option value="nekos">Nekos</option><option value="giphy">Giphy</option><option value="tenor">Tenor</option></select><button onclick="event.stopPropagation();os.toggleSpotifyAnimeGif()" id="spotify-anime-toggle" class="px-2 py-0.5 rounded-full bg-black/35 border border-white/10 text-gray-300 cursor-none hover-target">GIF ON</button></div></div>
-                                                <div class="absolute bottom-2 left-2 right-2 pointer-events-none opacity-75"><div id="spotify-canvas-title" class="text-white text-[10px] font-bold truncate">Awaiting track telemetry</div><div id="spotify-canvas-artist" class="text-gray-400 text-[8px] truncate">Canvas engine standby</div></div>
+                                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
+                                                <div class="absolute top-2 left-2 right-2 flex items-center justify-between text-[10px] opacity-80 hover:opacity-100 transition-opacity gap-2"><span id="spotify-canvas-state" class="text-emerald-300 bg-black/45 border border-white/10 rounded-full px-2 py-0.5 truncate">Visualizer</span><div class="flex items-center gap-1 pointer-events-auto"><select id="spotify-gif-provider-select" onchange="os.setSpotifyGifProvider(this.value)" class="bg-black/55 border border-white/10 rounded-full px-2 py-0.5 text-gray-200 outline-none cursor-none hover-target"><option value="mixed">Mixed</option><option value="nekos">Anime</option><option value="giphy">Giphy</option><option value="tenor">Tenor</option></select><button type="button" onclick="event.stopPropagation();os.toggleSpotifyAnimeGif()" id="spotify-anime-toggle" class="px-2 py-0.5 rounded-full bg-black/45 border border-white/10 text-gray-200 cursor-none hover-target">GIF On</button></div></div>
+                                                <div class="absolute bottom-2 left-2.5 right-2.5 pointer-events-none"><div id="spotify-canvas-title" class="text-white text-xs font-semibold truncate">Waiting for track</div><div id="spotify-canvas-artist" class="text-gray-400 text-[11px] truncate">Canvas ready</div></div>
                                             </div>
-                                            <div class="text-[8px] font-mono text-os-accent tracking-widest uppercase mb-1">PROFILER METRICS</div>
-                                            
-                                            <!-- Last.fm Profile Avatar & Info Card -->
-                                            <div class="bg-os-900/50 rounded-lg border border-white/5 p-2.5 flex gap-2 items-center shadow-os-recessed flex-shrink-0" id="media-profile-card">
-                                                <div class="w-10 h-10 rounded-full bg-white/5 animate-pulse shrink-0" id="media-profile-avatar-placeholder"></div>
+
+                                            <div class="os-card p-2.5 flex gap-2.5 items-center shrink-0" id="media-profile-card">
+                                                <div class="w-10 h-10 rounded-full bg-white/5 shrink-0" id="media-profile-avatar-placeholder"></div>
                                                 <div class="space-y-1 overflow-hidden flex-1">
-                                                    <div class="h-2 bg-white/10 rounded w-16 animate-pulse"></div>
-                                                    <div class="h-2 bg-white/5 rounded w-24 animate-pulse"></div>
+                                                    <div class="h-2.5 bg-white/10 rounded w-20"></div>
+                                                    <div class="h-2 bg-white/5 rounded w-28"></div>
                                                 </div>
                                             </div>
 
-                                            <div class="text-[8px] font-mono text-os-accent tracking-widest uppercase mb-1">RECENT TELEMETRY</div>
-                                            <div class="space-y-2 overflow-y-auto pr-1 max-h-44 xl:max-h-56 no-scrollbar" id="scrobble-history-list"></div>
+                                            <div class="text-[11px] font-semibold text-gray-300">Recent Tracks</div>
+                                            <div class="space-y-1.5 overflow-y-auto pr-1 flex-1 no-scrollbar" id="scrobble-history-list"></div>
                                         </div>
 
-                                        <div class="flex justify-between items-center border-t border-white/5 pt-3 mt-3 text-[9px] font-mono text-os-accent flex-shrink-0">
-                                            <span id="telemetry-update-time">UPDATE: INACTIVE</span>
-                                            <button onclick="os.fetchLastFmData()" class="hover-target cursor-none text-white hover:underline uppercase flex items-center gap-1">
-                                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Live
+                                        <div class="flex justify-between items-center border-t border-white/[0.08] pt-2.5 mt-2.5 text-[11px] text-gray-400 shrink-0">
+                                            <span id="telemetry-update-time">Idle</span>
+                                            <button type="button" onclick="os.fetchLastFmData()" class="os-btn hover-target cursor-none">
+                                                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
                                             </button>
                                         </div>
                                     </div>
