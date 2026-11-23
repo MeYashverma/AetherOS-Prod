@@ -1,14 +1,16 @@
 import { createPredictor } from './chat-predictions.js';
 import { localChatTime, messageTime } from './chat-clock.js';
+import { splitChatAsides } from './chat-asides.js';
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
 import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
+import { cleanMedia, mediaURL, renderMediaImage } from '../providers/stickersapi.js';
 import { ChatInteractions } from './chat-interactions.js';
 import { listenerReplyFor, listenerTiming } from './listener-replies.js';
 import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
-import { addChatReaction } from './chat-reactions.js?v=gif-media-only-5';
+import { addChatReaction } from './chat-reactions.js?v=stickersapi-26';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */
@@ -162,6 +164,7 @@ export class Messages extends Phone {
     }
     this.predict=createPredictor(L.lines);
     const P = planTurns(L, s.artist); this.P = P;
+    this.asides = new Map();
     const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
     const art=s.artwork||'';
     const avatar=`<span class="chat-avatar" aria-hidden="true"><span class="chat-avatar-fallback">${esc((title||"?").trim()[0]||"?")}</span>${art?`<img alt="" src="${esc(art)}" onerror="this.remove()">`:''}</span>`;
@@ -170,29 +173,140 @@ export class Messages extends Phone {
       <div class="chat-contact"><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <div class="nav-trailing"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></div></header>
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
-      <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
+      <footer><button type="button" class="chat-media-launch" aria-label="Add sticker or emote to lyric chat" title="Browse stickers and emotes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/></svg></button><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
       <div class="kbw"><div class="kb">${KB}</div></div>
       <div class="phone-home" aria-hidden="true"><span class="home-indicator"></span></div>`;
     this.inner = this.ph.querySelector(".inner"); this.sub = this.ph.querySelector("header small"); this.rows = []; this.typing = null;
+    this.thread = this.ph.querySelector('.thread'); this.following = true;
+    this.thread.tabIndex = 0;
+    this.thread.setAttribute('role', 'region');
+    this.thread.setAttribute('aria-label', 'Lyric chat history');
+    // Scrolling caused by layout, a new lyric, or setting scrollTop is not a
+    // request to browse history. Only a deliberate gesture pauses auto-follow.
+    this.userScrollUntil = 0;
+    this.lastScrollTop = 0;
+    const userScroll = () => { this.userScrollUntil = Date.now() + 750; };
+    const scrollable = () => this.thread.scrollHeight > this.thread.clientHeight + 8;
+    const browseHistory = () => { if (scrollable()) { userScroll(); this.following = false; } };
+    this.thread.addEventListener('wheel', e => { if (e.deltaY < 0) browseHistory(); }, { passive: true });
+    this.thread.addEventListener('touchstart', e => { this.touchY = e.touches[0]?.clientY; }, { passive: true });
+    this.thread.addEventListener('touchmove', e => {
+      const y = e.touches[0]?.clientY;
+      if (y != null && this.touchY != null && y > this.touchY + 2) browseHistory();
+      this.touchY = y;
+    }, { passive: true });
+    this.thread.addEventListener('pointermove', e => { if (e.buttons) userScroll(); }, { passive: true });
+    this.thread.addEventListener('keydown', e => {
+      if (e.target.closest('button,input,textarea,[contenteditable="true"]')) return;
+      if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) || e.key === ' ' && e.shiftKey) browseHistory();
+      else if (e.key === 'Tab') userScroll();
+    });
+    this.thread.addEventListener('scroll', () => {
+      const top = this.thread.scrollTop;
+      if (this.atLatest()) { this.following = true; this.userScrollUntil = 0; }
+      else if (Date.now() < this.userScrollUntil && top < this.lastScrollTop - 1) this.following = false;
+      this.lastScrollTop = top;
+    }, { passive: true });
+    // Replies, GIFs and the keyboard can grow after the lyric frame has run.
+    // Keep the last bubble visible even when playback is paused or frames stall.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.chatResizeObserver = new ResizeObserver(() => this.scrollToLatest());
+      this.chatResizeObserver.observe(this.inner);
+      this.chatResizeObserver.observe(this.thread);
+    }
     this.kbw = this.ph.querySelector(".kbw"); this.inp = this.ph.querySelector(".inp"); this.plans = new Map(); this.down = [];
     this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
     this.predictionText = ""; this.shown = ""; this.kbo = false;
     this.clock = this.ph.querySelector(".chat-clock");
+    this.ph.querySelector('.chat-media-launch').onclick=()=>{
+      this.chatInteractions ||= new ChatInteractions(this);
+      const index=this.rows[0]?.index ?? L.lines.findIndex(line=>line.text);
+      if(index>=0)this.chatInteractions.openMedia(index);
+    };
+    this.applyProfileMedia();
+  }
+  applyProfileMedia() {
+    const header=this.ph.querySelector('header.chat-topbar'), avatar=header?.querySelector('.chat-avatar');
+    if(!header||!avatar)return;
+    avatar.querySelector('.chat-custom-avatar')?.remove();
+    const reduced=typeof matchMedia==='function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const chosen=cleanMedia(this.ctx.opts?.avatar?.());
+    if(chosen?.kind==='pfp' && (!reduced||!chosen.animated)){
+      const img=document.createElement('img');img.className='chat-custom-avatar';img.alt='';
+      img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();
+      img.src=mediaURL(chosen);avatar.append(img);
+    }
+    const banner=cleanMedia(this.ctx.opts?.banner?.());
+    const url=banner?.kind==='banner' && (!reduced||!banner.animated)?mediaURL(banner):null;
+    header.classList.toggle('has-chat-banner',!!url);
+    header.style.backgroundImage=url?`linear-gradient(#10212dbb,#10212dcc),url("${url}")`:'';
+  }
+  atLatest() {
+    const thread = this.thread;
+    return !thread || thread.scrollHeight - thread.clientHeight - thread.scrollTop <= Math.max(8, thread.clientWidth * .04);
+  }
+  scrollToLatest() {
+    if (this.following && this.thread) {
+      this.thread.scrollTop = this.thread.scrollHeight;
+      this.lastScrollTop = this.thread.scrollTop;
+    }
+  }
+  outgoing(turn) { return !!turn && !this.P.group && turn.who === 1; }
+  lyricSegments(i, line) {
+    if (!this.asides.has(i)) {
+      const singers = [...(this.ctx.lyrics.speakers || []), this.ctx.song.artist];
+      this.asides.set(i, splitChatAsides(line, singers));
+    }
+    return this.asides.get(i);
   }
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
-    const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = messageTime(this.ctx.lyrics,`lyric:${i}`);
+    const out = this.outgoing(t), mm = messageTime(this.ctx.lyrics,`lyric:${i}`);
     const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
-    
-    // Ensure this.inner exists for tests that call bubble() before build()
+
+    // Ensure this.inner exists for tests that call bubble() before build().
     if (!this.inner) this.inner = this.ph.querySelector('.inner');
-    
+
     addChatReaction(this, b, line.text, i);
     addConversation(this, b, line, i);
     this.chatInteractions ||= new ChatInteractions(this);
     this.chatInteractions.attach(b, i);
     return b;
+  }
+  lyricBubbles(i, line) {
+    const segments = this.lyricSegments(i, line);
+    if (!segments) {
+      const el = this.bubble(i, line);
+      return { el, parts: [{ el, line, spans: [...el.querySelectorAll('.w')] }] };
+    }
+    // Keep the source line intact. Only this chat view splits a sung aside from
+    // its main lyric; merged main tokens still light at their original times.
+    const mainTokens = segments.filter(s => !s.aside).flatMap(s => s.tokens);
+    const mainLine = { ...line, text: mainTokens.map(t => t.text).join(' ').trim(), tokens: mainTokens };
+    const out = this.outgoing(this.P.T[i]);
+    const parts = [];
+    let main = null;
+    for (const segment of segments) {
+      let el, partLine;
+      if (segment.aside) {
+        partLine = { ...line, text: segment.text, tokens: segment.tokens };
+        const mm = messageTime(this.ctx.lyrics, `lyric:${i}`);
+        el = $('div', `b ${out ? 'in' : 'out'} tail chat-aside`, `<p>${wordsHTML(segment.tokens)}</p><time>${mm}${out ? '' : '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>'}</time>`);
+        el.setAttribute('aria-label', `${segment.text}, lyric from the other participant`);
+      } else if (!main && mainTokens.length) {
+        partLine = mainLine;
+        el = main = this.bubble(i, mainLine);
+      } else continue;
+      parts.push({ el, line: partLine, spans: [...el.querySelectorAll('.w')] });
+    }
+    // A line consisting only of a sung aside is still a lyric users can react to.
+    if (!main && parts.length) {
+      this.chatInteractions ||= new ChatInteractions(this);
+      this.chatInteractions.attach(parts[0].el, i);
+      parts[0].el.setAttribute('aria-label', `${parts[0].line.text}, lyric from the other participant; right-click or hold to react or reply`);
+    }
+    return { el: main || parts[0]?.el, parts };
   }
   appendListener(index,line,el) {
     if(this.ctx.opts?.listenerReplies?.()===false)return null;
@@ -207,6 +321,36 @@ export class Messages extends Phone {
     reply.dataset.clockKey=`listener:${index}`;
     reply.hidden=true;
     reply.append(body,time);if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(reply); return reply;
+  }
+  manualMediaBubble(index,item,number){
+    const b=document.createElement('div');b.className='b out in tail chat-local-media';
+    b.setAttribute('aria-label',`Your local ${item.kind}: ${item.name} (not a lyric)`);
+    const label=document.createElement('small');label.textContent='You · local media';
+    const preview=document.createElement('div');preview.className='chat-local-media-preview';
+    const placeholder=document.createElement('span');placeholder.textContent='Loading media…';preview.append(placeholder);
+    const time=document.createElement('time');time.textContent=messageTime(this.ctx.lyrics,`manual:${index}:media:${number}`);
+    b.append(label,preview,time);
+    const controller=new AbortController(),job={element:b,controller};
+    this.stickerJobs ||= new Set();this.stickerJobs.add(job);
+    renderMediaImage(preview,item,controller.signal,'chat-local-media-image').then(ok=>{
+      if(ok && b.isConnected)placeholder.remove();
+      else if(!controller.signal.aborted && b.isConnected)placeholder.textContent='Image unavailable';
+    }).finally(()=>this.stickerJobs?.delete(job));
+    return b;
+  }
+  refreshManualMedia(index){
+    const row=this.rows.find(r=>r.index===index);
+    if(!row)return;
+    const items=this.chatInteractions?.record(index).media || [];
+    row.media ||= [];
+    while(row.media.length>items.length)row.media.pop().remove();
+    cleanupStickerJobs(this);
+    let anchor=row.media.at(-1)||row.reply||row.parts.at(-1)?.el;
+    for(let i=row.media.length;i<items.length;i++){
+      const b=this.manualMediaBubble(index,items[i],i);
+      anchor.after(b);anchor=b;row.media.push(b);
+    }
+    this.scrollToLatest();
   }
   listenerFrame(t) {
     let active=null;
@@ -228,33 +372,50 @@ export class Messages extends Phone {
     }
     return active;
   }
-  destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
+  destroy() { this.chatResizeObserver?.disconnect(); cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
-    if (!S.line || S.gap) return;
-    const t = this.P.T[S.idx]; if (!t) return;
-    if (S.jump) { if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = []; this.typing = null; }
-    this.sendFlash = S.t;
-    if (this.rows[0]) this.full(this.rows[0].el);
-    this.typing?.remove(); this.typing = null;
-    // TTML can have simultaneous agents. Rebuild a small deterministic window on
-    // each line change so equal-start duet lines and backward seeks aren't lost.
-    if (this.ctx.lyrics.format === 'TTML') {
-      if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove());
-      const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
-      for (const { line, i } of eligible) {
-        const el = this.bubble(i, line); if (!el) continue;
-        if(this.inner) this.inner.append(el); el.classList.add('in');
-        if(!S.jump&&i===S.idx)el.classList.add('message-arrival');
-        const reply=this.appendListener(i,line,el);
-        this.rows.unshift({ el, reply, line, spans: [...el.querySelectorAll('.w')] });
+    const previous = this.rows[0]?.index ?? -1;
+    const rewinding = S.idx < previous;
+    // A seek restores the conversation up to that point, rather than clearing
+    // everything except the current line. Ordinary playback never evicts rows.
+    if (rewinding) this.following = true;
+    if (rewinding) {
+      while (this.rows.length && this.rows[0].index > S.idx) {
+        const row = this.rows.shift();
+        row.parts.forEach(part => part.el.remove());
+        row.reply?.remove();row.media?.forEach(media=>media.remove());
       }
-      return;
+      cleanupStickerJobs(this);
     }
-    const el = this.bubble(S.idx, S.line); if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(el);
-    const reply=this.appendListener(S.idx,S.line,el);
-    this.rows.unshift({ el, reply, spans: [...el.querySelectorAll('.w')] });
-    while (this.rows.length > 9) { const old=this.rows.pop(); old.el.remove(); old.reply?.remove(); }
-    requestAnimationFrame(() => { el.classList.add('in');if(!S.jump)el.classList.add('message-arrival'); });
+    this.typing?.remove(); this.typing = null;
+    if (!S.line || S.idx < 0) { this.scrollToLatest(); return; }
+    const last = this.rows[0]?.index ?? -1;
+    if (last >= S.idx) { this.scrollToLatest(); return; }
+    this.sendFlash = S.t;
+    if (this.rows[0]) for (const part of this.rows[0].parts) this.full(part.el);
+    // Fill skipped lines on a forward seek, including simultaneous TTML agents.
+    // Only a newly arriving, adjacent lyric animates; history is already sent.
+    for (let i = last + 1; i <= S.idx; i++) {
+      const line = this.ctx.lyrics.lines[i];
+      if (!line?.text) continue;
+      const row = this.lyricBubbles(i, line);
+      for (const part of row.parts) this.inner.append(part.el);
+      const reply = this.appendListener(i, line, row.el);
+      const media=(this.chatInteractions?.record(i).media || []).map((item,n)=>this.manualMediaBubble(i,item,n));
+      this.inner.append(...media);
+      this.rows.unshift({ ...row, index: i, line, reply, media });
+      const animate = i === S.idx && !S.jump && i === last + 1;
+      if (animate) requestAnimationFrame(() => {
+        for (const part of row.parts) if (part.el.isConnected) {
+          part.el.classList.add('in', 'message-arrival');
+        }
+      });
+      else for (const part of row.parts) {
+        part.el.classList.add('in');
+        if (i !== S.idx) this.full(part.el);
+      }
+    }
+    this.scrollToLatest();
   }
   tick(S) {
     if (!this.down) this.down = [];
@@ -272,19 +433,23 @@ export class Messages extends Phone {
     cleanupStickerJobs(this);
     const clock=this.ph.querySelector('.chat-clock');if(clock)clock.textContent=localChatTime();
     const listener=this.listenerFrame(S.t);
-    const r = this.rows[0]; if (!r || !S.line) return;
-    if (this.ctx.lyrics.format === 'TTML') {
-      for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
-    } else light(r.spans, S.gap ? 99 : S.pos);
+    const r = this.rows[0];
+    if (!r || !S.line) { this.scrollToLatest(); return; }
+    const litRows = this.ctx.lyrics.format === 'TTML' ? this.rows : [r];
+    for (const row of litRows) for (const part of row.parts) {
+      light(part.spans, S.gap && row === r ? 99 : wordPos(part.line.tokens, S.t));
+    }
     const L = this.ctx.lyrics; let ni = S.idx + 1; while (L.lines[ni] && !L.lines[ni].text) ni++;
-    const nx = L.lines[ni], nt = this.P.T[ni], out = !!nt && (this.P.two ? nt.who === 1 : this.P.group ? false : nt.who === 1);
-    // Green (outgoing) lines are typed on a real-looking keyboard that rises just before the bubble is sent.
+    const nx = L.lines[ni], nt = this.P.T[ni], out = this.outgoing(nt);
+    const nextParts = nx && this.lyricSegments(ni, nx);
+    const nextMain = nextParts ? nextParts.filter(part => !part.aside).map(part => part.text).join(' ').trim() : nx?.text;
+    // Only type the words assigned to this participant, never an extracted aside.
     let kb = false, typed = '', last = null, p = 0;
-    if (nx && out) {
-      const dur = clamp(nx.text.length * 0.065 + 0.5, 0.9, 2.8), start = Math.max(nx.t - dur, S.line.t + 0.35), d = nx.t - start;
+    if (nx && out && nextMain) {
+      const dur = clamp(nextMain.length * 0.065 + 0.5, 0.9, 2.8), start = Math.max(nx.t - dur, S.line.t + 0.35), d = nx.t - start;
       if (d > 0.3 && S.t >= start - 0.5) {
         kb = true; p = clamp((S.t - start) / d);
-        let pl = this.plans.get(ni); if (!pl) this.plans.set(ni, pl = typingPlan(nx.text, ni));
+        let pl = this.plans.get(ni); if (!pl) this.plans.set(ni, pl = typingPlan(nextMain, ni));
         ({ str: typed, last } = typedAt(pl, p)); this.dur = d; this.ev = last && last.u * d;
       }
     }
@@ -307,13 +472,13 @@ export class Messages extends Phone {
       if (last.t === 'b') hit('back'); else { const c = last.ch.toLowerCase(); if (last.shift) hit('shift'); hit(c === ' ' ? 'space' : /[a-z]/.test(c) ? c : 'sym'); }
     }
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
-    const want = !listener && nx && nt && !out && S.t > nx.t - 1.5;
+    const want = !!(!listener && nx && nt && !out && nextMain && S.t > nx.t - 1.5);
     if (want && !this.typing) {
       this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); if(this.inner) this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
     }
     if (!want && this.typing) { this.typing.remove(); this.typing = null; this.sub.textContent = this.P.group ? this.P.names.join(', ') : 'online'; }
-    if(this.inner) this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
+    this.scrollToLatest();
   }
 }
 

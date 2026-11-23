@@ -2,8 +2,8 @@
 // `own: true` marks styles that keep their own colours regardless of the Aesthetics settings.
 import { Visual, Fisheye, FisheyeVisual, Ship } from './type.js';
 import { Codestyle, CodestyleVisual, Branches, Web, Constellation } from './scenes.js';
-// Version this import so an open preview cannot pair the new chat CSS with stale header markup.
-import { Notifications, Money, Messages, MapStyle } from './native.js?v=header-inline-22';
+// Version this import so cached previews load the current chat renderer.
+import { Notifications, Money, Messages, MapStyle } from './native.js?v=stickersapi-26';
 import { Kinetic, Collage, Y2K, Cinema } from './art.js';
 
 export const STYLES = [

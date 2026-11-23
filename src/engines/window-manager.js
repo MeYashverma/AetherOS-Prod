@@ -302,6 +302,8 @@ class WindowManager {
                     os.initDataStream();
                 } else if (winData.id === 'media') {
                     os.renderMediaDashboard();
+                } else if (winData.id === 'stickers') {
+                    window.AetherMedia?.renderLibrary();
                 } else if (winData.id === 'radiobrowser') {
                     os.initRadioBrowser();
                 } else if (winData.id === 'sysmon') {

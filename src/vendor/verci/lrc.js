@@ -43,8 +43,11 @@ export function parseLRC(src) {
 // Only accepted when at least two different names appear on a meaningful share of lines, so a lyric that
 // merely contains a colon is never mistaken for a singer tag. Returns the singer names (or []).
 const SPK = [/^<v\d*:\s*([^>]{1,24})>\s*/i, /^\[([^\]\d][^\]]{0,23})\]\s*/, /^\(([A-Z][^)]{0,23})\)\s+/, /^([A-Z][\w.'&\- ]{0,22}):\s+/];
+// (Ah) and (Ooh) are sung ad-libs, not singer names, even if every LRC line
+// begins with one. Leave them in the lyric for the chat's opposite-side bubble.
+const ADLIB_TAG = /^(?:a+h+|o+h+|o+oh+|wo+o+|yeah+|hey+|huh+|uh+|hmm+|mm+|la+|na+|ha+|whoa+)[!?.]*$/i;
 export function detectSpeakers(lines) {
-  const hits = lines.map(l => { for (const re of SPK) { const m = l.text.match(re); if (m) return { name: m[1].trim(), rest: l.text.slice(m[0].length) }; } return null; });
+  const hits = lines.map(l => { for (const re of SPK) { const m = l.text.match(re); if (m && (re !== SPK[2] || !ADLIB_TAG.test(m[1].trim()))) return { name: m[1].trim(), rest: l.text.slice(m[0].length) }; } return null; });
   const texted = lines.filter(l => l.text).length, tagged = hits.filter(Boolean);
   const names = [...new Set(tagged.map(h => h.name.toLowerCase()))];
   if (names.length < 2 || names.length > 6 || tagged.length < Math.max(3, texted * 0.3)) return [];

@@ -4,6 +4,27 @@ Object.assign(WindowContents, {
         <div class="flex flex-col h-full bg-[#07090f] relative overflow-hidden" id="media-console-panel"></div>
     `,
 
+    stickers: `
+        <main id="stickers-library-panel" class="aether-media-library">
+            <div class="aether-library-eyebrow">AETHER / MEDIA LIBRARY</div>
+            <h1>Stickers &amp; Profiles</h1>
+            <p class="aether-library-lead">Browse public stickers, Twitch emotes, Telegram sticker sets, profile pictures and banners. Choose an image to copy its link or download it. Only your searches and requested previews go to StickersAPI.</p>
+            <div class="aether-library-categories" aria-label="Browse media">
+                <button type="button" data-media-open="stickers"><strong>✦ Stickers</strong><span>Search stickers.gg</span></button>
+                <button type="button" data-media-open="emotes"><strong>☺ Emotes</strong><span>7TV · BTTV · FFZ</span></button>
+                <button type="button" data-media-open="telegram"><strong>◈ Telegram sets</strong><span>Public set name; no token</span></button>
+                <button type="button" data-media-open="pfps"><strong>◉ Profile pictures</strong><span>Use in lyric chat</span></button>
+                <button type="button" data-media-open="banners"><strong>▣ Banners</strong><span>Use in lyric chat</span></button>
+            </div>
+            <section class="aether-library-profiles" aria-label="Current chat appearance">
+                <h2>Lyric chat appearance</h2>
+                <p>Local preferences on this device. A selected profile picture replaces the song artwork in the chat header; the banner sits behind the same compact header. Remove either to restore the defaults.</p>
+                <div class="aether-library-profile-cards"><div data-media-profile="pfp"></div><div data-media-profile="banner"></div></div>
+            </section>
+            <p class="aether-library-footnote">Public read-only API · no account or API key required · Telegram sets depend on the service’s server-side availability. Offline, your existing local reactions and artwork still work.</p>
+        </main>
+    `,
+
     radiobrowser: `
         <div class="grid h-full bg-[#07090f] text-xs relative overflow-hidden rb-deck-shell select-none" id="rb-root" style="grid-template-columns:minmax(310px,41%) minmax(360px,59%);">
             <!-- LEFT: Now Playing / Turntable / Visualizer -->

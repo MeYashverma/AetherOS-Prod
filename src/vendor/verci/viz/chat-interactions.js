@@ -1,6 +1,8 @@
 import { createPredictor, predictionBar } from './chat-predictions.js';
 import { messageTime } from './chat-clock.js';
-// Per-song, in-memory chat state. Replies are local notes, never singer dialogue.
+import { cleanMedia } from '../providers/stickersapi.js';
+import { openMediaPicker } from './stickersapi-picker.js';
+// Per-song, in-memory chat state. Replies and selected media are local, never singer dialogue.
 const sessions=new WeakMap();
 export class ChatInteractions {
  constructor(viz) {
@@ -8,7 +10,7 @@ export class ChatInteractions {
   if(!sessions.has(lyrics))sessions.set(lyrics,new Map());
   this.messages=sessions.get(lyrics);this.timers=new Set();this.panel=null;
  }
- record(index){if(!this.messages.has(index))this.messages.set(index,{reaction:undefined,replies:[]});return this.messages.get(index);}
+ record(index){if(!this.messages.has(index))this.messages.set(index,{reaction:undefined,replies:[],media:[]});return this.messages.get(index);}
  button(text,cls,fn){const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=text;b.onclick=e=>{e.stopPropagation();fn();};return b;}
  attach(bubble,index){
   bubble.dataset.messageIndex=index;const auto=bubble.querySelector('.chat-emoji');
@@ -77,7 +79,11 @@ export class ChatInteractions {
   }
   if(!expanded)picker.append(this.button('+','chat-picker-more',()=>this.open(index,true)));
   panel.append(picker,this.button('Reply','chat-menu-action',()=>this.openThread(index,true)));
+  panel.append(this.button('Add sticker or emote · StickersAPI','chat-menu-action',()=>this.openMedia(index)));
   if(record.replies.length)panel.append(this.button(`View thread (${record.replies.length})`,'chat-menu-action',()=>this.openThread(index)));
+  if(record.media?.length)panel.append(this.button(`Remove last local media (${record.media.length})`,'chat-menu-action',()=>{
+   record.media.pop();this.viz.refreshManualMedia?.(index);this.close();
+  }));
   if(record.reaction!==undefined || this.viz.ph.querySelector(`[data-message-index="${index}"]`)?.dataset.autoReaction)panel.append(this.button('Remove reaction','chat-menu-action',()=>{record.reaction='';this.refresh(index);this.close();}));
  }
  openThread(index,focusInput=false){
@@ -90,6 +96,7 @@ export class ChatInteractions {
    if(!list.children.length){const empty=document.createElement('p');empty.textContent='No replies yet. Add your thoughts below.';list.append(empty);}
    list.scrollTop=list.scrollHeight;
   };draw();panel.append(list);
+  panel.append(this.button('Add sticker or emote to chat','chat-menu-action',()=>this.openMedia(index)));
   const form=document.createElement('form');form.className='chat-reply-form';
   const input=document.createElement('textarea');input.maxLength=280;input.rows=2;input.placeholder='Reply to this lyric…';input.setAttribute('aria-label','Your local reply');
   const send=document.createElement('button');send.type='submit';send.textContent='Send';
@@ -98,5 +105,22 @@ export class ChatInteractions {
   input.onkeydown=e=>{if(e.key==='Enter' && !e.shiftKey){e.preventDefault();form.requestSubmit();}};
   panel.append(form);if(focusInput)input.focus();
  }
- destroy(){for(const timer of this.timers)clearTimeout(timer);this.timers.clear();this.close();}
+ openMedia(index){
+  this.close();
+  const picker=window.AetherMedia?.openPicker || openMediaPicker;
+  this.mediaPicker=picker({initialType:'stickers',onSelect:item=>this.addMedia(index,item)});
+  return this.mediaPicker;
+ }
+ addMedia(index,item){
+  if(!Number.isInteger(index)||index<0||!this.viz.ctx.lyrics.lines[index]||!this.viz.ph.isConnected)return false;
+  const safe=cleanMedia(item);
+  if(!safe||!['sticker','emote','telegram'].includes(safe.kind))return false;
+  const record=this.record(index);
+  record.media ||= [];
+  if(record.media.length>=12)return false;
+  record.media.push(safe);
+  this.viz.refreshManualMedia?.(index);
+  return true;
+ }
+ destroy(){for(const timer of this.timers)clearTimeout(timer);this.timers.clear();this.mediaPicker?.close();this.close();}
 }

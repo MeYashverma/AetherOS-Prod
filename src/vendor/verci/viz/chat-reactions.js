@@ -1,5 +1,6 @@
 // Decorative reactions, not lyric replacements or singer metadata.
 import { attachAutomaticSticker } from '../providers/automatic-stickers.js';
+import { moodMedia, renderMediaImage } from '../providers/stickersapi.js';
 import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
 export function lyricReaction(text,index,seed='') {
   const info=analyzeLyric(text);if(!info)return null;
@@ -56,16 +57,36 @@ export function addChatReaction(viz, bubble, text, index) {
   const connection=globalThis.navigator?.connection;
   if(options.gifs?.()===false || reduced || connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '') || !reaction.gif) return;
   const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; bubble.append(slot);
-  viz.reactionAbort ||= new AbortController();
-  // Fixed reaction category only: no title, artist, lyric text or API key leaves the app.
-  // Deduplicate concurrent requests when TTML reconstructs bubbles during seeks.
-  viz.reactionRequests ||= new Map();
-  const key=`${reaction.gif}:${index%3}`;
-  if(!viz.reactionRequests.has(key)) viz.reactionRequests.set(key,reactionGif(reaction.gif,viz.reactionAbort.signal,fetch,index));
-  viz.reactionRequests.get(key).then(item=>{
-    if(!item || viz.reactionAbort.signal.aborted || !bubble.isConnected) return;
-    const img=document.createElement('img'); img.alt=item.alt; img.referrerPolicy='no-referrer';
-    img.onload=()=>{ if(!viz.reactionAbort.signal.aborted) slot.hidden=false; };
-    img.onerror=()=>slot.remove(); img.src=item.url;slot.append(img);
-  }).catch(()=>slot.remove());
+  if(['auto','stickerapi'].includes(options.stickerSource?.() || '')){
+    const controller=new AbortController(),job={element:slot,controller};
+    viz.stickerJobs ||= new Set();viz.stickerJobs.add(job);
+    moodMedia('emote',reaction.mood,hash(`${viz.ctx.song.title}:${index}`),reduced).then(async item=>{
+      if(!item||controller.signal.aborted||!slot.isConnected)return false;
+      if(await renderMediaImage(slot,item,controller.signal)){
+        if(!controller.signal.aborted&&slot.isConnected){slot.hidden=false;return true;}
+      }
+      return false;
+    }).then(loaded=>{if(!loaded&&!controller.signal.aborted&&slot.isConnected)attachLegacyGif();})
+      .catch(()=>{if(!controller.signal.aborted&&slot.isConnected)attachLegacyGif();})
+      .finally(()=>viz.stickerJobs?.delete(job));
+    return;
+  }
+  attachLegacyGif();
+  function attachLegacyGif(){
+    // Initial bubble construction happens before insertion into the chat DOM.
+    // Async fallback callers already verify isConnected; do not skip explicit
+    // Discord/Sticker.ly/local modes here or their legacy GIFs disappear.
+    viz.reactionAbort ||= new AbortController();
+    // Fixed reaction category only: no title, artist, lyric text or API key leaves the app.
+    // Deduplicate concurrent requests when TTML reconstructs bubbles during seeks.
+    viz.reactionRequests ||= new Map();
+    const key=`${reaction.gif}:${index%3}`;
+    if(!viz.reactionRequests.has(key)) viz.reactionRequests.set(key,reactionGif(reaction.gif,viz.reactionAbort.signal,fetch,index));
+    viz.reactionRequests.get(key).then(item=>{
+      if(!item || viz.reactionAbort.signal.aborted || !bubble.isConnected) return;
+      const img=document.createElement('img'); img.alt=item.alt; img.referrerPolicy='no-referrer';
+      img.onload=()=>{ if(!viz.reactionAbort.signal.aborted) slot.hidden=false; };
+      img.onerror=()=>slot.remove(); img.src=item.url;slot.append(img);
+    }).catch(()=>slot.remove());
+  }
 }

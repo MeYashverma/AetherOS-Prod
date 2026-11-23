@@ -900,6 +900,7 @@ window.extendOS({
                 { id: 'taskmanager',    label: 'Task Manager',            icon: 'list-checks',  category: 'System' },
                 { id: 'focus',          label: 'Focus & Soundscapes',     icon: 'timer',        category: 'System' },
                 { id: 'media',          label: 'Music & Podcasts',        icon: 'radio',        category: 'Media' },
+                { id: 'stickers',       label: 'Stickers & Profiles',     icon: 'smile',        category: 'Media' },
                 { id: 'radiobrowser',   label: 'World Radio',             icon: 'radio-tower',  category: 'Media' },
                 { id: 'winamp',         label: 'Winamp + SomaFM',         icon: 'disc-3',       category: 'Media' },
                 { id: 'photobooth',     label: 'Photo Booth',             icon: 'aperture',     category: 'Media' },

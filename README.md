@@ -339,6 +339,7 @@ Apply via `os.applyTheme(name)` → sets `document.documentElement` variables + 
 
 ### Media
 - **Media Console:** Last.fm (requires `api_lastfm` + `api_lastfm_user`), LRCLib → lyrics.ovh → no-lyrics, Deezer/iTunes fallback, GIF overlay (`#rb-gif-bg` blur 14px), vinyl, tonearm, visualizer (`#rb-visualizer-canvas`)
+- **Stickers & Profiles:** Finder media library and lyric-chat picker for keyless [StickersAPI](https://stickerapi.sbs/docs) stickers, emotes, public Telegram sets, PFPs and banners. Automatic lyric reactions fall back to Discord, Sticker.ly and local media; [details](docs/music-and-verci.md#stickersapi-automatic-media-and-app-wide-library).
 - **Radio Browser:** topvote/trending, station search, play via `<audio>` + visualizer
 - **YouTube Ambient:** Piped search + Invidious mirrors + proxy fallback, `youtubeambient` window
 - **YTCH.TV:** retro TV iframe with mirror handling
@@ -370,7 +371,7 @@ flowchart LR
 **Presence/Social:** Lanyard, Discord CDN, GitHub API, RSS, Reddit, HN  
 **Weather/Geo:** Open-Meteo, Open-Meteo Geocoding, ipwho.is, ipapi.co  
 **Space/Tracking:** Where The ISS At, OpenSky, NASA (APOD/EPIC/Mars), Cesium, Three  
-**Radio/Media/GIFs:** Radio Browser, OtakuGIFs, Nekos, Giphy, Tenor, Klipy, YTCH.TV, Piped, Invidious, Rammerhead  
+**Radio/Media/GIFs:** Radio Browser, StickersAPI, Discord public stickers, Sticker.ly, OtakuGIFs, Nekos, Giphy, Tenor, Klipy, YTCH.TV, Piped, Invidious, Rammerhead<br>
 **Research:** Wikipedia/Wikimedia, MangaDex, Jikan, AniList, Kitsu, Dragon Ball API, Animechan, Quotable  
 **Transport:** AllOrigins, Codetabs, CORS helpers, R.jina.ai, BroadcastChannel, PeerJS, File System Access, Wake Lock, Web Crypto
 
