@@ -169,6 +169,11 @@ export class Messages extends Phone {
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
       <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
       <div class="kbw"><div class="kb">${KB}</div></div>`;
+    this.inner = this.ph.querySelector(".inner"); this.sub = this.ph.querySelector("header small"); this.rows = []; this.typing = null;
+    this.kbw = this.ph.querySelector(".kbw"); this.inp = this.ph.querySelector(".inp"); this.plans = new Map(); this.down = [];
+    this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
+    this.predictionText = ""; this.shown = ""; this.kbo = false;
+    this.clock = this.ph.querySelector(".chat-clock");
   }
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
@@ -197,7 +202,7 @@ export class Messages extends Phone {
     reply.listener={text,...timing,plan:typingPlan(text,index+1701),body,time,state:'pending'};
     reply.dataset.clockKey=`listener:${index}`;
     reply.hidden=true;
-    reply.append(body,time);this.inner.append(reply);return reply;
+    reply.append(body,time);if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(reply); return reply;
   }
   listenerFrame(t) {
     let active=null;
@@ -234,14 +239,14 @@ export class Messages extends Phone {
       const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
       for (const { line, i } of eligible) {
         const el = this.bubble(i, line); if (!el) continue;
-        this.inner.append(el); el.classList.add('in');
+        if(this.inner) this.inner.append(el); el.classList.add('in');
         if(!S.jump&&i===S.idx)el.classList.add('message-arrival');
         const reply=this.appendListener(i,line,el);
         this.rows.unshift({ el, reply, line, spans: [...el.querySelectorAll('.w')] });
       }
       return;
     }
-    const el = this.bubble(S.idx, S.line); this.inner.append(el);
+    const el = this.bubble(S.idx, S.line); if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(el);
     const reply=this.appendListener(S.idx,S.line,el);
     this.rows.unshift({ el, reply, spans: [...el.querySelectorAll('.w')] });
     while (this.rows.length > 9) { const old=this.rows.pop(); old.el.remove(); old.reply?.remove(); }
@@ -288,8 +293,7 @@ export class Messages extends Phone {
     if(predictionText!==this.predictionText){
       this.predictionText=predictionText;
     if(this.ph){const bar=this.ph.querySelector('.kb-suggestions');if(bar)bar.replaceChildren();}
-      if(this.predict && bar){for(const word of this.predict(predictionText)){const item=document.createElement('span');item.textContent=word;bar.append(item);}}
-      if(this.predict && bar){for(const word of this.predict(predictionText)){const item=document.createElement('span');item.textContent=word;bar.append(item);}}
+      if(this.ph && this.predict){const bar=this.ph.querySelector('.kb-suggestions');if(bar)for(const word of this.predict(predictionText)){const item=document.createElement('span');item.textContent=word;bar.append(item);}}
     }
     const shown = typed.length > 90 ? '…' + typed.slice(-88) : typed;
     if (shown !== (this.shown||'') || kb !== (this.kbo||false)) { this.shown = shown; this.kbo = kb; if(this.inp) this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; if(this.ph) this.ph.classList.toggle('hastext', kb && !!shown); }
@@ -301,11 +305,11 @@ export class Messages extends Phone {
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
     const want = !listener && nx && nt && !out && S.t > nx.t - 1.5;
     if (want && !this.typing) {
-      this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
+      this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); if(this.inner) this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
     }
     if (!want && this.typing) { this.typing.remove(); this.typing = null; this.sub.textContent = this.P.group ? this.P.names.join(', ') : 'online'; }
-    this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
+    if(this.inner) this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
   }
 }
 
