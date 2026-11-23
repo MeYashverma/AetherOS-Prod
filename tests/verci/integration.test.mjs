@@ -82,4 +82,17 @@ console.log('UI regressions: isolated app chrome and reserved video slot verifie
 
 const frameCSS = readFileSync('styles/verci-stage.css', 'utf8');
 assert.ok(!/border-radius:(?:50|54)px/.test(frameCSS), 'no capsule-like native phone overrides');
-assert.match(frameCSS, /\.phone\.nd-ios\{[^}]*border-radius:8% \/ 4%/, 'frame corners scale with the device itself');
+assert.match(frameCSS, /\.phone\.nd-ios\{[^}]*border-radius:15% \/ 7%/, 'template corner radius is relative to the phone, never the stage');
+assert.doesNotMatch(frameCSS, /\.phone(?:\.nd-wa|\.nd-ios)?\{[^}]*border-radius:\d+cqw/, 'cqw on the phone itself resolves against the stage and clips the corners');
+assert.match(frameCSS, /\.nd-wa \.sb\{[^}]*height:15\.9cqw/, '62pt status bar');
+assert.match(frameCSS, /header \.nav-actions\{height:11\.3cqw/, '44pt action row');
+assert.match(frameCSS, /header \.nav-title\{height:15\.6cqw/, '61pt title row');
+assert.match(frameCSS, /\.nd-wa footer\{height:15\.9cqw/, '62pt composer');
+assert.match(frameCSS, /\.nd-wa \.phone-home\{height:8\.7cqw/, '34pt home safe area');
+const Messages = STYLES.find(style => style.id === 'native-messages').make;
+const chat = new Messages(document.getElementById('stage'), {song:{title:'Test',artist:'Artist'},lyrics:L}).mount();
+assert.ok(chat.ph.querySelector('header > .nav-actions'), 'navigation actions have their own row');
+assert.ok(chat.ph.querySelector('header > .nav-title .chat-contact'), 'navigation title has its own row');
+assert.equal(chat.ph.querySelector('.phone-home').previousElementSibling, chat.kbw, 'home safe area stays visible when the keyboard is closed');
+assert.ok(chat.ph.querySelector('.phone-home .home-indicator'), 'home indicator is outside the hidden keyboard');
+chat.destroy();
