@@ -35,8 +35,13 @@ export class Viz {
   constructor(root, ctx) { this.ctx = ctx; this.root = root; this.key = -9; this.w = 0; this.h = 0; }
   mount() { this.el = $('div', 'viz ' + (this.cls || '')); this.root.append(this.el); this.init(); return this; }
   frame(S, dt) {
-    const r = this.el.getBoundingClientRect();
-    if (r.width !== this.w || r.height !== this.h) { this.w = r.width; this.h = r.height; this.resize?.(); }
+    // Canvas/scene styles need their stage dimensions. CSS-only views can opt
+    // out: measuring a flex-sized stage after changing chat text forces layout
+    // of the entire retained conversation before the browser can paint.
+    if (this.measureFrameRect !== false) {
+      const r = this.el.getBoundingClientRect();
+      if (r.width !== this.w || r.height !== this.h) { this.w = r.width; this.h = r.height; this.resize?.(); }
+    }
     S.jump = S.idx !== this.key && S.idx !== this.key + 1;
     S.changed = S.idx !== this.key || S.gap !== this.gap;
     if (S.changed) { this.onLine(S); this.key = S.idx; this.gap = S.gap; }

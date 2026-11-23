@@ -29,10 +29,7 @@ export function attachAutomaticSticker(viz,sticker,reaction,options,index,seed,r
    const item=await moodMedia('sticker',reaction.mood,seed+index,reduced);
    if(!active())return;
    if(item&&await renderMediaImage(sticker,item,controller.signal)&&active()){
-    sticker.classList.add('has-stickersapi-image');
-    const credit=document.createElement('small');credit.className='chat-sticker-credit';
-    credit.textContent='StickersAPI';sticker.append(credit);
-    return;
+    sticker.classList.add('has-stickersapi-image');return;
    }
   }
   if(!active())return;

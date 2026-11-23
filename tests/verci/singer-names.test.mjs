@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {resolveSingerNames} from '../../src/vendor/verci/singer-names.js';
 import {planTurns} from '../../src/vendor/verci/viz/native.js';
 import {listenerAnalysis,listenerReplyFor} from '../../src/vendor/verci/viz/listener-replies.js';
+import {reactionHash} from '../../src/vendor/verci/viz/reaction-intelligence.js';
 const lines=Array.from({length:7},(_,i)=>({text:'I miss you',speaker:0,t:i*4,tokens:[]}));
 const lyrics={speakers:['Voice 1','Voice 2'],speakerIds:['v1','v2'],lines};
 assert.deepEqual(resolveSingerNames(lyrics,{artist:'Don Toliver',title:'Lose My Mind (feat. Doja Cat)'}),{names:['Don Toliver','Doja Cat'],inferred:[0,1]});
@@ -66,6 +67,35 @@ const repeatPlan={T:repeated.lines.map(()=>({who:0}))};
 const responses=[2,6,10,14,18,22,26,30].map(i=>listenerReplyFor(repeated,repeatPlan,i,'repeat'));
 assert.equal(new Set(responses).size,8,'same-mood chorus rotates through eight distinct replies');
 assert.ok(responses.some(s=>/^[^a-z]+$/i.test(s)),'emoji-only responses appear in rotation');
+// Compare against the original full scan, including mood changes, alternating
+// singers, different seeds and backwards seeks. Memoization may not change text.
+const referenceReply=(song,turns,index,seed)=>{
+ if(index<2)return null;
+ const who=turns.T[index]?.who;if(who===undefined)return null;
+ let streak=0;for(let i=index;i>=0&&turns.T[i]?.who===who;i--)streak++;
+ if(streak<3||streak%4!==3)return null;
+ const line=song.lines[index],prev=song.lines[index-1];
+ if(!line?.text||!prev||line.t-prev.t>20)return null;
+ const info=listenerAnalysis(song,index);if(!info)return null;
+ let occurrence=0;
+ for(let i=2;i<index;i++)if((index-i)%4===0&&listenerAnalysis(song,i)?.mood===info.mood)occurrence++;
+ return info.pool[(reactionHash(`${seed}:${info.mood}`)+occurrence)%info.pool.length];
+};
+const varied={lines:Array.from({length:88},(_,i)=>({t:i*4,text:[
+ 'I miss you','I love you','dance with me','I feel sad','left me on read',
+ 'I am losing my mind','The sky is blue','I want to hurt myself'
+][i%8]}))};
+for(const turns of [
+ {T:varied.lines.map(()=>({who:0}))},
+ {T:varied.lines.map((_,i)=>({who:Math.floor(i/7)%2}))}
+])for(const seed of ['repeat','another song']){
+ const expected=varied.lines.map((_,i)=>referenceReply(varied,turns,i,seed));
+ for(let i=varied.lines.length-1;i>=0;i--)assert.equal(listenerReplyFor(varied,turns,i,seed),expected[i],`seeking to line ${i}`);
+ for(let i=0;i<varied.lines.length;i++)assert.equal(listenerReplyFor(varied,turns,i,seed),expected[i],`replaying line ${i}`);
+}
+varied.lines=varied.lines.map((line,i)=>({...line,text:i%2?'I am happy':'The sky is blue'}));
+const revisedPlan={T:varied.lines.map(()=>({who:0}))};
+for(let i=0;i<varied.lines.length;i++)assert.equal(listenerReplyFor(varied,revisedPlan,i,'repeat'),referenceReply(varied,revisedPlan,i,'repeat'),`replaced lyrics line ${i}`);
 assert.match(listenerAnalysis({lines:[{text:'I want to hurt myself'}]},0).pool.join(' '),/here|alone/,'serious distress uses supportive pool');
 assert.equal(listenerAnalysis({lines:[{text:'left me on read'}]},0).mood,'ghosting');
 assert.equal(listenerAnalysis({lines:[{text:'I am losing my mind'}]},0).mood,'overthinking');
