@@ -112,3 +112,12 @@ Automatic quoted-lyric reply decorations and their setting have been removed. Ma
 Generic TTML labels now use a complete matching artist-credit list (including a featured artist in the title) when simple `v1`, `v2`, etc. references can be mapped by numeric order. Names are **inferred from credits**, visibly marked as inferred, not verified vocal attribution. Explicit agent names and locally saved overrides take priority. Recognized lyric singer tags can provide a name as well. Ambiguous credit counts and joint references remain unmapped. Participant-name edits invalidate the turn-plan cache, fixing stale Voice labels after an override.
 
 **Fictional listener replies** is enabled by default and can be disabled under Source & connection. During at least three consecutive lines from one participant, sparse deterministic mood/context replies appear on the opposite side. Replies use ordinary chat bubble styling and timestamps without visible labels. The setting and accessible name identify them as generated listener replies; no real singer is assigned these words. They are generated locally from curated responses, never added to the timed lyric tokens, never quoted as song lyrics, and are rebuilt consistently when seeking. No lyric text is sent to an AI service.
+
+
+### Listener pacing and reply style
+
+Singer names no longer carry visible inference badges or chat-header credit notes. Credit matching remains a best-effort convenience, with corrections and attribution caveats in Source & connection.
+
+Listener replies now wait 550ms after the triggering lyric, then spend 0.9–3.4 seconds typing on the playback clock. Outgoing replies use the existing composer, keyboard, key highlights and typing plan; incoming replies show typing dots. Sent replies animate into the thread (reduced motion disables the arrival animation). Pausing freezes progress; seeking reconstructs state without timeout-driven delayed sends. Lyrics retain their original timing.
+
+Local reply selection weighs the current lyric most strongly, with two recent lines as context, negation-aware mood matching, phrase-specific overthinking/ghosting/time-pressure cues, and a serious-distress override. Expanded banks include cheeky, cute, sarcastic, exaggerated and emoji-only messages; repeated same-mood choruses rotate through the bank instead of repeating the same line. This is a deterministic curated engine, not a claim of AI-level understanding or unlimited unique responses. No lyric text is uploaded.

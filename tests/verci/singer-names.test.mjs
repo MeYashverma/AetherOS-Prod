@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {resolveSingerNames} from '../../src/vendor/verci/singer-names.js';
 import {planTurns} from '../../src/vendor/verci/viz/native.js';
-import {listenerReplyFor} from '../../src/vendor/verci/viz/listener-replies.js';
+import {listenerAnalysis,listenerReplyFor} from '../../src/vendor/verci/viz/listener-replies.js';
 const lines=Array.from({length:7},(_,i)=>({text:'I miss you',speaker:0,t:i*4,tokens:[]}));
 const lyrics={speakers:['Voice 1','Voice 2'],speakerIds:['v1','v2'],lines};
 assert.deepEqual(resolveSingerNames(lyrics,{artist:'Don Toliver',title:'Lose My Mind (feat. Doja Cat)'}),{names:['Don Toliver','Doja Cat'],inferred:[0,1]});
@@ -33,6 +33,17 @@ assert.ok(root.querySelector('.chat-fictional-reply.out'),'listener answers on t
 assert.equal(root.querySelector('.chat-fictional-reply small'),null,'no visible generated-reply label');
 assert.ok(!root.querySelector('.chat-fictional-reply').textContent.includes('Fictional listener'));
 assert.ok(root.querySelector('.chat-fictional-reply time'),'same timestamp layout as lyric bubbles');
+const pending=root.querySelector('.chat-fictional-reply');
+assert.equal(pending.hidden,true,'reply is not instantly sent on line arrival');
+const timing=pending.listener;
+viz.tick(frameState(solo,timing.start+.3));
+assert.equal(viz.kbw.classList.contains('open'),true,'outgoing reply raises keyboard');
+assert.equal(pending.hidden,true,'reply stays hidden while composer types');
+viz.tick(frameState(solo,timing.end+.01));
+assert.equal(pending.hidden,false,'send occurs on playback timeline');
+assert.ok(pending.classList.contains('listener-arrival'),'send has arrival animation');
+assert.ok(!root.textContent.includes('inferred'),'no visible inference labels');
+
 assert.equal(solo.lines.length,7,'does not insert invented lyrics into timeline');
 viz.onLine({...frameState(solo,9),jump:true});
 assert.equal(root.querySelectorAll('.chat-fictional-reply').length,1,'seeking does not duplicate replies');
@@ -40,3 +51,21 @@ viz.destroy();
 viz=new Messages(root,{...ctx,opts:{...ctx.opts,listenerReplies:()=>false}}).mount();
 viz.onLine({...frameState(solo,9),jump:true});
 assert.equal(root.querySelector('.chat-fictional-reply'),null,'listener mode can be disabled');viz.destroy();
+
+// Incoming listener replies use typing dots instead of the outgoing keyboard.
+const outgoing=document.createElement('div');outgoing.className='b out';
+viz=new Messages(root,ctx).mount();
+const incoming=viz.appendListener(2,solo.lines[2],outgoing);viz.rows=[{reply:incoming}];
+viz.listenerFrame(incoming.listener.start+.1);
+assert.ok(incoming.classList.contains('typing'));assert.equal(incoming.querySelectorAll('i').length,3);
+viz.listenerFrame(incoming.listener.end+.1);assert.ok(!incoming.classList.contains('typing'));
+viz.destroy();
+
+const repeated={lines:Array.from({length:35},(_,i)=>({text:'I miss you',t:i*4}))};
+const repeatPlan={T:repeated.lines.map(()=>({who:0}))};
+const responses=[2,6,10,14,18,22,26,30].map(i=>listenerReplyFor(repeated,repeatPlan,i,'repeat'));
+assert.equal(new Set(responses).size,8,'same-mood chorus rotates through eight distinct replies');
+assert.ok(responses.some(s=>/^[^a-z]+$/i.test(s)),'emoji-only responses appear in rotation');
+assert.match(listenerAnalysis({lines:[{text:'I want to hurt myself'}]},0).pool.join(' '),/here|alone/,'serious distress uses supportive pool');
+assert.equal(listenerAnalysis({lines:[{text:'left me on read'}]},0).mood,'ghosting');
+assert.equal(listenerAnalysis({lines:[{text:'I am losing my mind'}]},0).mood,'overthinking');

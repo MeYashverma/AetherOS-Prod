@@ -3,7 +3,7 @@ import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
 import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
 import { ChatInteractions } from './chat-interactions.js';
-import { listenerReplyFor } from './listener-replies.js';
+import { listenerReplyFor, listenerTiming } from './listener-replies.js';
 import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
 import { addChatReaction } from './chat-reactions.js?v=gif-media-only-5';
@@ -150,7 +150,7 @@ export class Messages extends Phone {
       const resolved = resolveSingerNames(L,s); L.speakers=resolved.names; L.inferredSpeakers=resolved.inferred;
     }
     const P = planTurns(L, s.artist); this.P = P;
-    const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns') + (L.inferredSpeakers?.length ? ' · names inferred from credits' : '');
+    const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
     this.ph.innerHTML = `<div class="sb"><span>9:41</span><span>●●●</span></div>
       <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(s.artwork)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
@@ -164,7 +164,7 @@ export class Messages extends Phone {
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
     const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
-    const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}${this.ctx.lyrics.inferredSpeakers?.includes(t.who) ? ' · inferred' : ''}</s>` : '';
+    const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
     addChatReaction(this, b, line.text, i);
     addConversation(this, b, line, i);
@@ -176,11 +176,34 @@ export class Messages extends Phone {
     if(this.ctx.opts?.listenerReplies?.()===false)return null;
     const text=listenerReplyFor(this.ctx.lyrics,this.P,index,this.ctx.song.title);
     if(!text)return null;
-    const reply=document.createElement('div');reply.className=`b chat-fictional-reply ${el.classList.contains('out')?'listener-left':'out'} in`;
+    const reply=document.createElement('div');reply.className=`b chat-fictional-reply ${el.classList.contains('out')?'listener-left':'out'}`;
     reply.setAttribute('aria-label','Generated listener reply');
     const body=document.createElement('p');body.textContent=text;
     const time=document.createElement('time');time.textContent=Math.floor(line.t/60)+':'+String(Math.floor(line.t%60)).padStart(2,'0');
+    const timing=listenerTiming(line,text);
+    reply.listener={text,...timing,plan:typingPlan(text,index+1701),body,time,state:'pending'};
+    time.textContent=Math.floor(timing.end/60)+':'+String(Math.floor(timing.end%60)).padStart(2,'0');
+    reply.hidden=true;
     reply.append(body,time);this.inner.append(reply);return reply;
+  }
+  listenerFrame(t) {
+    let active=null;
+    for(const row of this.rows){
+      const el=row.reply,data=el?.listener;if(!data)continue;
+      const state=t<data.start?'pending':t<data.end?'typing':'sent';
+      if(state!==data.state){
+        const old=data.state;data.state=state;
+        el.classList.remove('typing','listener-arrival');
+        if(state==='typing'&&!el.classList.contains('out')){
+          el.replaceChildren(...Array.from({length:3},()=>document.createElement('i')));el.classList.add('typing','in');el.hidden=false;
+        }else if(state==='sent'){
+          el.replaceChildren(data.body,data.time);el.hidden=false;el.classList.add('in');
+          if(old==='typing')el.classList.add('listener-arrival');
+        }else {el.hidden=true;el.classList.remove('in');}
+      }
+      if(state==='typing')active={el,data};
+    }
+    return active;
   }
   destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
@@ -211,6 +234,7 @@ export class Messages extends Phone {
   }
   tick(S) {
     cleanupStickerJobs(this);
+    const listener=this.listenerFrame(S.t);
     const r = this.rows[0]; if (!r || !S.line) return;
     if (this.ctx.lyrics.format === 'TTML') {
       for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
@@ -227,6 +251,10 @@ export class Messages extends Phone {
         ({ str: typed, last } = typedAt(pl, p)); this.dur = d; this.ev = last && last.u * d;
       }
     }
+    if(listener?.el.classList.contains('out')){
+      const data=listener.data;kb=true;p=clamp((S.t-data.start)/(data.end-data.start));
+      ({str:typed,last}=typedAt(data.plan,p));this.dur=data.end-data.start;this.ev=last&&last.u*this.dur;
+    }
     this.kbw.classList.toggle('open', kb); this.ph.classList.toggle('kbopen', kb);
     const shown = typed.length > 90 ? '…' + typed.slice(-88) : typed;
     if (shown !== this.shown || kb !== this.kbo) { this.shown = shown; this.kbo = kb; this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; this.ph.classList.toggle('hastext', kb && !!shown); }
@@ -236,7 +264,7 @@ export class Messages extends Phone {
       if (last.t === 'b') hit('back'); else { const c = last.ch.toLowerCase(); if (last.shift) hit('shift'); hit(c === ' ' ? 'space' : /[a-z]/.test(c) ? c : 'sym'); }
     }
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
-    const want = nx && nt && !out && S.t > nx.t - 1.5;
+    const want = !listener && nx && nt && !out && S.t > nx.t - 1.5;
     if (want && !this.typing) {
       this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
