@@ -60,13 +60,9 @@ assert.deepEqual([a.slug,b.slug],['fun-happy','fun-happy-gif']);
 assert.equal((await moodMedia('sticker','joy',1,true,moodFetch)).slug,'fun-happy','reduced motion excludes GIFs');
 assert.equal(moodCalls,1,'concurrent/successive moods share cached requests');
 assert.equal(await moodMedia('sticker','not/valid',0,false,moodFetch),null);
-let positiveMoodURL;
-const positiveEmote=await moodMedia('emote','love',0,false,async url=>{
-  positiveMoodURL=url;
-  return {ok:true,json:async()=>({items:[{source:'7tv',id:'01GAZ199Z8000FEWHS6AT5QZV0',name:'peepoHappy',type:'webp',animated:false}]})};
-});
-assert.equal(positiveEmote?.name,'peepoHappy');
-assert.match(positiveMoodURL,/\/emotes\?source=all&limit=24&q=happy$/, 'a broad positive mood can show a real emote even without a love-named item');
+assert.equal(await moodMedia('emote','love',0,false,async()=>{
+  throw Error('automatic mood matching must never request emotes');
+}),null, 'only manual listMedia searches the emote catalogue');
 
 const dom=new JSDOM('<div id="slot"></div>');globalThis.document=dom.window.document;
 const slot=document.getElementById('slot');

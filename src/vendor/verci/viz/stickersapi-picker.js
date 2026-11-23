@@ -1,4 +1,4 @@
-import { listMedia, mediaURL } from '../providers/stickersapi.js';
+import { listMedia, mediaURL } from '../providers/stickersapi.js?v=stickersapi-31';
 
 const CATEGORIES = {
   stickers: 'Stickers', emotes: 'Emotes', telegram: 'Telegram sets',

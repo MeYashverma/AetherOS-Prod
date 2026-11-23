@@ -2,8 +2,8 @@
 // inside its own bubbles; other styles get a small, non-interactive stage badge.
 // Only nearby, on-device mood cues are searched. Preview images are warmed in a
 // sliding window, never downloaded for the whole song or stored in app settings.
-import { automaticMediaAllowed } from '../providers/automatic-stickers.js';
-import { mediaURL, moodMedia, renderMediaImage } from '../providers/stickersapi.js';
+import { automaticMediaAllowed } from '../providers/automatic-stickers.js?v=stickersapi-31';
+import { mediaURL, moodMedia, renderMediaImage } from '../providers/stickersapi.js?v=stickersapi-31';
 import { buildReactionPlan, reactionHash } from './reaction-intelligence.js';
 
 const AHEAD = 3; // current cue and the next two, not every cue in the song
@@ -27,20 +27,15 @@ export class LyricMedia {
     this.reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.density = opts.density?.() || 'balanced';
     const stickers = !this.chat || opts.stickers?.() !== false;
-    const emotes = !this.chat || opts.gifs?.() !== false;
     this.plan = buildReactionPlan(lyrics, title, this.density, {
-      stickers, gifs: this.chat && emotes && !this.reduced
+      stickers, gifs: this.chat && opts.gifs?.() !== false && !this.reduced
     });
     const chatSource = opts.stickerSource?.() || 'auto';
     this.cues = this.plan.flatMap((reaction, index) => {
-      if (!reaction?.sticker && !reaction?.gif) return [];
-      if (this.chat && !['auto', 'stickerapi'].includes(chatSource)) return [];
-      const mood = reaction.sticker?.mood || reaction.mood;
-      const targets = [];
-      if (reaction.sticker && stickers) targets.push({ kind: 'sticker', mood, seed: reactionHash(title) + index });
-      // Emotes accompany stickers, rather than waiting for a rare GIF-only slot.
-      if (emotes && (reaction.sticker || reaction.gif)) targets.push({ kind: 'emote', mood, seed: reactionHash(`${title}:${index}`) });
-      return targets.length ? [{ index, emoji: reaction.sticker?.emoji, targets }] : [];
+      if (!reaction?.sticker || (this.chat && !['auto', 'stickerapi'].includes(chatSource))) return [];
+      return [{ index, emoji: reaction.sticker.emoji, targets: [{
+        kind: 'sticker', mood: reaction.sticker.mood, seed: reactionHash(title) + index
+      }] }];
     });
     this.cueByIndex = new Map(this.cues.map(cue => [cue.index, cue]));
     if (!this.chat) {
@@ -75,21 +70,13 @@ export class LyricMedia {
     fallback.className = 'lyric-api-fallback';
     fallback.textContent = cue.emoji || '✦';
     sticker.append(fallback);
-    const emote = document.createElement('span');
-    emote.className = 'lyric-api-emote';
-    emote.hidden = true;
-    this.overlay.append(sticker, emote);
-    for (const target of cue.targets) {
-      const slot = target.kind === 'sticker' ? sticker : emote;
-      moodMedia(target.kind, target.mood, target.seed, this.reduced).then(async item => {
-        if (!item || controller.signal.aborted || !slot.isConnected) return;
-        const loaded = await renderMediaImage(slot, item, controller.signal, 'lyric-api-image');
-        if (loaded && !controller.signal.aborted && slot.isConnected) {
-          slot.hidden = false;
-          if (target.kind === 'sticker') fallback.hidden = true;
-        }
-      }).catch(() => {}); // The local glyph remains when the API/image fails.
-    }
+    this.overlay.append(sticker);
+    const target = cue.targets[0];
+    moodMedia('sticker', target.mood, target.seed, this.reduced).then(async item => {
+      if (!item || controller.signal.aborted || !sticker.isConnected) return;
+      const loaded = await renderMediaImage(sticker, item, controller.signal, 'lyric-api-image');
+      if (loaded && !controller.signal.aborted && sticker.isConnected) fallback.hidden = true;
+    }).catch(() => {}); // The local glyph remains when the API/image fails.
   }
 
   warm(index) {

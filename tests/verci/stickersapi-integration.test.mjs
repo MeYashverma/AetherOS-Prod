@@ -23,6 +23,7 @@ const { openLibraryPicker, setChatProfile, renderLibrary }=await import('../../s
 const { STICKERS_API }=await import('../../src/vendor/verci/providers/stickersapi.js');
 const lyrics=parseLRC('[00:00]I love you\n[00:03]You sing too\n[00:06](Ah) And you know I love you');
 const opts={listenerReplies:()=>false,emojis:()=>false,gifs:()=>false,stickers:()=>false,textReactions:()=>false,
+  lyricMediaEnabled:()=>false, // Manual picker and selected emotes work even with automatic StickersAPI lyrics off.
   avatar:()=>window.SystemState.settings.chat_media_avatar,banner:()=>window.SystemState.settings.chat_media_banner};
 const context=L=>({song:{title:'A song',artist:'Singer',artwork:'https://aether.test/art.png'},lyrics:L,opts,duration:()=>60});
 let viz=new Messages(document.getElementById('stage'),context(lyrics)).mount();
@@ -124,6 +125,11 @@ viz.destroy();
 const other=parseLRC('[00:00]A different song');
 viz=new Messages(document.getElementById('stage'),context(other)).mount();viz.frame(frameState(other,0.2),.016);
 assert.equal(viz.inner.querySelectorAll('.chat-local-media').length,0,'another song never inherits selected media');
+assert.equal(viz.chatInteractions.addMedia(0,{kind:'emote',source:'7tv',id:'01GAZ199Z8000FEWHS6AT5QZV0',name:'peepoHappy'}),true);
+assert.equal(viz.inner.querySelector('.chat-local-media img').src,`${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`,'manually selected emotes still render in chat');
+viz.frame(frameState(other,-1),.016);
+viz.frame(frameState(other,0.2),.016);
+assert.equal(viz.inner.querySelector('.chat-local-media img').src,`${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`,'manual emotes survive seeking');
 viz.destroy();
 assert.ok(searches>=2);
 
@@ -163,8 +169,8 @@ image.onerror();
 assert.ok(sticker.querySelector('strong').textContent==='Local','failed remote images keep the built-in sticker');
 sticker.remove();
 
-// A GIF slot must still use the older service in explicit source modes even
-// though the bubble has not been inserted into the DOM when addChatReaction runs.
+// GIF slots use the existing GIF providers in every source mode, never
+// StickersAPI emotes. The bubble is not yet in the DOM when the fetch starts.
 const { addChatReaction }=await import('../../src/vendor/verci/viz/chat-reactions.js');
 const reaction=(mood,gif,source,index)=>{
   const bubble=document.createElement('div');bubble.innerHTML='<p>Lyric stays untouched</p>';
@@ -179,31 +185,31 @@ urls=[];
 globalThis.fetch=async(url)=>{
   urls.push(url);
   if(url.includes('nekos.best'))return {ok:true,json:async()=>({results:[{url:'https://nekos.best/img/joy.gif'}]})};
-  if(url.includes('/emotes?'))return {ok:true,json:async()=>({items:[{source:'bttv',id:'abcdef',name:'peepoHappy',type:'png',animated:false}]})};
   throw Error('Unexpected GIF request '+url);
 };
 let example=reaction('joy','smile','discord',0);await flush();
-assert.ok(urls.some(url=>url.includes('nekos.best')),'explicit Discord mode keeps the previous GIF provider');
+assert.deepEqual(urls,['https://nekos.best/api/v2/smile'],'explicit Discord mode keeps the previous GIF provider');
 let gif=example.bubble.querySelector('.chat-gif img');assert.ok(gif);gif.onload();
 assert.equal(example.bubble.querySelector('.chat-gif').hidden,false);
 example.bubble.remove();example.viz.reactionAbort.abort();
 
 urls=[];example=reaction('joy','smile','auto',1);await flush();
-assert.ok(urls.some(url=>url.includes('/emotes?')),'automatic GIF slots first request StickersAPI emotes');
-assert.ok(!urls.some(url=>url.includes('nekos.best')),'a matching StickersAPI emote avoids the old GIF service');
-gif=example.bubble.querySelector('.chat-stickersapi-image');assert.equal(gif.src,`${STICKERS_API}/emote/bttv/abcdef/preview`);
+assert.deepEqual(urls,['https://nekos.best/api/v2/smile'],'automatic GIF slots no longer request StickersAPI emotes');
+assert.equal(example.bubble.querySelector('.chat-stickersapi-image'),null);
+gif=example.bubble.querySelector('.chat-gif img');assert.equal(gif.src,'https://nekos.best/img/joy.gif');
 gif.onload();await flush();assert.equal(example.bubble.querySelector('.chat-gif').hidden,false);
-example.bubble.remove();
+example.bubble.remove();example.viz.reactionAbort.abort();
 
 urls=[];
 globalThis.fetch=async(url)=>{
   urls.push(url);
-  if(url.includes('/emotes?'))return {ok:true,json:async()=>({items:[]})};
-  if(url.includes('nekos.best'))return {ok:true,json:async()=>({results:[{url:'https://nekos.best/img/cry.gif'}]})};
+  if(url.includes('nekos.best'))return {ok:false,status:503};
+  if(url.includes('api.waifu.pics/sfw/cry'))return {ok:true,json:async()=>({url:'https://i.waifu.pics/cry.gif'})};
   throw Error('Unexpected GIF request '+url);
 };
 example=reaction('sad','cry','auto',2);await flush();
-assert.ok(urls.some(url=>url.includes('/emotes?')) && urls.some(url=>url.includes('nekos.best')),'empty emotes fall back to legacy GIFs');
-assert.equal(example.bubble.querySelector('.chat-gif img').src,'https://nekos.best/img/cry.gif');
+assert.deepEqual(urls,['https://nekos.best/api/v2/cry','https://api.waifu.pics/sfw/cry'],'GIF provider fallback works without an emote search');
+gif=example.bubble.querySelector('.chat-gif img');assert.equal(gif.src,'https://i.waifu.pics/cry.gif');
+gif.onload();assert.equal(example.bubble.querySelector('.chat-gif').hidden,false);
 example.bubble.remove();example.viz.reactionAbort.abort();
-console.log('Finder, chat media, profiles, seeks, privacy and both provider fallback chains verified.');
+console.log('Finder, manual emotes, chat media, seeks, privacy, stickers and GIF fallbacks verified.');

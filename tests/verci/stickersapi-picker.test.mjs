@@ -68,6 +68,13 @@ p=openMediaPicker({types:['stickers','emotes','telegram'],initialType:'telegram'
 assert.equal(p.dialog.querySelectorAll('[role=tab]').length,3);
 p.dialog.querySelector('.aether-media-item').click();
 assert.equal(selected.kind,'telegram');assert.equal(document.querySelector('[role=dialog]'),null,'chat picker closes after a choice');
+selected=undefined;
+p=openMediaPicker({types:['stickers','emotes','telegram'],initialType:'emotes',fetchImpl:fake,onSelect:item=>{selected=item;}});await flush();
+assert.equal(p.dialog.querySelector('.aether-media-item img').src,`${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`);
+p.dialog.querySelector('.aether-media-item').click();
+assert.equal(selected.kind,'emote','manual emote selection still works');
+assert.equal(selected.id,'01GAZ199Z8000FEWHS6AT5QZV0');
+assert.equal(document.querySelector('[role=dialog]'),null);
 let avatar,banner;
 p=openMediaPicker({initialType:'pfps',fetchImpl:fake,onAvatar:item=>{avatar=item;},onBanner:item=>{banner=item;}});await flush();
 p.dialog.querySelector('.aether-media-item').click();p.dialog.querySelector('.aether-media-use').click();

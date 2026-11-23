@@ -64,7 +64,12 @@ await flush(); // jsdom's queued window load event triggers one last adapter ren
 const stickerButton = document.getElementById('music-stickersapi-test');
 const stickerStatus = document.getElementById('music-stickersapi-status');
 assert.match(document.getElementById('music-chat-stickers').parentElement.textContent,/Sticker reactions in chat/);
+assert.match(document.getElementById('music-chat-gifs').parentElement.textContent,/Contextual GIF reactions/);
+assert.doesNotMatch(document.getElementById('music-chat-gifs').parentElement.textContent,/emotes/i, 'GIF switch does not promise automatic emotes');
 assert.equal(document.getElementById('music-lyric-media').checked, true, 'the all-style lyric switch is visible and on by default');
+assert.match(document.getElementById('music-lyric-media').parentElement.title,/automatic StickersAPI stickers/);
+assert.doesNotMatch(document.getElementById('music-lyric-media').parentElement.title,/emotes/i);
+assert.match(document.querySelector('.music-stickerly-library p').textContent,/No emotes are added automatically/);
 globalThis.fetch = async url => {
  assert.match(url, /stickerapi\.sbs\/api\/(?:search\?q=happy|emotes\?source=all&limit=24&q=happy)/);
  return {ok:true,json:async()=>({items:url.includes('/emotes?')

@@ -1,6 +1,6 @@
 import { createPredictor, predictionBar } from './chat-predictions.js';
 import { messageTime } from './chat-clock.js';
-import { cleanMedia } from '../providers/stickersapi.js';
+import { cleanMedia } from '../providers/stickersapi.js?v=stickersapi-31';
 import { openMediaPicker } from './stickersapi-picker.js';
 // Per-song, in-memory chat state. Replies and selected media are local, never singer dialogue.
 const sessions=new WeakMap();

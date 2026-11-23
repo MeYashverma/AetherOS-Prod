@@ -1,6 +1,6 @@
 import { discordCatalogue, pickDiscordSticker, renderDiscordSticker } from './discord-stickers.js';
 import { attachStickerly } from './stickerly.js';
-import { moodMedia, renderMediaImage } from './stickersapi.js';
+import { moodMedia, renderMediaImage } from './stickersapi.js?v=stickersapi-31';
 
 export function automaticMediaAllowed() {
  const connection=globalThis.navigator?.connection;
@@ -40,17 +40,4 @@ export function attachAutomaticSticker(viz,sticker,reaction,options,index,seed,r
   try{if(await discord())return;}catch{} // Network/CORS/content failure; preserve the local tile.
   if(active())fallback();
  })().catch(()=>{if(active())fallback();}).finally(()=>viz.stickerJobs?.delete(job));
-}
-
-// A separate, smaller emote beside a sticker. A missing emote never replaces
-// the sticker or its local emoji fallback, and teardown/seek aborts the preview.
-export function attachAutomaticEmote(viz,sticker,mood,seed,reduced){
- const slot=document.createElement('span');slot.className='chat-emote';slot.hidden=true;sticker.append(slot);
- const controller=new AbortController(),job={element:slot,controller};
- viz.stickerJobs ||= new Set();viz.stickerJobs.add(job);
- moodMedia('emote',mood,seed,reduced).then(async item=>{
-  if(!item||controller.signal.aborted||!slot.isConnected)return;
-  const loaded=await renderMediaImage(slot,item,controller.signal,'chat-stickersapi-emote-image');
-  if(loaded&&!controller.signal.aborted&&slot.isConnected)slot.hidden=false;
- }).catch(()=>{}).finally(()=>viz.stickerJobs?.delete(job));
 }
