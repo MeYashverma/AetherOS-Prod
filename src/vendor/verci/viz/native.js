@@ -1,3 +1,5 @@
+import { createPredictor } from './chat-predictions.js';
+import { localChatTime, messageTime } from './chat-clock.js';
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
@@ -13,21 +15,25 @@ import { Phone } from './phone.js';
 export class Notifications extends Phone {
   pcls = 'nd-ios';
   build() {
-    const s = this.ctx.song;
-    this.ph.innerHTML = `<div class="wall"></div><div class="shade"></div>
-      <div class="island"></div>
-      <div class="sbar"><span>Verci</span><span class="rt"><svg viewBox="0 0 20 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 28 12"><rect x=".5" y=".5" width="24" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="19" height="8" rx="2.2"/><rect x="26" y="4" width="1.8" height="4" rx=".9" opacity=".5"/></svg></span></div>
-      <div class="lock"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg></div>
-      <div class="date"></div><div class="clock"></div>
-      <div class="nstack"></div>
-      <div class="player"><img alt="" src="${esc(s.artwork)}"><div class="pm"><b>${esc(s.title)}</b><span>${esc(s.artist)}</span></div><i class="bar"><u></u></i>
-        <div class="pc"><svg viewBox="0 0 24 24"><path d="M6 6v12M18 6l-9 6 9 6z"/></svg><svg viewBox="0 0 24 24" class="pp"><path d="M8 5v14M16 5v14"/></svg><svg viewBox="0 0 24 24"><path d="M18 6v12M6 6l9 6-9 6z"/></svg></div></div>
-      <div class="fl"><svg viewBox="0 0 24 24"><path d="M8 3h8l-1 6 2 3v9H7v-9l2-3z"/></svg></div>
-      <div class="cam"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg></div>
-      <div class="home"></div>`;
-    this.ph.querySelector('.wall').style.backgroundImage = this.art();
-    this.stack = this.ph.querySelector('.nstack'); this.cards = []; this.bar = this.ph.querySelector('.bar u');
-    this.clock = this.ph.querySelector('.clock'); this.date = this.ph.querySelector('.date');
+    const s = this.ctx.song, L = this.ctx.lyrics;
+    if (L.format === 'TTML' && !L.originalSpeakers) {
+      L.originalSpeakers = [...(L.speakers || [])];
+      const resolved = resolveSingerNames(L,s); L.speakers=resolved.names; L.inferredSpeakers=resolved.inferred;
+    }
+    this.predict=createPredictor(L.lines);
+    const P = planTurns(L, s.artist); this.P = P;
+    const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
+    const art=s.artwork||'';
+    this.ph.innerHTML = `<div class="sb"><span class="chat-clock">${localChatTime()}</span><span class="ios-status" aria-hidden="true"><svg viewBox="0 0 48 16"><path d="M1 13V10h3v3zm5 0V7h3v6zm5 0V4h3v9zm5 0V1h3v12z" fill="currentColor"/><path d="M24 5q7-6 14 0m-11 3q4-4 8 0m-5 3h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><i></i></span></div>
+      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(art)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
+      <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
+      <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
+      <div class="kbw"><div class="kb">${KB}</div></div>`;
+    this.inner = this.ph.querySelector('.inner'); this.sub = this.ph.querySelector('header small'); this.rows = []; this.typing = null;
+    this.kbw = this.ph.querySelector('.kbw'); this.inp = this.ph.querySelector('.inp'); this.plans = new Map(); this.down = [];
+    this.keys = {}; this.ph.querySelectorAll('[data-k]').forEach(e => this.keys[e.dataset.k] = e);
+    this.predictionText='';
   }
   card(line) {
     const c = $('div', 'n', `<i class="ico"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg></i>
@@ -36,22 +42,22 @@ export class Notifications extends Phone {
   }
   onLine(S) {
     if (!S.line || S.gap) return;
-    if (S.jump) { this.stack.innerHTML = ''; this.cards = []; }
+    if (S.jump) { if(this.stack) this.stack.innerHTML = ''; this.cards = []; }
     if (this.cards[0]) this.full(this.cards[0].el);
-    const el = this.card(S.line); this.stack.prepend(el);
+    const el = this.card(S.line); if(this.stack) this.stack.prepend(el);
     this.cards.unshift({ el, spans: [...el.querySelectorAll('.w')] });
     this.cards.slice(4).forEach(c => c.el.remove()); this.cards.length = Math.min(4, this.cards.length);
-    this.cards.forEach((c, i) => c.el.style.setProperty('--a', i));
-    requestAnimationFrame(() => { el.classList.add('in'); this.stack.style.setProperty('--h', el.offsetHeight + 'px'); });
+    if(this.cards) this.cards.forEach((c, i) => { if(c.el) c.el.style.setProperty('--a', i); });
+    requestAnimationFrame(() => { if(el) el.classList.add('in'); if(this.stack) this.stack.style.setProperty('--h', (el?.offsetHeight||0) + 'px'); });
   }
   tick(S) {
     if (this.cards[0] && S.line) light(this.cards[0].spans, S.gap ? 99 : S.pos);
     const d = new Date(), k = Math.floor(d.getTime() / 1000);
     if (k !== this.k) {
       this.k = k;
-      this.clock.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: false }).replace(/^0/, '');
-      this.date.textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
-      const dur = this.ctx.duration(); this.bar.style.width = (dur ? clamp(S.t / dur) * 100 : 0) + '%';
+      if(this.clock) this.clock.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: false }).replace(/^0/, '');
+      if(this.date) this.date.textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+      const dur = this.ctx.duration(); if(this.bar && this.bar.style) this.bar.style.width = (dur ? clamp(S.t / dur) * 100 : 0) + '%';
     }
   }
 }
@@ -77,7 +83,7 @@ export class Money extends Phone {
     const el = this.row(S.idx, S.line); this.feed.prepend(el);
     this.rows.unshift({ el, spans: [...el.querySelectorAll('.w')], idx: S.idx });
     this.rows.slice(9).forEach(r => r.el.remove()); this.rows.length = Math.min(9, this.rows.length);
-    requestAnimationFrame(() => el.classList.add('in'));
+    requestAnimationFrame(() => { el.classList.add('in');if(!S.jump)el.classList.add('message-arrival'); });
   }
   tick(S) {
     cleanupStickerJobs(this);
@@ -95,9 +101,9 @@ export class Money extends Phone {
 /* Chat: a WhatsApp-style thread (with Instagram-round bubbles and Discord-style names in groups).
    Who talks follows the lyrics: real singer tags when the file has them, otherwise turns of one to four
    lines (short and long) that sometimes stay with one person and sometimes alternate. */
-const KB = ['qwertyuiop', 'asdfghjkl'].map((r, i) => `<div class="kr${i ? ' r2' : ''}">${[...r].map(c => `<i data-k="${c}">${c}</i>`).join('')}</div>`).join('')
+const KB = '<div class="kb-suggestions"><span>I</span><span>yeah</span><span>I’m</span></div>' + ['qwertyuiop', 'asdfghjkl'].map((r, i) => `<div class="kr${i ? ' r2' : ''}">${[...r].map(c => `<i data-k="${c}">${c}</i>`).join('')}</div>`).join('')
   + `<div class="kr"><i class="sp" data-k="shift">⇧</i>${[...'zxcvbnm'].map(c => `<i data-k="${c}">${c}</i>`).join('')}<i class="sp" data-k="back">⌫</i></div>`
-  + `<div class="kr"><i class="sp w2" data-k="sym">123</i><i class="sp" data-k="emo">☺</i><i class="space" data-k="space">space</i><i class="sp w2 go" data-k="go">send</i></div>`;
+  + `<div class="kr"><i class="sp w2" data-k="sym">123</i><i class="space" data-k="space">space</i><i class="sp w2 go" data-k="go">return</i></div><div class="kb-bottom"><span>☻</span><span>♩</span></div><div class="home-indicator"></div>`;
 const NAME_COL = ['#53bdeb', '#e9a23b', '#ff7eb6', '#7fd67a', '#c39bff', '#ff8a65'];
 export function planTurns(L, artist) {
   const key=JSON.stringify([L.speakers,artist]);
@@ -143,29 +149,41 @@ export function typedAt(ev, p) { // text so far and the last key event at progre
 
 export class Messages extends Phone {
   pcls = 'nd-wa';
+  constructor(ph, ctx) {
+    super(ph, ctx);
+    this.inner = null;
+  }
   build() {
     const s = this.ctx.song, L = this.ctx.lyrics;
     if (L.format === 'TTML' && !L.originalSpeakers) {
       L.originalSpeakers = [...(L.speakers || [])];
       const resolved = resolveSingerNames(L,s); L.speakers=resolved.names; L.inferredSpeakers=resolved.inferred;
     }
+    this.predict=createPredictor(L.lines);
     const P = planTurns(L, s.artist); this.P = P;
     const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
-    this.ph.innerHTML = `<div class="sb"><span>9:41</span><span>●●●</span></div>
-      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(s.artwork)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
+    const art=s.artwork||'';
+    this.ph.innerHTML = `<div class="sb"><span class="chat-clock">${localChatTime()}</span><span class="ios-status" aria-hidden="true"><svg viewBox="0 0 48 16"><path d="M1 13V10h3v3zm5 0V7h3v6zm5 0V4h3v9zm5 0V1h3v12z" fill="currentColor"/><path d="M24 5q7-6 14 0m-11 3q4-4 8 0m-5 3h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><i></i></span></div>
+      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(art)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
-      <footer><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14c1 1.7 2 2.3 3.5 2.3s2.5-.6 3.5-2.3M9 10v.01M15 10v.01"/></svg><span class="inp"><em>Message</em></span><svg class="mic" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
+      <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
       <div class="kbw"><div class="kb">${KB}</div></div>`;
-    this.inner = this.ph.querySelector('.inner'); this.sub = this.ph.querySelector('header small'); this.rows = []; this.typing = null;
-    this.kbw = this.ph.querySelector('.kbw'); this.inp = this.ph.querySelector('.inp'); this.plans = new Map(); this.down = [];
-    this.keys = {}; this.ph.querySelectorAll('[data-k]').forEach(e => this.keys[e.dataset.k] = e);
+    this.inner = this.ph.querySelector(".inner"); this.sub = this.ph.querySelector("header small"); this.rows = []; this.typing = null;
+    this.kbw = this.ph.querySelector(".kbw"); this.inp = this.ph.querySelector(".inp"); this.plans = new Map(); this.down = [];
+    this.keys = {}; this.ph.querySelectorAll("[data-k]").forEach(e => this.keys[e.dataset.k] = e);
+    this.predictionText = ""; this.shown = ""; this.kbo = false;
+    this.clock = this.ph.querySelector(".chat-clock");
   }
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
-    const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
+    const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = messageTime(this.ctx.lyrics,`lyric:${i}`);
     const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
+    
+    // Ensure this.inner exists for tests that call bubble() before build()
+    if (!this.inner) this.inner = this.ph.querySelector('.inner');
+    
     addChatReaction(this, b, line.text, i);
     addConversation(this, b, line, i);
     this.chatInteractions ||= new ChatInteractions(this);
@@ -179,12 +197,12 @@ export class Messages extends Phone {
     const reply=document.createElement('div');reply.className=`b chat-fictional-reply ${el.classList.contains('out')?'listener-left':'out'}`;
     reply.setAttribute('aria-label','Generated listener reply');
     const body=document.createElement('p');body.textContent=text;
-    const time=document.createElement('time');time.textContent=Math.floor(line.t/60)+':'+String(Math.floor(line.t%60)).padStart(2,'0');
+    const time=document.createElement('time');
     const timing=listenerTiming(line,text);
     reply.listener={text,...timing,plan:typingPlan(text,index+1701),body,time,state:'pending'};
-    time.textContent=Math.floor(timing.end/60)+':'+String(Math.floor(timing.end%60)).padStart(2,'0');
+    reply.dataset.clockKey=`listener:${index}`;
     reply.hidden=true;
-    reply.append(body,time);this.inner.append(reply);return reply;
+    reply.append(body,time);if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(reply); return reply;
   }
   listenerFrame(t) {
     let active=null;
@@ -197,6 +215,7 @@ export class Messages extends Phone {
         if(state==='typing'&&!el.classList.contains('out')){
           el.replaceChildren(...Array.from({length:3},()=>document.createElement('i')));el.classList.add('typing','in');el.hidden=false;
         }else if(state==='sent'){
+          data.time.textContent=messageTime(this.ctx.lyrics,el.dataset.clockKey);
           el.replaceChildren(data.body,data.time);el.hidden=false;el.classList.add('in');
           if(old==='typing')el.classList.add('listener-arrival');
         }else {el.hidden=true;el.classList.remove('in');}
@@ -209,31 +228,45 @@ export class Messages extends Phone {
   onLine(S) {
     if (!S.line || S.gap) return;
     const t = this.P.T[S.idx]; if (!t) return;
-    if (S.jump) { this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = []; this.typing = null; }
+    if (S.jump) { if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = []; this.typing = null; }
     this.sendFlash = S.t;
     if (this.rows[0]) this.full(this.rows[0].el);
     this.typing?.remove(); this.typing = null;
     // TTML can have simultaneous agents. Rebuild a small deterministic window on
     // each line change so equal-start duet lines and backward seeks aren't lost.
     if (this.ctx.lyrics.format === 'TTML') {
-      this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = [];
+      if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove());
       const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
       for (const { line, i } of eligible) {
         const el = this.bubble(i, line); if (!el) continue;
-        this.inner.append(el); el.classList.add('in');
+        if(this.inner) this.inner.append(el); el.classList.add('in');
+        if(!S.jump&&i===S.idx)el.classList.add('message-arrival');
         const reply=this.appendListener(i,line,el);
         this.rows.unshift({ el, reply, line, spans: [...el.querySelectorAll('.w')] });
       }
       return;
     }
-    const el = this.bubble(S.idx, S.line); this.inner.append(el);
+    const el = this.bubble(S.idx, S.line); if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(el);
     const reply=this.appendListener(S.idx,S.line,el);
     this.rows.unshift({ el, reply, spans: [...el.querySelectorAll('.w')] });
     while (this.rows.length > 9) { const old=this.rows.pop(); old.el.remove(); old.reply?.remove(); }
-    requestAnimationFrame(() => el.classList.add('in'));
+    requestAnimationFrame(() => { el.classList.add('in');if(!S.jump)el.classList.add('message-arrival'); });
   }
   tick(S) {
+    if (!this.down) this.down = [];
+    if (!this.kbw) this.kbw = this.ph?.querySelector('.kbw');
+    if (!this.inp) this.inp = this.ph?.querySelector('.inp');
+    if (!this.predictionText) this.predictionText = '';
+    if (!this.shown) this.shown = '';
+    if (!this.kbo) this.kbo = false;
+    if (!this.plans) this.plans = new Map();
+    if (!this.kbw) this.kbw = this.ph?.querySelector('.kbw');
+    if (!this.inp) this.inp = this.ph?.querySelector('.inp');
+    if (!this.predictionText) this.predictionText = '';
+    if (!this.shown) this.shown = '';
+    if (!this.kbo) this.kbo = false;
     cleanupStickerJobs(this);
+    const clock=this.ph.querySelector('.chat-clock');if(clock)clock.textContent=localChatTime();
     const listener=this.listenerFrame(S.t);
     const r = this.rows[0]; if (!r || !S.line) return;
     if (this.ctx.lyrics.format === 'TTML') {
@@ -255,22 +288,28 @@ export class Messages extends Phone {
       const data=listener.data;kb=true;p=clamp((S.t-data.start)/(data.end-data.start));
       ({str:typed,last}=typedAt(data.plan,p));this.dur=data.end-data.start;this.ev=last&&last.u*this.dur;
     }
-    this.kbw.classList.toggle('open', kb); this.ph.classList.toggle('kbopen', kb);
+    if(this.kbw) this.kbw.classList.toggle('open', kb); if(this.ph) this.ph.classList.toggle('kbopen', kb);
+    const predictionText=kb?typed:'';
+    if(predictionText!==this.predictionText){
+      this.predictionText=predictionText;
+    if(this.ph){const bar=this.ph.querySelector('.kb-suggestions');if(bar)bar.replaceChildren();}
+      if(this.ph && this.predict){const bar=this.ph.querySelector('.kb-suggestions');if(bar)for(const word of this.predict(predictionText)){const item=document.createElement('span');item.textContent=word;bar.append(item);}}
+    }
     const shown = typed.length > 90 ? '…' + typed.slice(-88) : typed;
-    if (shown !== this.shown || kb !== this.kbo) { this.shown = shown; this.kbo = kb; this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; this.ph.classList.toggle('hastext', kb && !!shown); }
-    for (const k of this.down) k.classList.remove('down'); this.down = [];
+    if (shown !== (this.shown||'') || kb !== (this.kbo||false)) { this.shown = shown; this.kbo = kb; if(this.inp) this.inp.innerHTML = kb ? `${esc(shown)}<u></u>` : '<em>Message</em>'; if(this.ph) this.ph.classList.toggle('hastext', kb && !!shown); }
+    if(Array.isArray(this.down)) { for (const k of this.down) { if(k) k.classList.remove('down'); } } this.down = [];
     if (kb && last && p * this.dur - this.ev < 0.13 && p < 1) {
-      const hit = k => { const e = this.keys[k]; if (e) { e.classList.add('down'); this.down.push(e); } };
+    const hit = k => { const e = this.keys?.[k]; if (e) { e.classList.add('down'); if(Array.isArray(this.down)) this.down.push(e); } };
       if (last.t === 'b') hit('back'); else { const c = last.ch.toLowerCase(); if (last.shift) hit('shift'); hit(c === ' ' ? 'space' : /[a-z]/.test(c) ? c : 'sym'); }
     }
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
     const want = !listener && nx && nt && !out && S.t > nx.t - 1.5;
     if (want && !this.typing) {
-      this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
+      this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); if(this.inner) this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';
     }
     if (!want && this.typing) { this.typing.remove(); this.typing = null; this.sub.textContent = this.P.group ? this.P.names.join(', ') : 'online'; }
-    this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
+    if(this.inner) this.inner.style.transform = `translateY(${-Math.max(0, this.inner.scrollHeight - this.inner.parentElement.clientHeight)}px)`;
   }
 }
 
