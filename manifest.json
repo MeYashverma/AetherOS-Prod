@@ -1,5 +1,5 @@
 {
-  "name": "AetherOS — macOS Liquid Glass Desktop",
+  "name": "AetherOS",
   "short_name": "AetherOS",
   "description": "Liquid Glass desktop operating system in the browser with native macOS apps, Photo Booth, GaragePad, Calculator, Clock, Stickies, and VFS archive.",
   "start_url": "./index.html",

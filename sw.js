@@ -1,12 +1,14 @@
 // AetherOS — Offline-Capable Service Worker (Network-First Shell + Offline Cache Fallback)
-const CACHE_NAME = 'aetheros-shell-v9';
+const CACHE_NAME = 'aetheros-shell-v10';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './styles/core.css',
   './styles/modules-and-overlays.css',
-  './styles/liquid-glass.css'
+  './styles/liquid-glass.css',
+  './styles/verci-stage.css',
+  './styles/music-theater.css'
 ];
 
 self.addEventListener('install', (event) => {
