@@ -199,11 +199,11 @@ urls=[];
 globalThis.fetch=async(url)=>{
   urls.push(url);
   if(url.includes('/emotes?'))return {ok:true,json:async()=>({items:[]})};
-  if(url.includes('nekos.best'))return {ok:true,json:async()=>({results:[{url:'https://nekos.best/img/hug.gif'}]})};
+  if(url.includes('nekos.best'))return {ok:true,json:async()=>({results:[{url:'https://nekos.best/img/cry.gif'}]})};
   throw Error('Unexpected GIF request '+url);
 };
-example=reaction('love','hug','auto',2);await flush();
+example=reaction('sad','cry','auto',2);await flush();
 assert.ok(urls.some(url=>url.includes('/emotes?')) && urls.some(url=>url.includes('nekos.best')),'empty emotes fall back to legacy GIFs');
-assert.equal(example.bubble.querySelector('.chat-gif img').src,'https://nekos.best/img/hug.gif');
+assert.equal(example.bubble.querySelector('.chat-gif img').src,'https://nekos.best/img/cry.gif');
 example.bubble.remove();example.viz.reactionAbort.abort();
 console.log('Finder, chat media, profiles, seeks, privacy and both provider fallback chains verified.');

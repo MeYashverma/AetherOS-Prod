@@ -14,7 +14,9 @@ assert.equal(mediaURL({kind:'sticker',slug:'safe',image:'https://evil.test/malwa
 assert.equal(mediaURL({kind:'pfp',slug:'11334-cat'}),`${STICKERS_API}/pfp/11334-cat/preview`);
 assert.equal(mediaURL({kind:'banner',slug:'8879-guitar'}),`${STICKERS_API}/banner/8879-guitar/preview`);
 assert.equal(mediaURL({kind:'emote',id:'123',source:'evil'}),null);
-const emote=normalizeMedia('emote',{source:'7tv',id:'01GAZ199Z8000FEWHS6AT5QZV0',name:'peepoHappy',animated:false});
+assert.equal(normalizeMedia('emote',{source:'7tv',id:'123',type:'svg',animated:false}),null, 'unsupported emote previews are ignored');
+assert.equal(mediaURL(normalizeMedia('emote',{source:'ffz',id:'720510',type:null,name:'ffzRainbow',animated:false})),`${STICKERS_API}/emote/ffz/720510/preview`, 'FFZ does not always include a media type');
+const emote=normalizeMedia('emote',{source:'7tv',id:'01GAZ199Z8000FEWHS6AT5QZV0',name:'peepoHappy',type:'webp',animated:false});
 assert.equal(mediaURL(emote),`${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`);
 const telegram=normalizeMedia('telegram',{fileId:'FILE_a-123',thumbnailFileId:'THUMB_b-456',emoji:'😂',isAnimated:true});
 assert.equal(mediaURL(telegram),`${STICKERS_API}/telegram/file/THUMB_b-456/preview`);
@@ -58,6 +60,13 @@ assert.deepEqual([a.slug,b.slug],['fun-happy','fun-happy-gif']);
 assert.equal((await moodMedia('sticker','joy',1,true,moodFetch)).slug,'fun-happy','reduced motion excludes GIFs');
 assert.equal(moodCalls,1,'concurrent/successive moods share cached requests');
 assert.equal(await moodMedia('sticker','not/valid',0,false,moodFetch),null);
+let positiveMoodURL;
+const positiveEmote=await moodMedia('emote','love',0,false,async url=>{
+  positiveMoodURL=url;
+  return {ok:true,json:async()=>({items:[{source:'7tv',id:'01GAZ199Z8000FEWHS6AT5QZV0',name:'peepoHappy',type:'webp',animated:false}]})};
+});
+assert.equal(positiveEmote?.name,'peepoHappy');
+assert.match(positiveMoodURL,/\/emotes\?source=all&limit=24&q=happy$/, 'a broad positive mood can show a real emote even without a love-named item');
 
 const dom=new JSDOM('<div id="slot"></div>');globalThis.document=dom.window.document;
 const slot=document.getElementById('slot');

@@ -49,6 +49,10 @@
 .music-scene-tools{min-height:48px}
 .music-scene-tools select{padding:8px 10px}
 .music-scene-tools #music-media-picker{font-size:11px;white-space:nowrap}
+.music-scene-tools .music-lyric-api-toggle{display:flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid #ffffff24;border-radius:8px;background:#191b25;color:#e6e6ed;font-size:10px;white-space:nowrap;cursor:pointer}
+.music-lyric-api-toggle input{accent-color:#fb7185;margin:0;cursor:pointer}
+.music-lyric-api-toggle:focus-within{outline:2px solid #fb7185;outline-offset:2px}
+@container(max-width:550px){.music-scene-tools{flex-wrap:wrap}.music-scene-tools select{max-width:100%;flex:1 1 105px}.music-scene-tools .music-lyric-api-toggle{flex:0 0 auto}}
 .music-app > footer{min-height:62px;flex-wrap:nowrap}
 .music-app > footer > button{flex-shrink:0}
 .music-app > footer label{white-space:nowrap;flex-shrink:0}

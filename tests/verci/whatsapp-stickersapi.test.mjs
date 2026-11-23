@@ -33,8 +33,10 @@ globalThis.fetch = async (url, init) => {
   urls.push(url);
   assert.equal(init.credentials, 'omit');
   assert.equal(init.referrerPolicy, 'no-referrer');
-  assert.ok(url.includes('/search?q=love'), 'only the local mood label goes to StickersAPI');
-  return { ok: true, json: async () => ({ items: [{ slug: '71189-love', name: 'Love', type: 'png', image: 'https://evil.test/image.png' }] }) };
+  assert.ok(url.includes('/search?q=love') || url.includes('/emotes?source=all&limit=24&q=happy'), 'only curated mood labels go to StickersAPI');
+  return { ok: true, json: async () => ({ items: url.includes('/emotes?') ?
+    [{ source: '7tv', id: '01GAZ199Z8000FEWHS6AT5QZV0', name: 'peepoHappy', type: 'webp', animated: false }] :
+    [{ slug: '71189-love', name: 'Love', type: 'png', image: 'https://evil.test/image.png' }] }) };
 };
 let viz = mount(lyrics, 'Love Song');
 viz.frame(frameState(lyrics, 0.2), .016);
@@ -46,15 +48,19 @@ assert.equal(bubble.querySelector('.chat-local-media'), null);
 assert.ok(sticker.nextElementSibling.matches('time'), 'timestamp follows lyric and sticker media');
 assert.equal(bubble.querySelector('p').textContent.trim(), 'I love you', 'the timed lyric is unchanged');
 await flush();
-assert.deepEqual(urls, [`${STICKERS_API}/search?q=love&limit=24`]);
+assert.deepEqual(urls, [`${STICKERS_API}/search?q=love&limit=24`, `${STICKERS_API}/emotes?source=all&limit=24&q=happy`]);
+const loveEmote = sticker.querySelector('.chat-emote');
+assert.equal(loveEmote.hidden, true, 'the extra emote is hidden while its image loads');
+assert.equal(loveEmote.querySelector('img').src, `${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`);
 const image = sticker.querySelector('.chat-stickersapi-image');
 assert.ok(image, 'the actual chat bubble requests a StickersAPI image');
 assert.equal(image.src, `${STICKERS_API}/sticker/71189-love/preview`, 'untrusted URLs are not rendered');
 assert.equal(image.referrerPolicy, 'no-referrer');
 assert.equal(image.hidden, true, 'local sticker remains visible while loading');
 assert.equal(sticker.querySelector('strong'),null,'no caption is shown beneath the loading sticker');
-image.onload(); await flush();
+image.onload(); loveEmote.querySelector('img').onload(); await flush();
 assert.equal(image.hidden, false);
+assert.equal(loveEmote.hidden, false, 'even the first love-lyric sticker has a matching positive emote');
 assert.ok(sticker.classList.contains('has-stickersapi-image'));
 assert.equal(sticker.querySelector('strong'),null,'loaded stickers have no caption beneath them');
 assert.equal(sticker.querySelector('.chat-sticker-credit'), null, 'no provider credit is shown inside the lyric bubble');
@@ -67,13 +73,14 @@ assert.ok(viz.inner.querySelector('.chat-sticker'), 'replay reconstructs the pla
 await flush();
 const replayImage = viz.inner.querySelector('.chat-stickersapi-image');
 assert.ok(replayImage);
-replayImage.onload(); await flush();
-assert.equal(urls.length, 1, 'replay uses the cached mood search');
+replayImage.onload(); viz.inner.querySelector('.chat-emote img').onload(); await flush();
+assert.equal(urls.length, 2, 'replay uses cached sticker and emote searches');
 viz.destroy();
 
 // A valid JSON search does not mean its preview can load. A broken image must
 // retain the local sticker and try the established Discord fallback instead.
 globalThis.fetch = async (url) => {
+  if (url.includes('/emotes?')) return { ok: true, json: async () => ({ items: [{ source: '7tv', id: '01GAZ199Z8000FEWHS6AT5QZV0', name: 'peepoHappy', type: 'webp', animated: false }] }) };
   if (url.startsWith(STICKERS_API)) return { ok: true, json: async () => ({ items: [{ slug: '82222-happy', name: 'Happy', type: 'png' }] }) };
   if (url.includes('discord.com/api/')) return { ok: true, json: async () => ({ sticker_packs: [{ name: 'Public', stickers: [{ id: '123456789012345678', name: 'Happy', tags: 'happy', format_type: 1, available: true }] }] }) };
   throw Error(`Unexpected URL: ${url}`);
@@ -83,6 +90,13 @@ viz = mount(joy, 'Joyful Song'); viz.frame(frameState(joy, 0.2), .016); await fl
 let tile = viz.inner.querySelector('.chat-sticker');
 let preview = tile.querySelector('.chat-stickersapi-image');
 assert.ok(preview);
+const badge = tile.querySelector('.chat-emote');
+const emoteImage = badge.querySelector('img');
+assert.equal(emoteImage.src, `${STICKERS_API}/emote/7tv/01GAZ199Z8000FEWHS6AT5QZV0/preview`);
+assert.equal(badge.hidden, true, 'the emote does not displace the sticker before loading');
+emoteImage.onload(); await flush();
+assert.equal(badge.hidden, false, 'a matched emote appears beside the sticker on its first cue');
+assert.equal(tile.querySelector(':scope > strong'), null, 'neither image adds a caption');
 preview.onerror(); await flush();
 assert.equal(tile.querySelector('.chat-sticker-credit'), null);
 assert.ok(!tile.classList.contains('has-stickersapi-image'));
@@ -90,7 +104,36 @@ const discord = tile.querySelector('.chat-discord-image');
 assert.ok(discord, 'Discord is still tried when the API preview fails');
 discord.onload(); await flush();
 assert.ok(tile.classList.contains('has-discord-sticker'));
+assert.equal(badge.hidden, false, 'the extra emote survives a sticker-source fallback');
 assert.equal(viz.inner.querySelector('p').textContent.trim(), 'I am happy');
+viz.destroy();
+
+// Reduced motion still allows a static StickersAPI emote beside a static
+// sticker, but never introduces a GIF. The chat GIF/emote switch is respected.
+globalThis.matchMedia = () => ({ matches: true });
+viz = mount(joy, 'Static happy'); viz.frame(frameState(joy, 0.2), .016); await flush();
+const staticBadge = viz.inner.querySelector('.chat-emote');
+assert.ok(staticBadge.querySelector('img'), 'static emotes are eligible under reduced motion');
+staticBadge.querySelector('img').onload(); await flush();
+assert.equal(staticBadge.hidden, false);
+assert.equal(viz.inner.querySelector('.chat-gif'), null);
+viz.destroy();
+viz = mount(joy, 'No emotes', { ...opts, gifs: () => false });
+viz.frame(frameState(joy, 0.2), .016);
+assert.ok(viz.inner.querySelector('.chat-sticker'));
+assert.equal(viz.inner.querySelector('.chat-emote'), null, 'the chat GIF/emote switch suppresses the badge');
+viz.destroy();
+globalThis.matchMedia = () => ({ matches: false });
+
+// Turning the lyric switch off stops automatic StickersAPI calls without
+// removing the local sticker or changing the manual library.
+const offRequests = [];
+globalThis.fetch = async url => { offRequests.push(url); return { ok: false, status: 503 }; };
+viz = mount(parseLRC('[00:00]I am happy'), 'Switch Off', { ...opts, lyricMediaEnabled: () => false });
+viz.frame(frameState(viz.ctx.lyrics, 0.2), .016); await flush();
+assert.ok(viz.inner.querySelector('.chat-sticker > span'), 'emoji fallback still appears when the API is off');
+assert.equal(viz.inner.querySelector('.chat-emote'), null);
+assert.ok(!offRequests.some(url => url.startsWith(STICKERS_API)));
 viz.destroy();
 
 // Offline: no broken image replaces the lyric or the device-rendered sticker.

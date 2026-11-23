@@ -188,6 +188,7 @@ const SystemState = window.SystemState = {
         media_player_mode: 'monitor',
         media_gif_provider: 'mixed',
         chat_sticker_source: 'auto',
+        lyrics_api_media: true,
         chat_media_avatar: null,
         chat_media_banner: null,
         radio_gif_enabled: 'off',

@@ -1,5 +1,5 @@
 // Decorative reactions, not lyric replacements or singer metadata.
-import { attachAutomaticSticker } from '../providers/automatic-stickers.js?v=stickersapi-29';
+import { attachAutomaticSticker, attachAutomaticEmote, automaticMediaAllowed } from '../providers/automatic-stickers.js?v=stickersapi-30';
 import { moodMedia, renderMediaImage } from '../providers/stickersapi.js';
 import { analyzeLyric, buildReactionPlan, reactionHash as hash } from './reaction-intelligence.js';
 export function lyricReaction(text,index,seed='') {
@@ -37,6 +37,8 @@ export function addChatReaction(viz, bubble, text, index) {
   const connection=globalThis.navigator?.connection;
   const stickersEnabled=options.stickers?.()!==false;
   const gifsEnabled=options.gifs?.()!==false && !reduced && !connection?.saveData && !/(^|-)2g$/.test(connection?.effectiveType || '');
+  const apiEnabled=options.lyricMediaEnabled?.()!==false && automaticMediaAllowed();
+  const apiSource=['auto','stickerapi'].includes(options.stickerSource?.() || 'auto');
   const mediaKey=`${stickersEnabled}:${gifsEnabled}`;
   if(viz.ctx.lyrics?.lines) {
     if(!viz.reactionPlan || viz.reactionDensity!==density || (viz.reactionMedia && viz.reactionMedia!==mediaKey)) {
@@ -60,10 +62,12 @@ export function addChatReaction(viz, bubble, text, index) {
     const icon=document.createElement('span');icon.textContent=reaction.sticker.emoji;
     sticker.append(icon);insertMedia(sticker);
     attachAutomaticSticker(viz,sticker,reaction.sticker,options,index,hash(viz.ctx.song.title || ''),reduced);
+    if(apiEnabled && apiSource && options.gifs?.()!==false)
+      attachAutomaticEmote(viz,sticker,reaction.mood,hash(`${viz.ctx.song.title}:${index}`),reduced);
   }
   if(!gifsEnabled || !reaction.gif) return;
   const slot=document.createElement('div'); slot.className='chat-gif'; slot.hidden=true; insertMedia(slot);
-  if(['auto','stickerapi'].includes(options.stickerSource?.() || '')){
+  if(apiEnabled && apiSource){
     const controller=new AbortController(),job={element:slot,controller};
     viz.stickerJobs ||= new Set();viz.stickerJobs.add(job);
     moodMedia('emote',reaction.mood,hash(`${viz.ctx.song.title}:${index}`),reduced).then(async item=>{

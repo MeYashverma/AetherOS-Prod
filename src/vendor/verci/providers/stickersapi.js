@@ -36,7 +36,10 @@ export function cleanMedia(item) {
 export function normalizeMedia(kind, raw) {
   if (!raw || typeof raw !== 'object') return null;
   const type = String(raw.type || '').toLowerCase();
+  // FFZ does not include a type in its normalized listings; its proxy still
+  // serves an image. Reject explicit unsupported types without dropping FFZ.
   if (kind === 'sticker' && !TYPES.has(type)) return null;
+  if (kind === 'emote' && !TYPES.has(type) && !(raw.source === 'ffz' && !raw.type)) return null;
   const item = {
     kind, name: raw.name || (kind === 'telegram' ? raw.emoji : ''),
     animated: kind === 'sticker' ? ['gif', 'apng'].includes(type)
@@ -88,18 +91,26 @@ export async function listMedia(type, { query = '', source = 'all', set = 'UtyaD
 }
 
 const MOODS = {
-  heartbreak: ['broken heart', 'sad'], sad: ['sad', 'sad'], love: ['love', 'heart'],
+  heartbreak: ['broken heart', 'sad'], sad: ['sad', 'sad'], love: ['love', 'happy'],
   dance: ['dance', 'dance'], joy: ['happy', 'happy'], humor: ['laugh', 'laugh'],
   anger: ['angry', 'angry'], dream: ['sleep', 'sleep'], rain: ['rain', 'rain'],
   night: ['night', 'night'], fire: ['fire', 'fire'], surprise: ['surprised', 'wow'],
   confidence: ['confident', 'cool'], money: ['money', 'money'], longing: ['miss you', 'sad']
+};
+// The public emote catalogue has no `heart`/`love` title today, but does have
+// a happy face. These broad, on-device mood aliases make positive lyric cues
+// visibly use real emotes without sending lyric text or selecting random art.
+const EMOTE_ALIASES = {
+  romance: 'happy', crush: 'happy', devotion: 'happy',
+  friendship: 'happy', healing: 'happy', hope: 'happy', humor: 'happy',
+  celebration: 'clap'
 };
 const cache = new Map(), pending = new Map(), cooldown = new Map();
 // Moods are local classification labels, never raw lyric text. Cache/inflight
 // deduplication prevents one network request per chat bubble or seek.
 export async function moodMedia(kind, mood, seed = 0, reduced = false, fetchImpl = fetch) {
   if (!['sticker', 'emote'].includes(kind) || !/^[a-z]{2,24}$/.test(mood)) return null;
-  const term = MOODS[mood]?.[kind === 'sticker' ? 0 : 1] || mood;
+  const term = (kind === 'emote' && EMOTE_ALIASES[mood]) || MOODS[mood]?.[kind === 'sticker' ? 0 : 1] || mood;
   const key = `${kind}:${term}`;
   if (Date.now() < (cooldown.get(key) || 0)) return null;
   let entry = cache.get(key);
