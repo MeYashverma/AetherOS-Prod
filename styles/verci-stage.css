@@ -474,3 +474,64 @@
 .verci-stage .nd-wa .chat-live-predictions{flex:none;gap:0;min-height:8cqw;background:#2c2c2e;border-radius:2cqw}
 .verci-stage .nd-wa .chat-live-predictions button{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#eee;background:transparent;border-radius:0;border-right:1px solid #48484a;padding:1.5cqw;font-size:3.3cqw}
 .verci-stage .nd-wa .chat-live-predictions button:last-child{border-right:0}
+
+/* === iOS Template Safe-Area Override (copy of attached spec) — ensures no clipping === */
+.verci-stage .phone-wrap{padding:16px 12px 20px !important;overflow:visible !important}
+.verci-stage .phone,
+.verci-stage .phone.nd-wa,
+.verci-stage .phone.nd-ios{
+  height:100% !important;
+  max-height:100% !important;
+  width:auto !important;
+  max-width:min(390px, 100%) !important;
+  aspect-ratio:9/19.6 !important;
+  border-radius:14cqw !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+.verci-stage .phone.nd-wa .sb{
+  height:15.9cqw !important;
+  min-height:15.9cqw !important;
+  max-height:15.9cqw !important;
+  background:#000 !important;
+  padding:3.2cqw 6cqw 2cqw !important;
+  font-size:3.4cqw !important;
+  display:flex !important;
+  align-items:flex-end !important;
+}
+.verci-stage .phone.nd-wa .sb::after{
+  top:2.2cqw !important;
+  left:50% !important;
+  translate:-50% 0 !important;
+  width:28cqw !important;
+  height:7.6cqw !important;
+  background:#000 !important;
+  border-radius:3.8cqw !important;
+}
+.verci-stage .phone.nd-wa header{
+  height:26.9cqw !important;
+  min-height:26.9cqw !important;
+  max-height:26.9cqw !important;
+  padding:2.8cqw 4cqw !important;
+  background:#1f2c34 !important;
+  gap:2.6cqw !important;
+}
+.verci-stage .phone.nd-wa footer{
+  height:15.9cqw !important;
+  min-height:15.9cqw !important;
+  max-height:15.9cqw !important;
+  background:#202c33 !important;
+  padding:2.8cqw 3.5cqw !important;
+}
+.verci-stage .phone.nd-wa .home-indicator{
+  width:34cqw !important;
+  height:1.3cqw !important;
+  margin:1.2cqw auto 2cqw !important;
+  background:#fff !important;
+  border-radius:0.65cqw !important;
+  opacity:1 !important;
+}
+.verci-stage .phone.nd-wa .kb{
+  padding-bottom:2cqw !important;
+}
+
