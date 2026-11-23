@@ -177,8 +177,10 @@ export class Messages extends Phone {
     const text=listenerReplyFor(this.ctx.lyrics,this.P,index,this.ctx.song.title);
     if(!text)return null;
     const reply=document.createElement('div');reply.className=`b chat-fictional-reply ${el.classList.contains('out')?'listener-left':'out'} in`;
-    const label=document.createElement('small');label.textContent='Fictional listener · not lyrics';
-    const body=document.createElement('p');body.textContent=text;reply.append(label,body);this.inner.append(reply);return reply;
+    reply.setAttribute('aria-label','Generated listener reply');
+    const body=document.createElement('p');body.textContent=text;
+    const time=document.createElement('time');time.textContent=Math.floor(line.t/60)+':'+String(Math.floor(line.t%60)).padStart(2,'0');
+    reply.append(body,time);this.inner.append(reply);return reply;
   }
   destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {

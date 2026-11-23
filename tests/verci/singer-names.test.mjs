@@ -30,7 +30,9 @@ const ctx={song:{title:'Song',artist:'Singer'},lyrics:solo,opts:{gifs:()=>false,
 let viz=new Messages(root,ctx).mount();
 viz.onLine({...frameState(solo,9),jump:true});
 assert.ok(root.querySelector('.chat-fictional-reply.out'),'listener answers on the right during a solo');
-assert.match(root.querySelector('.chat-fictional-reply').textContent,/Fictional listener · not lyrics/);
+assert.equal(root.querySelector('.chat-fictional-reply small'),null,'no visible generated-reply label');
+assert.ok(!root.querySelector('.chat-fictional-reply').textContent.includes('Fictional listener'));
+assert.ok(root.querySelector('.chat-fictional-reply time'),'same timestamp layout as lyric bubbles');
 assert.equal(solo.lines.length,7,'does not insert invented lyrics into timeline');
 viz.onLine({...frameState(solo,9),jump:true});
 assert.equal(root.querySelectorAll('.chat-fictional-reply').length,1,'seeking does not duplicate replies');
