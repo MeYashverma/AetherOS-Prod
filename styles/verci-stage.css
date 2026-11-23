@@ -22,7 +22,7 @@
 .verci-stage .k-ship .sw{position:absolute;left:0;top:0;font-size:calc(var(--fs)*var(--lyric-scale));font-weight:900;letter-spacing:-.03em;white-space:nowrap;color:var(--hi);transform:translate3d(calc(var(--x) - 50%),calc(var(--y) - 50%),var(--z)) rotate(var(--r));transition:opacity .6s;animation:verci-land .6s cubic-bezier(.2,.8,.2,1)}
 @keyframes verci-land{from{transform:translate3d(calc(var(--x) - 50%),calc(var(--y) - 50%),calc(var(--z) + 800px)) rotate(var(--r)) scale(1.7);opacity:0;filter:blur(10px)}}
 .verci-stage .phone-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:12px 0 62px}
-.verci-stage .phone{position:relative;max-height:100%;height:auto;max-width:100%;aspect-ratio:9/19.5;border-radius:8% / 4%;overflow:hidden;container-type:size;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;box-shadow:0 0 0 4px #18181c,0 0 0 5px #3b3b42,0 20px 60px #0008;isolation:isolate;box-sizing:border-box}
+.verci-stage .phone{position:relative;height:100%;max-height:100%;max-width:100%;aspect-ratio:9/19.5;border-radius:8% / 4%;overflow:hidden;container-type:size;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;box-shadow:0 0 0 4px #18181c,0 0 0 5px #3b3b42,0 20px 60px #0008;isolation:isolate;box-sizing:border-box}
 .verci-stage .phone .w{transition:opacity .2s,color .2s}
 .verci-stage .nd-money{background:#000;color:#fff}
 .verci-stage .nd-money .head{padding:11cqw 6cqw 5cqw;text-align:center}
@@ -337,7 +337,7 @@
    8% horizontal / 4% vertical makes restrained, near-circular corners at 9:19. */
 .verci-stage .phone,
 .verci-stage .phone.nd-wa,
-.verci-stage .phone.nd-ios{height:auto;max-height:100%;width:auto;max-width:100%;aspect-ratio:9/19.5!important;min-height:0;border-radius:8% / 4%;box-sizing:border-box;box-shadow:0 0 0 4px #18181c,0 0 0 5px #3b3b42,0 20px 60px #0008;overflow:hidden}
+.verci-stage .phone.nd-ios{height:100%;max-height:100%;width:auto;max-width:100%;aspect-ratio:9/19.5!important;border-radius:8% / 4%;box-sizing:border-box;box-shadow:0 0 0 4px #18181c,0 0 0 5px #3b3b42,0 20px 60px #0008;overflow:hidden}
 
 /* Native emoji glyphs use Apple Color Emoji on Apple platforms, system fallback elsewhere. */
 .verci-stage .nd-wa .chat-emoji{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:1.12em;white-space:nowrap;vertical-align:baseline}
