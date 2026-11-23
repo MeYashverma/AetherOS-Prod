@@ -17,29 +17,8 @@ export function textReactionFor(text,index,seed='') {
  const choices=TEXT_REACTIONS[info.mood];if(!choices)return null;
  return choices[reactionHash(`${seed}:${index}:text-reaction`)%choices.length];
 }
-export function replyTarget(lyrics,turns,index) {
- const current=lyrics.lines[index];if(!current || index<1 || index%4!==2)return null;
- const who=turns.T[index]?.who;
- for(let i=index-1;i>=Math.max(0,index-3);i--) {
-  const line=lyrics.lines[i];
-  if(line.text && line.t<current.t && current.t-line.t<=30 && turns.T[i] && turns.T[i].who!==who) return i;
- }
- return null;
-}
 export function addConversation(viz,bubble,line,index) {
  const options=viz.ctx.opts || {};
- if(options.replies?.()!==false) {
-  const target=replyTarget(viz.ctx.lyrics,viz.P,index);
-  if(target!==null) {
-   const quoted=viz.ctx.lyrics.lines[target],who=viz.P.T[target].who;
-   const quote=document.createElement('button');quote.type='button';quote.className='chat-quote';
-   quote.setAttribute('aria-label','Seek to quoted lyric');
-   const label=document.createElement('small');label.textContent=`Quoted lyric · ${viz.ctx.lyrics.speakers?.length ? viz.P.names[who] || 'Unspecified voice' : 'Earlier line'}`;
-   const text=document.createElement('span');text.textContent=quoted.text;
-   quote.append(label,text);quote.onclick=e=>{e.stopPropagation();viz.ctx.seek?.(quoted.t);};
-   bubble.insertBefore(quote,bubble.querySelector('p'));
-  }
- }
  if(options.textReactions?.()!==false && index%4===1) {
   const text=textReactionFor(line.text,index,viz.ctx.song.title);if(!text)return;
   const badge=document.createElement('div');badge.className='chat-text-reaction';

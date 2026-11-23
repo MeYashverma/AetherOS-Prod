@@ -62,5 +62,5 @@ export function parseTTML(src) {
   }
   const flat=lines.flatMap((l,li) => l.tokens.map((w,wi) => ({...w,li,wi})));
   const coverage=flat.length ? flat.filter(w=>!w.estimated).length/flat.length : 0;
-  return { lines, flat, speakers, synced:true, wordLevel:coverage>=.8, wordCoverage:coverage, format:'TTML', speakerSource: speakers.length ? 'TTML agents' : null };
+  return { lines, flat, speakers, speakerIds: ids, synced:true, wordLevel:coverage>=.8, wordCoverage:coverage, format:'TTML', speakerSource: speakers.length ? 'TTML agents' : null };
 }

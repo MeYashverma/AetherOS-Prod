@@ -18,6 +18,7 @@ const xml=`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns
 </div></body></tt>`;
 const L=parseTTML(xml);
 assert.deepEqual(L.speakers,['Alice','Bob']);
+assert.deepEqual(L.speakerIds,['v1','v2'],'stable agent identifiers retained for singer name assignments');
 assert.equal(L.lines.length,4);
 const unnamed = parseTTML(xml.replace('<ttm:name>Alice</ttm:name>', '').replace('<ttm:name>Bob</ttm:name>', ''));
 assert.deepEqual(unnamed.speakers, ['Voice 1', 'Voice 2']);

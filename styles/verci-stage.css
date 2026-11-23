@@ -370,8 +370,6 @@
 .verci-stage .nd-wa .b{position:relative}
 .verci-stage .nd-wa .b.has-chat-reaction{margin-bottom:6cqw}
 .verci-stage .nd-wa .b>p{padding-right:3cqw}
-.verci-stage .nd-wa .b .chat-message-actions{position:absolute;right:.4cqw;top:.3cqw;border:0;background:transparent;padding:.5cqw 1cqw;color:#adc6bd;font:600 4cqw/1 system-ui;opacity:.5;cursor:pointer;border-radius:2cqw}
-.verci-stage .nd-wa .b:hover .chat-message-actions,.verci-stage .nd-wa .b:focus-within .chat-message-actions{opacity:1}
 .verci-stage .nd-wa .b .chat-reaction-pill{position:absolute;bottom:-4.5cqw;left:2cqw;display:flex;align-items:center;justify-content:center;min-width:9cqw;min-height:7cqw;padding:.6cqw 1.8cqw;border:.6cqw solid #0b141a;border-radius:99px;background:#26373c;color:#fff;font-size:4.8cqw;line-height:1.1;box-shadow:0 .5cqw 1cqw #0003;cursor:pointer}
 .verci-stage .nd-wa .b.out .chat-reaction-pill{left:auto;right:2cqw}
 .verci-stage .nd-wa .b .chat-reply-count{display:block;border:0;background:transparent;color:#78d9bb;font:600 3.2cqw/1.4 system-ui;padding:1cqw 0;cursor:pointer}

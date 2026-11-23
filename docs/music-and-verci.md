@@ -98,3 +98,10 @@ Automatic sticker source now tries the official anonymous `https://discord.com/a
 Supports PNG/APNG/GIF and Discord's Lottie JSON using locally vendored lottie-web 5.13.0 light SVG renderer (MIT license alongside runtime). No bot token, third-party proxy, or runtime script CDN. Animation payloads with external assets/fonts are rejected. Catalogue fetches deduplicate, cache for one hour in memory, time out after ten seconds and cool down after failure. Individual media failures retain the local tile. Reduced motion selects static PNGs only; save-data/2G skips remote automatic media. Removed chat tiles and destroyed renderers abort their animation jobs.
 
 Source & connection → **Test Discord sticker API** checks the browser's catalogue connection and renders/destroys a sample media asset. Research confirmed the public catalogue and a Lottie CDN payload were accessible; this does not establish CORS/network availability for every user's browser. The connection test reports that locally. Public availability does not grant blanket redistribution rights; media is loaded from Discord, not copied into this repository.
+
+
+### Singer labels and simplified chat controls
+
+TTML names embedded in agent metadata are displayed as singer labels. Stable agent references are now retained for editable singer labels under **Source & connection → TTML singer names**. Assignments are saved locally per track artist/title and agent reference; clearing an assignment restores the TTML name. Unnamed TTML agents do not reliably identify a vocalist, so the app does not assign the first listed artist to `v1` by guesswork. Enter the correct name when the file omits it.
+
+Automatic quoted-lyric reply decorations and their setting have been removed. Manual replies/counts/threads remain; the reply thread no longer repeats a quoted lyric. The reaction dropdown arrow is removed. Open the reaction/reply menu with right-click, a 450ms hold (cancelled on drag), or keyboard Context Menu / Shift+F10 on a focused message. Existing attached reaction pills remain tappable.

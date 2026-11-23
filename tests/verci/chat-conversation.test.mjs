@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { addConversation, replyTarget, textReactionFor } from '../../src/vendor/verci/viz/chat-conversation.js';
+import { addConversation, textReactionFor } from '../../src/vendor/verci/viz/chat-conversation.js';
 import { Messages, planTurns } from '../../src/vendor/verci/viz/native.js';
 import { parseLRC } from '../../src/vendor/verci/lrc.js';
 const dom=new JSDOM('<div id="stage"></div>');
@@ -9,8 +9,6 @@ globalThis.document=dom.window.document;globalThis.requestAnimationFrame=()=>1;
 const L=parseLRC('[00:00]Hello\n[00:04]I love you\n[00:08]Hell no\n[00:12]VA next');
 L.speakers=['First singer','Second singer'];L.lines.forEach((l,i)=>l.speaker=i%2);
 const P=planTurns(L,'Duet');
-assert.equal(replyTarget(L,P,2),1);
-assert.equal(replyTarget(L,P,0),null);
 let sought=-1;
 const viz=new Messages(document.getElementById('stage'),{lyrics:L,song:{title:'Duet',artist:'Two',artwork:''},seek:t=>sought=t,opts:{emojis:()=>false,gifs:()=>false,stickers:()=>false}}).mount();
 for(let i=0;i<L.lines.length;i++) {
@@ -18,7 +16,7 @@ for(let i=0;i<L.lines.length;i++) {
  assert.equal(bubble.classList.contains('big'),false,'short lines stay normal-sized');
  assert.ok(bubble.querySelector('time'),'short lines retain timestamps');
  assert.equal(bubble.querySelector('p').textContent,L.lines[i].text);
- if(i===2){const quote=bubble.querySelector('.chat-quote');assert.ok(quote);assert.match(quote.textContent,/I love you/);quote.click();assert.equal(sought,4);}
+ assert.equal(bubble.querySelector('.chat-quote'),null,'no automatic quoted lyrics');
  if(i===1)assert.ok(bubble.querySelector('.chat-text-reaction'));
 }
 const b=document.createElement('div');b.innerHTML='<p>Hell no</p>';
