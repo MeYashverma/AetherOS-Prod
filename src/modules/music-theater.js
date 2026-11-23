@@ -1,6 +1,8 @@
 // AetherOS adapter for the audited Verci-2 renderers and real playback engines.
 import { STYLES } from '../vendor/verci/viz/index.js';
 import { frameState, esc } from '../vendor/verci/viz/core.js';
+import { parseTTML } from '../vendor/verci/ttml.js';
+import { findCommunityTTML } from '../vendor/verci/providers/ttml-community.js';
 import { parseLRC, estimatePlain } from '../vendor/verci/lrc.js';
 import { PlaybackManager } from '../vendor/verci/playback.js';
 import { isConfident } from '../vendor/verci/rank.js';
@@ -15,10 +17,26 @@ const $ = id => document.getElementById(id);
 const fmt = n => `${Math.floor((n || 0) / 60)}:${String(Math.floor((n || 0) % 60)).padStart(2, '0')}`;
 const host = document.createElement('div');
 host.id = 'music-video-dock'; host.hidden = true;
+host.setAttribute('aria-label', 'YouTube player');
 host.innerHTML = '<div id="music-youtube"></div>';
 document.body.append(host);
 const player = new PlaybackManager('music-youtube');
 window.AetherMusic = { state, player, styles: STYLES };
+// Keep the iframe mounted across renders (moving it reloads YouTube playback).
+// Align its persistent host with a reserved, scroll-aware slot inside the app.
+function syncVideoDock() {
+  const slot = $('music-video-slot');
+  const show = player.mode === 'yt' && visible() && state.view !== 'stats' && slot;
+  if (slot) slot.hidden = player.mode !== 'yt';
+  if (!show) { host.hidden = true; return; }
+  const r = slot.getBoundingClientRect();
+  const clip = slot.closest('aside').getBoundingClientRect();
+  host.hidden = !r.width || !r.height || r.top < clip.top || r.bottom > clip.bottom;
+  Object.assign(host.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+}
+const videoResize = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(syncVideoDock) : null;
+window.addEventListener('resize', syncVideoDock);
+document.addEventListener('scroll', syncVideoDock, true);
 function status(text) { state.status = text; if ($('music-status')) $('music-status').textContent = text; }
 function stopStage() { cancelAnimationFrame(state.raf); state.raf = 0; state.viz?.destroy(); state.viz = null; }
 function visible() { const w = window.SystemState.windows.media; return w?.isOpen && !w.isMinimized && !document.hidden; }
@@ -34,7 +52,7 @@ function mountStage() {
     L.lines.forEach((l, i) => { const row = document.createElement('button'); row.type = 'button'; row.textContent = l.text || '•••'; row.onclick = () => player.seek(Math.max(0, l.t - state.offset)); row.dataset.line = i; scroll.append(row); });
   } else {
     const style = STYLES.find(s => s.id === state.style) || STYLES[0];
-    try { state.viz = new style.make(root, { song: state.song, lyrics: L, theme: { hi: '#fff', sec: '#ffffff57', scale: 1 }, duration: () => player.duration, opts: { hometown: () => true } }).mount(); }
+    try { state.viz = new style.make(root, { song: state.song, lyrics: L, theme: { hi: '#fff', sec: '#ffffff57', scale: 1 }, duration: () => player.duration, opts: { hometown: () => true, emojis: () => settings.chat_emojis !== false, gifs: () => settings.chat_gifs !== false } }).mount(); }
     catch (e) { status(`Scene unavailable: ${e.message}. Try Classic Scroll.`); return; }
   }
   let previous = performance.now(), active = -2;
@@ -55,6 +73,7 @@ function mountStage() {
   state.raf = requestAnimationFrame(tick);
 }
 function updateClock() {
+  syncVideoDock();
   const d = player.duration, t = player.time;
   if ($('music-clock')) $('music-clock').textContent = `${fmt(t)} / ${fmt(d)}`;
   if ($('music-seek') && !$('music-seek').matches(':active')) { $('music-seek').max = d || 1; $('music-seek').value = t; $('music-seek').disabled = !d; }
@@ -67,6 +86,7 @@ function rows(list, action) {
 function render() {
   const root = $('media-console-panel'); if (!root) return;
   stopStage();
+  videoResize?.disconnect();
   const s = state.song;
   root.onclick = e => {
     if (state.view !== 'stats') return;
@@ -84,12 +104,15 @@ function render() {
     <header><div><small>AETHER / LISTEN</small><h1>Music & Podcasts</h1></div><nav><button data-view="music" aria-pressed="${state.view === 'music'}">Music</button><button data-view="podcasts" aria-pressed="${state.view === 'podcasts'}">Podcasts</button><button data-view="stats" aria-pressed="${state.view === 'stats'}">Last.fm Stats</button></nav></header>
     <div class="music-toolbar"><form id="music-search-form"><input id="music-query" aria-label="Search music or podcasts" placeholder="${state.view === 'podcasts' ? 'Search podcast episodes…' : 'Song, artist, or YouTube link…'}" required><button>Search</button></form><button id="music-follow" aria-pressed="${state.follow}">${state.follow ? 'Following Last.fm' : 'Follow Last.fm'}</button></div>
     <p id="music-status" role="status">${esc(state.status)}</p>
-    ${state.view === 'stats' ? '<div id="music-stats"></div>' : `<div class="music-body"><aside><div class="music-now"><small>NOW PLAYING ${s?.isLoved ? '♥' : ''}</small><h2>${esc(s?.title || 'Find your next song')}</h2><p>${esc(s?.artist || 'Full tracks, never preview clips.')}</p></div><div id="music-results">${rows(state.results, 'result')}</div><h3>Recent listening</h3><div id="music-recent">${rows([...state.recent, ...window.SystemState.history].slice(0, 30), 'recent')}</div></aside>
-    <main><div class="music-scene-tools"><select id="music-style" aria-label="Lyrics style"><option value="scroll">Classic Scroll</option>${STYLES.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join('')}</select><span id="music-sync">${state.lyrics ? state.lyrics.estimated ? 'Estimated lines & words' : state.lyrics.wordLevel ? 'Word-synced LRC' : 'Line-synced · estimated words' : 'No lyrics'}</span><button id="music-fullscreen" title="Fullscreen lyrics">⛶</button></div><div id="music-stage" class="verci-stage"></div><div class="music-lyrics-tools"><button id="music-earlier">−0.5s</button><span id="music-offset">${state.offset.toFixed(1)}s</span><button id="music-later">+0.5s</button><label>Import LRC<input id="music-lrc" type="file" accept=".lrc,.txt" hidden></label></div></main></div>`}
+    ${state.view === 'stats' ? '<div id="music-stats"></div>' : `<div class="music-body"><aside><div id="music-video-slot" class="music-video-slot" hidden></div><div class="music-now"><small>NOW PLAYING ${s?.isLoved ? '♥' : ''}</small><h2>${esc(s?.title || 'Find your next song')}</h2><p>${esc(s?.artist || 'Full tracks, never preview clips.')}</p></div><div id="music-results">${rows(state.results, 'result')}</div><h3>Recent listening</h3><div id="music-recent">${rows([...state.recent, ...window.SystemState.history].slice(0, 30), 'recent')}</div></aside>
+    <main><div class="music-scene-tools"><select id="music-style" aria-label="Lyrics style"><option value="scroll">Classic Scroll</option>${STYLES.map(v => `<option value="${v.id}">${esc(v.name)}</option>`).join('')}</select><span id="music-sync">${state.lyrics ? state.lyrics.estimated ? 'Estimated lines & words' : state.lyrics.format === 'TTML' ? `TTML · ${state.lyrics.speakers.length ? state.lyrics.speakers.length + ' voices' : 'no singer tags'} · ${state.lyrics.source || 'imported'} · ${state.lyrics.wordLevel ? 'word sync' : 'estimated words'}` : state.lyrics.wordLevel ? 'Word-synced LRC' : 'Line-synced · estimated words' : 'No lyrics'}</span><button id="music-fullscreen" title="Fullscreen lyrics">⛶</button></div><div id="music-stage" class="verci-stage"></div><div class="music-lyrics-tools"><button id="music-earlier">−0.5s</button><span id="music-offset">${state.offset.toFixed(1)}s</span><button id="music-later">+0.5s</button><label>Import lyrics<input id="music-lrc" type="file" accept=".lrc,.txt,.ttml,.xml" hidden></label></div></main></div>`}
     <footer><button id="music-play">${player.playing ? 'Pause' : 'Play'}</button><span id="music-clock">${fmt(player.time)} / ${fmt(player.duration)}</span><input id="music-seek" type="range" min="0" max="${player.duration || 1}" value="${player.time}" step="0.1" aria-label="Playback position"><label>Volume <input id="music-volume" type="range" min="0" max="1" step="0.01" value="${player.volume}" aria-label="Volume"></label></footer>
-    <details><summary>Source & connection</summary><p>Playback: ${esc(state.source || 'none')}. Public search services and embeds may be unavailable or blocked. No preview is substituted.</p><form id="music-override"><input id="music-link" placeholder="Paste a YouTube URL / video ID" aria-label="YouTube playback override" required><button>Play full video</button></form><form id="music-lastfm"><input id="music-lfm-user" placeholder="Last.fm username" aria-label="Last.fm username" value="${esc(settings.api_lastfm_user || '')}" required><input id="music-lfm-key" type="password" placeholder="Last.fm API key (Settings → APIs)" aria-label="Last.fm API key"><button>Save Last.fm</button></form><p>Last.fm supplies track identity, not audio or an external playback clock. Following starts the matching recording from its beginning; lyric timing follows this local player. Browser autoplay may require pressing Play.</p></details>
+    <details><summary>Source & connection</summary><div class="music-chat-options"><label><input id="music-chat-emojis" type="checkbox" ${settings.chat_emojis !== false ? 'checked' : ''}> Chat emojis (device emoji style)</label><label><input id="music-chat-gifs" type="checkbox" ${settings.chat_gifs !== false ? 'checked' : ''}> Occasional contextual anime GIFs · nekos.best</label></div><p>Playback: ${esc(state.source || 'none')}. Public search services and embeds may be unavailable or blocked. No preview is substituted.</p><form id="music-override"><input id="music-link" placeholder="Paste a YouTube URL / video ID" aria-label="YouTube playback override" required><button>Play full video</button></form><form id="music-lastfm"><input id="music-lfm-user" placeholder="Last.fm username" aria-label="Last.fm username" value="${esc(settings.api_lastfm_user || '')}" required><input id="music-lfm-key" type="password" placeholder="Last.fm API key (Settings → APIs)" aria-label="Last.fm API key"><button>Save Last.fm</button></form><p>Last.fm supplies track identity, not audio or an external playback clock. Following starts the matching recording from its beginning; lyric timing follows this local player. Browser autoplay may require pressing Play.</p></details>
   </div>`;
   root.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { state.view = b.dataset.view; if (state.view === 'podcasts') state.follow = false; state.results = []; ++searchGeneration; render(); });
+  for (const [id, key] of [['music-chat-emojis', 'chat_emojis'], ['music-chat-gifs', 'chat_gifs']]) {
+    $(id).onchange = e => { settings[key] = e.target.checked; window.SystemState.save(); mountStage(); };
+  }
   $('music-search-form').onsubmit = e => { e.preventDefault(); search($('music-query').value.trim()); };
   $('music-follow').onclick = () => { state.follow = !state.follow; if (state.follow) lastLive = ''; render(); if (state.follow) pollLastFm(); };
   $('music-play').onclick = () => { player.toggle(); updateClock(); };
@@ -97,12 +120,28 @@ function render() {
   $('music-volume').oninput = e => os.adjustVolume(+e.target.value);
   $('music-override').onsubmit = e => { e.preventDefault(); const id = youtubeId($('music-link').value.trim()); if (!id) return status('Enter a valid YouTube URL or 11-character video ID.'); playSong(state.song || { title: 'YouTube video', artist: '' }, { engine: 'youtube', videoId: id, label: 'Manual YouTube selection' }); };
   $('music-lastfm').onsubmit = e => { e.preventDefault(); settings.api_lastfm_user = $('music-lfm-user').value.trim(); if ($('music-lfm-key').value.trim()) settings.api_lastfm = $('music-lfm-key').value.trim(); window.SystemState.save(); pollLastFm(); };
+  videoResize?.observe(root);
+  if ($('music-video-slot')) videoResize?.observe($('music-video-slot'));
+  syncVideoDock();
   if (state.view === 'stats') { $('music-stats').innerHTML = os.getLastFmMetricsLayout(); os.initLastFmMetricsSubView(); return; }
   $('music-style').value = state.style;
   $('music-style').onchange = e => { state.style = e.target.value; settings.verci_style = state.style; window.SystemState.save(); mountStage(); };
   $('music-fullscreen').onclick = () => { const p = $('music-stage'); if (document.fullscreenElement) document.exitFullscreen?.(); else p.requestFullscreen?.().catch(e => status(e.message)); };
   for (const [id, delta] of [['music-earlier', -0.5], ['music-later', 0.5]]) $(id).onclick = () => { state.offset += delta; $('music-offset').textContent = `${state.offset.toFixed(1)}s`; };
-  $('music-lrc').onchange = async e => { const file = e.target.files[0]; if (!file) return; const gen = state.generation; const text = await file.text(); if (gen !== state.generation) return; const L = parseLRC(text); state.lyrics = L.lines.length ? L : estimatePlain(text, player.duration || state.song?.durationMs / 1000 || 180); render(); };
+  $('music-lrc').onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const gen = state.generation;
+    try {
+      if (file.size > 3 * 1024 * 1024) throw Error('Lyrics file is too large (maximum 3 MB).');
+      const text = await file.text(); if (gen !== state.generation) return;
+      const isTTML = /\.(ttml|xml)$/i.test(file.name) || /^\s*(<\?xml[^>]*>\s*)?<([\w-]+:)?tt[\s>]/.test(text);
+      const L = isTTML ? parseTTML(text) : parseLRC(text);
+      if (isTTML && !L.lines.length) throw Error('No timed lyric lines found in TTML.');
+      state.lyricsImported = true; state.plain = null;
+      state.lyrics = L.lines.length ? L : estimatePlain(text, player.duration || state.song?.durationMs / 1000 || 180);
+      render();
+    } catch (err) { status(`Lyrics import: ${err.message}`); }
+  };
   bindResults(); mountStage();
 }
 function bindResults() {
@@ -147,7 +186,7 @@ async function playSong(song, explicit = null) {
   state.candidates = []; state.candidate = 0; player.stop(); state.abort?.abort();
   if (os.audioStream) os.audioStream.pause(); os.stopRadioBrowser?.();
   state.song = { ...song, title: song.title || song.name, artwork: song.artwork || song.coverUrl || '' };
-  state.lyrics = null; state.plain = null; state.estimatedDuration = 0; state.offset = 0;
+  state.lyrics = null; state.lyricsImported = false; state.plain = null; state.estimatedDuration = 0; state.offset = 0;
   status('Resolving a matching full-length recording…'); render();
   const miniTitle = $('mini-track-title'), miniArtist = $('mini-artist-name');
   if (miniTitle) miniTitle.textContent = state.song.title;
@@ -169,10 +208,15 @@ async function playSong(song, explicit = null) {
   } catch (e) { if (gen === state.generation) status(`Full-song resolution unavailable: ${e.message}. Try a YouTube link.`); }
 }
 async function loadLyrics(gen) {
+  // Race independently: LRCLIB stays fast; richer TTML may upgrade it later.
+  findCommunityTTML(state.song).then(L => {
+    if (!L || gen !== state.generation || state.lyricsImported) return;
+    state.plain = null; state.lyrics = L; render();
+  }).catch(() => {}); // Community catalogue/rate limits must never stop playback or LRCLIB.
   try {
     const song = state.song;
     const found = await lrclibFind({ ...song, durationSec: song.durationMs / 1000 || 0 });
-    if (gen !== state.generation) return;
+    if (gen !== state.generation || state.lyricsImported || state.lyrics?.format === 'TTML') return;
     if (found?.syncedLyrics) state.lyrics = parseLRC(found.syncedLyrics);
     else if (found?.plainLyrics) {
       state.plain = found.plainLyrics; state.estimatedDuration = player.duration || song.durationMs / 1000 || found.duration || 180;
@@ -181,7 +225,7 @@ async function loadLyrics(gen) {
     else state.lyrics = null;
     if (found?.instrumental) status('Instrumental recording · no lyrics.');
     render();
-  } catch { if (gen === state.generation) { status('Lyrics service unavailable. Playback can continue; import an LRC file.'); render(); } }
+  } catch { if (gen === state.generation && !state.lyricsImported && !state.lyrics) { status('Lyrics service unavailable. Playback can continue; import an LRC file.'); render(); } }
 }
 let polling = false, lastLive = '';
 async function pollLastFm() {
@@ -225,7 +269,7 @@ os.seekMedia = e => { const r = e.currentTarget.getBoundingClientRect(); player.
 os.setMediaView = v => { state.view = v === 'metrics' ? 'stats' : 'music'; render(); };
 // Observe visibility/state changes rather than keeping expensive canvases running offscreen.
 let wasVisible = false;
-setInterval(() => { const v = visible(); if (v !== wasVisible) { wasVisible = v; if (v) mountStage(); else stopStage(); } if (v) updateClock(); }, 500);
+setInterval(() => { const v = visible(); if (v !== wasVisible) { wasVisible = v; if (v) mountStage(); else stopStage(); } if (v) updateClock(); syncVideoDock(); }, 500);
 setInterval(() => { if (state.follow || visible()) pollLastFm(); }, 15000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopStage(); else mountStage(); });
 player.setVolume(settings.media_tuner_volume ?? 0.7);

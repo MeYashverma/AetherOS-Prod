@@ -30,3 +30,22 @@ Serve the repository using a static HTTP server (ES modules require HTTP, not `f
 ## Source provenance
 
 Renderer and provider source derives from the user-supplied `Verci-2.zip`, with AetherOS-specific integration changes. No external media assets or generated audio files are bundled. The original archive remains unchanged.
+
+
+## TTML multi-singer chat
+
+The Native Design / WhatsApp scene now reads TTML `ttm:agent` references. Named agents become named participants; unnamed agents are displayed as **Voice 1**, **Voice 2**, etc. Artist credits are not evidence of who sings a particular line. Joint agent references remain joint participants, and unattributed lines are labeled **Unspecified voice**. Simultaneous lines are reconstructed together, including after backward seeking.
+
+- Automatic community source: [AMLL TTML Database](https://github.com/amll-dev/amll-ttml-db), via its public `metadata/raw-lyrics-index.jsonl` and `raw-lyrics/` files through the GitHub API. The catalogue is fetched once per page session. Exact normalized title, matching credited artist and version markers are required; known durations reject files extending beyond the recording. Coverage is community-dependent and API rate limits apply.
+- LRCLIB runs independently so failed/slow TTML lookup does not block ordinary lyrics. TTML upgrades the result when found. Manual imports take priority over pending network responses and track switches discard stale responses.
+- **Import lyrics** accepts `.ttml` / `.xml` as well as LRC/text. Supports absolute clock timestamps, unit timestamps, frame-clock timestamps, per-word spans, line durations, and agent names. Translation/romanization and background-vocal role spans are excluded from lead chat text. This is a lyric-focused TTML subset, not a general TTML layout or relative-time-container renderer.
+- Better Lyrics' current unified provider uses authentication/Turnstile. We do not impersonate the extension, bypass those checks, or advertise its backend as an anonymous public API. TTML files obtained legitimately from other sources can be imported locally.
+- Word timestamps in TTML are preserved; missing word timestamps are estimated. TTML is a data format, not a guarantee of singer annotations or complete word timing. Without singer metadata, the existing decorative chat turns remain a visualization, not an attributed duet transcript.
+
+The `ttml.test.mjs` suite covers timing, named/unnamed agents, overlapping duet chat, seeking, safe parsing, and conservative catalogue matching. Live provider coverage and rendering in a real browser still need manual verification.
+
+## Optional contextual chat reactions
+
+Native Design can append decorative Unicode emojis without modifying the lyric tokens, speaker attribution or timing. It recognizes a small set of English and romanized Hindi/Punjabi mood words (plus selected Devanagari words); this is a lightweight heuristic, not full language understanding. Unrecognized lines get no reaction. Emoji glyphs use the installed system font, preferring Apple Color Emoji where available; a specific iOS release's artwork is not bundled or guaranteed.
+
+Occasional GIF slots are deterministically randomized by song/line so seeks stay consistent, with at most one eligible line in each eight-line block. Supported moods request an anime reaction from `nekos.best`; only the allowlisted category is transmitted, never the lyrics, song title or artist. Third-party requests reveal normal connection metadata such as IP address. GIF media is restricted to HTTPS on the provider host, failures are silent, and requests abort when the scene is destroyed. Reduced-motion preference suppresses GIF loading and display. Emoji and GIF toggles are in **Source & connection** and are saved in desktop settings. The third-party service requires internet; actual GIF availability is not covered by offline tests.

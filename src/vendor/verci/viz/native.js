@@ -1,5 +1,7 @@
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
+import { wordPos } from '../lrc.js';
+import { addChatReaction } from './chat-reactions.js';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */
@@ -74,7 +76,9 @@ export class Money extends Phone {
   }
   tick(S) {
     const r = this.rows[0]; if (!r || !S.line) return;
-    light(r.spans, S.gap ? 99 : S.pos);
+    if (this.ctx.lyrics.format === 'TTML') {
+      for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
+    } else light(r.spans, S.gap ? 99 : S.pos);
     const L = this.ctx.lyrics; let sent = 0;
     for (let i = 0; i < S.idx; i++) sent += L.lines[i].tokens.length;
     sent += Math.floor(Math.max(0, S.pos));
@@ -96,7 +100,7 @@ export function planTurns(L, artist) {
   L.lines.forEach((l, i) => {
     if (!l.text) { T[i] = null; prevText = false; return; }
     let who, fresh;
-    if (sp.length) { who = l.speaker < 0 ? 0 : l.speaker; fresh = first || who !== prevWho || !prevText; }
+    if (sp.length) { who = Number.isInteger(l.speaker) && l.speaker >= 0 ? l.speaker : sp.length; fresh = first || who !== prevWho || !prevText; }
     else {
       const gap = l.t - prevT > 3.2;
       if (first || left <= 0 || gap || !prevText) { if (!first) side ^= 1; left = [1, 2, 3, 1, 2, 4, 2][Math.floor(rnd(turn++, 11) * 7)]; fresh = true; } else fresh = false;
@@ -106,7 +110,7 @@ export function planTurns(L, artist) {
     T[i] = { who, fresh, big: words <= 2 && l.text.length <= 11 };
     prevT = l.t; prevText = true; first = false; prevWho = who;
   });
-  L._turns = { T, names: sp.length ? sp : [artist, 'You'], two, group };
+  L._turns = { T, names: sp.length ? [...sp, ...(L.lines.some(l => !Number.isInteger(l.speaker) || l.speaker < 0) ? ['Unspecified voice'] : [])] : [artist, 'You'], two, group };
   return L._turns;
 }
 // Human-looking typing timeline for one line: uneven rhythm, longer pauses at spaces and punctuation, and the
@@ -133,7 +137,7 @@ export class Messages extends Phone {
   pcls = 'nd-wa';
   build() {
     const s = this.ctx.song, P = planTurns(this.ctx.lyrics, s.artist); this.P = P;
-    const title = P.group ? s.title : P.names[0], sub = P.group ? P.names.join(', ') : 'online';
+    const title = P.group || P.two ? s.title : P.names[0], sub = P.group || P.two ? P.names.join(', ') : 'online · visual turns';
     this.ph.innerHTML = `<div class="sb"><span>9:41</span><span>●●●</span></div>
       <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(s.artwork)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
@@ -147,10 +151,12 @@ export class Messages extends Phone {
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
     const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
-    const nm = (P.group || (P.two && t.fresh)) && !out && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
+    const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}${t.big ? ' big' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
+    addChatReaction(this, b, line.text, i);
     return b;
   }
+  destroy() { this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
     if (!S.line || S.gap) return;
     const t = this.P.T[S.idx]; if (!t) return;
@@ -158,6 +164,18 @@ export class Messages extends Phone {
     this.sendFlash = S.t;
     if (this.rows[0]) this.full(this.rows[0].el);
     this.typing?.remove(); this.typing = null;
+    // TTML can have simultaneous agents. Rebuild a small deterministic window on
+    // each line change so equal-start duet lines and backward seeks aren't lost.
+    if (this.ctx.lyrics.format === 'TTML') {
+      this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = [];
+      const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
+      for (const { line, i } of eligible) {
+        const el = this.bubble(i, line); if (!el) continue;
+        this.inner.append(el); el.classList.add('in');
+        this.rows.unshift({ el, line, spans: [...el.querySelectorAll('.w')] });
+      }
+      return;
+    }
     const el = this.bubble(S.idx, S.line); this.inner.append(el);
     this.rows.unshift({ el, spans: [...el.querySelectorAll('.w')] });
     while (this.rows.length > 9) this.rows.pop().el.remove();
@@ -165,7 +183,9 @@ export class Messages extends Phone {
   }
   tick(S) {
     const r = this.rows[0]; if (!r || !S.line) return;
-    light(r.spans, S.gap ? 99 : S.pos);
+    if (this.ctx.lyrics.format === 'TTML') {
+      for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
+    } else light(r.spans, S.gap ? 99 : S.pos);
     const L = this.ctx.lyrics; let ni = S.idx + 1; while (L.lines[ni] && !L.lines[ni].text) ni++;
     const nx = L.lines[ni], nt = this.P.T[ni], out = !!nt && (this.P.two ? nt.who === 1 : this.P.group ? false : nt.who === 1);
     // Green (outgoing) lines are typed on a real-looking keyboard that rises just before the bubble is sent.

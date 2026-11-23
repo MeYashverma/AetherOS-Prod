@@ -22,7 +22,7 @@
 .verci-stage .k-ship .sw{position:absolute;left:0;top:0;font-size:calc(var(--fs)*var(--lyric-scale));font-weight:900;letter-spacing:-.03em;white-space:nowrap;color:var(--hi);transform:translate3d(calc(var(--x) - 50%),calc(var(--y) - 50%),var(--z)) rotate(var(--r));transition:opacity .6s;animation:verci-land .6s cubic-bezier(.2,.8,.2,1)}
 @keyframes verci-land{from{transform:translate3d(calc(var(--x) - 50%),calc(var(--y) - 50%),calc(var(--z) + 800px)) rotate(var(--r)) scale(1.7);opacity:0;filter:blur(10px)}}
 .verci-stage .phone-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:12px 0 62px}
-.verci-stage .phone{position:relative;height:100%;max-width:100%;aspect-ratio:9/19;border-radius:40px;overflow:hidden;container-type:size;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;box-shadow:0 0 0 6px #18181c,0 0 0 7px #3b3b42,0 40px 90px rgba(0,0,0,.6);isolation:isolate}
+.verci-stage .phone{position:relative;height:100%;max-width:100%;aspect-ratio:9/19;border-radius:8% / 4%;overflow:hidden;container-type:size;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;box-shadow:0 0 0 6px #18181c,0 0 0 7px #3b3b42,0 40px 90px rgba(0,0,0,.6);isolation:isolate}
 .verci-stage .phone .w{transition:opacity .2s,color .2s}
 .verci-stage .nd-money{background:#000;color:#fff}
 .verci-stage .nd-money .head{padding:11cqw 6cqw 5cqw;text-align:center}
@@ -109,7 +109,7 @@
 @container  (max-width:760px){.verci-stage .code .body{grid-template-columns:1fr}
 .verci-stage .code aside,.verci-stage .code .mini{display:none}
 }
-.verci-stage .phone.nd-ios{aspect-ratio:9/19.5;border-radius:54px;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;box-shadow:0 0 0 4px #26262b,0 0 0 5.5px #4a4a52,0 40px 90px rgba(0,0,0,.6)}
+.verci-stage .phone.nd-ios{aspect-ratio:9/19.5;border-radius:8% / 4%;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;box-shadow:0 0 0 4px #26262b,0 0 0 5.5px #4a4a52,0 40px 90px rgba(0,0,0,.6)}
 .verci-stage .nd-ios .wall{position:absolute;inset:-12%;background-size:cover;background-position:center;filter:blur(44px) saturate(1.7) brightness(.62);transform:scale(1.15)}
 .verci-stage .nd-ios .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.25),transparent 30%,transparent 60%,rgba(0,0,0,.4))}
 .verci-stage .nd-ios .island{position:absolute;top:3cqw;left:50%;translate:-50% 0;width:28cqw;height:8cqw;border-radius:5cqw;background:#000;z-index:3}
@@ -147,7 +147,7 @@
 .verci-stage .nd-ios .cam{right:9cqw}
 .verci-stage .nd-ios .fl svg,.verci-stage .nd-ios .cam svg{width:5.6cqw;height:5.6cqw;stroke-width:1.9}
 .verci-stage .nd-ios .home{position:absolute;bottom:2.4cqw;left:50%;translate:-50% 0;width:34cqw;height:1.3cqw;border-radius:1cqw;background:rgba(255,255,255,.85)}
-.verci-stage .phone.nd-wa{display:flex;flex-direction:column;background:#0b141a;color:#e9edef;aspect-ratio:9/19.5;border-radius:50px;box-shadow:0 0 0 4px #26262b,0 0 0 5.5px #4a4a52,0 40px 90px rgba(0,0,0,.6)}
+.verci-stage .phone.nd-wa{display:flex;flex-direction:column;background:#0b141a;color:#e9edef;aspect-ratio:9/19.5;border-radius:8% / 4%;box-shadow:0 0 0 4px #26262b,0 0 0 5.5px #4a4a52,0 40px 90px rgba(0,0,0,.6)}
 .verci-stage .nd-wa .sb{display:flex;justify-content:space-between;padding:4.2cqw 9cqw 1.4cqw;font-size:3.5cqw;font-weight:600;background:#1f2c34;flex:none}
 .verci-stage .nd-wa header{display:flex;align-items:center;gap:2.6cqw;padding:1.6cqw 4cqw 2.6cqw 2cqw;background:#1f2c34;flex:none}
 .verci-stage .nd-wa header svg{width:6cqw;height:6cqw;color:#e9edef;flex:none}
@@ -156,7 +156,7 @@
 .verci-stage .nd-wa header div{flex:1;min-width:0}
 .verci-stage .nd-wa header b{display:block;font-size:4.5cqw;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .verci-stage .nd-wa header small{font-size:3.2cqw;color:#8696a0}
-.verci-stage .nd-wa .thread{flex:1;position:relative;overflow:hidden;background:#0b141a radial-gradient(rgba(255,255,255,.035) 1.2px,transparent 1.6px) 0 0/5cqw 5cqw}
+.verci-stage .nd-wa .thread{flex:1;position:relative;overflow:hidden;background-color:#0b141a;background-image:url("../assets/whatsapp-chat-doodles.svg");background-repeat:repeat;background-size:70cqw auto}
 .verci-stage .nd-wa .inner{position:absolute;left:0;right:0;top:0;padding:2cqw 0 4cqw;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
 .verci-stage .nd-wa .chip{width:fit-content;margin:1cqw auto 2.4cqw;background:#182229;color:#8696a0;font-size:3cqw;padding:1.2cqw 3cqw;border-radius:2cqw}
 .verci-stage .nd-wa .b{width:fit-content;max-width:80%;margin:.7cqw 3.2cqw;padding:1.8cqw 3cqw 1.2cqw;border-radius:4cqw;font-size:4.4cqw;line-height:1.27;transition:opacity .25s,transform .4s cubic-bezier(.2,1.5,.4,1)}
@@ -309,7 +309,7 @@
 .verci-stage .nd-map .compass{position:absolute;right:4cqw;top:30cqw;width:10cqw;height:10cqw;border-radius:50%;background:rgba(28,31,40,.88);backdrop-filter:blur(12px);display:grid;place-items:center;box-shadow:inset 0 0 0 .25cqw rgba(255,255,255,.12);transition:transform .2s linear}
 .verci-stage .nd-map .compass svg{width:6.4cqw;height:6.4cqw}
 @container  (max-height:560px){.verci-stage .phone-wrap{padding:4px 0 44px}
-.verci-stage .phone{border-radius:28px}
+.verci-stage .phone{border-radius:8% / 4%}
 .verci-stage .code{padding:8px 8px 52px}
 .verci-stage .k-mia .cap{bottom:46px}
 .verci-stage .k-cin .tc{display:none}
@@ -320,7 +320,7 @@
 }
 @container  (min-width:1700px){.verci-stage .code .win{max-width:1240px}
 }
-@container  (max-height:520px){.verci-stage .phone{aspect-ratio:auto!important;width:min(100%,380px);border-radius:22px;box-shadow:0 0 0 3px #26262b}
+@container  (max-height:520px){.verci-stage .phone{aspect-ratio:auto!important;width:min(100%,380px);border-radius:8% / 4%;box-shadow:0 0 0 3px #26262b}
 .verci-stage .nd-map .eta{display:none}
 .verci-stage .nd-ios .player,.verci-stage .nd-ios .fl,.verci-stage .nd-ios .cam{display:none}
 }
@@ -333,3 +333,19 @@
 
 .verci-stage .phone-wrap{padding-bottom:12px}
 @media(prefers-reduced-motion:reduce){.verci-stage *{animation:none!important;transition:none!important}}
+
+/* Keep native scenes as proportionate devices at every window size, not full-width sheets. */
+.verci-stage .phone-wrap{padding:14px 12px;overflow:hidden}
+/* Percentage radii resolve against this device box, not the scene container.
+   8% horizontal / 4% vertical makes restrained, near-circular corners at 9:19. */
+.verci-stage .phone,
+.verci-stage .phone.nd-wa,
+.verci-stage .phone.nd-ios{height:100%;width:auto;max-width:100%;aspect-ratio:9/19!important;border-radius:8% / 4%;box-shadow:0 0 0 4px #18181c,0 0 0 5px #3b3b42,0 20px 60px #0008}
+
+/* Native emoji glyphs use Apple Color Emoji on Apple platforms, system fallback elsewhere. */
+.verci-stage .nd-wa .chat-emoji{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:1.12em;white-space:nowrap;vertical-align:baseline}
+.verci-stage .nd-wa .chat-gif{margin-top:2cqw;max-width:46cqw;overflow:hidden;border-radius:2cqw}
+.verci-stage .nd-wa .chat-gif[hidden]{display:none}
+.verci-stage .nd-wa .chat-gif img{display:block;width:100%;max-height:30cqw;object-fit:cover}
+.verci-stage .nd-wa .chat-gif small{display:block;font-size:2.5cqw;color:#a7b8be;padding:1cqw 0}
+@media(prefers-reduced-motion:reduce){.verci-stage .nd-wa .chat-gif{display:none!important}}

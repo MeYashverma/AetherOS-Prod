@@ -68,3 +68,18 @@ assert.match(document.getElementById('music-sync').textContent,/Estimated/);
 dom.window.os.pauseVerciVisualStage();
 assert.equal(dom.window.AetherMusic.state.viz,null);
 console.log('Desktop adapter renders all 18 options; real clock, pause, seek, volume and stage cleanup verified.');
+
+// Regression: app chrome must not style headers/footers inside native lyric scenes.
+const musicCSS = readFileSync('styles/music-theater.css','utf8');
+assert.ok(!/\.music-app (?:header|footer|nav)\b/.test(musicCSS));
+assert.ok(!/\.music-body (?:aside|main)\b/.test(musicCSS));
+for (const file of ['styles/liquid-glass.css','styles/modules-and-overlays.css']) {
+ assert.ok(!readFileSync(file,'utf8').includes('#os-layer header'), file+' scopes menu bar to its direct child');
+}
+assert.ok(document.getElementById('music-video-slot'), 'video reserves space in sidebar');
+assert.ok(document.getElementById('music-video-dock').hidden, 'no detached video overlay without YouTube playback');
+console.log('UI regressions: isolated app chrome and reserved video slot verified.');
+
+const frameCSS = readFileSync('styles/verci-stage.css', 'utf8');
+assert.ok(!/border-radius:(?:50|54)px/.test(frameCSS), 'no capsule-like native phone overrides');
+assert.match(frameCSS, /\.phone\.nd-ios\{[^}]*border-radius:8% \/ 4%/, 'frame corners scale with the device itself');

@@ -572,7 +572,7 @@
         /* ═══════════════════════════════════════
            PREMIUM TOP BAR — System Control Layer
            ═══════════════════════════════════════ */
-        #os-layer header {
+        #os-layer > header {
             height: 36px !important;
             font-family: 'Inter', sans-serif !important;
             background: rgba(6, 6, 9, 0.96) !important;
@@ -583,7 +583,7 @@
             position: relative;
             z-index: 200;
         }
-        #os-layer header::after {
+        #os-layer > header::after {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; height: 1px;
