@@ -1,5 +1,5 @@
 // AetherOS — Offline-Capable Service Worker (Network-First Shell + Offline Cache Fallback)
-const CACHE_NAME = 'aetheros-shell-v21';
+const CACHE_NAME = 'aetheros-shell-v22';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,7 @@ const CORE_ASSETS = [
   './styles/core.css',
   './styles/modules-and-overlays.css',
   './styles/liquid-glass.css',
-  './styles/verci-stage.css?v=singer-controls-9',
+  './styles/verci-stage.css?v=listener-replies-10',
   './styles/music-theater.css',
   './assets/whatsapp-chat-doodles.svg'
 ];

@@ -3,6 +3,8 @@ import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
 import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
 import { ChatInteractions } from './chat-interactions.js';
+import { listenerReplyFor } from './listener-replies.js';
+import { resolveSingerNames } from '../singer-names.js';
 import { addConversation } from './chat-conversation.js';
 import { addChatReaction } from './chat-reactions.js?v=gif-media-only-5';
 import { Phone } from './phone.js';
@@ -98,7 +100,9 @@ const KB = ['qwertyuiop', 'asdfghjkl'].map((r, i) => `<div class="kr${i ? ' r2' 
   + `<div class="kr"><i class="sp w2" data-k="sym">123</i><i class="sp" data-k="emo">☺</i><i class="space" data-k="space">space</i><i class="sp w2 go" data-k="go">send</i></div>`;
 const NAME_COL = ['#53bdeb', '#e9a23b', '#ff7eb6', '#7fd67a', '#c39bff', '#ff8a65'];
 export function planTurns(L, artist) {
-  if (L._turns) return L._turns;
+  const key=JSON.stringify([L.speakers,artist]);
+  if (L._turns && L._turnsKey===key) return L._turns;
+  L._turnsKey=key;
   const T = [], sp = L.speakers || [], two = sp.length === 2, group = sp.length > 2;
   let side = 0, left = 0, prevT = -9, prevText = true, turn = 0, first = true, prevWho = -1;
   L.lines.forEach((l, i) => {
@@ -140,8 +144,13 @@ export function typedAt(ev, p) { // text so far and the last key event at progre
 export class Messages extends Phone {
   pcls = 'nd-wa';
   build() {
-    const s = this.ctx.song, P = planTurns(this.ctx.lyrics, s.artist); this.P = P;
-    const title = P.group || P.two ? s.title : P.names[0], sub = P.group || P.two ? P.names.join(', ') : 'online · visual turns';
+    const s = this.ctx.song, L = this.ctx.lyrics;
+    if (L.format === 'TTML' && !L.originalSpeakers) {
+      L.originalSpeakers = [...(L.speakers || [])];
+      const resolved = resolveSingerNames(L,s); L.speakers=resolved.names; L.inferredSpeakers=resolved.inferred;
+    }
+    const P = planTurns(L, s.artist); this.P = P;
+    const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns') + (L.inferredSpeakers?.length ? ' · names inferred from credits' : '');
     this.ph.innerHTML = `<div class="sb"><span>9:41</span><span>●●●</span></div>
       <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(s.artwork)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
@@ -155,13 +164,21 @@ export class Messages extends Phone {
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
     const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
-    const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
+    const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}${this.ctx.lyrics.inferredSpeakers?.includes(t.who) ? ' · inferred' : ''}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
     addChatReaction(this, b, line.text, i);
     addConversation(this, b, line, i);
     this.chatInteractions ||= new ChatInteractions(this);
     this.chatInteractions.attach(b, i);
     return b;
+  }
+  appendListener(index,line,el) {
+    if(this.ctx.opts?.listenerReplies?.()===false)return null;
+    const text=listenerReplyFor(this.ctx.lyrics,this.P,index,this.ctx.song.title);
+    if(!text)return null;
+    const reply=document.createElement('div');reply.className=`b chat-fictional-reply ${el.classList.contains('out')?'listener-left':'out'} in`;
+    const label=document.createElement('small');label.textContent='Fictional listener · not lyrics';
+    const body=document.createElement('p');body.textContent=text;reply.append(label,body);this.inner.append(reply);return reply;
   }
   destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
@@ -179,13 +196,15 @@ export class Messages extends Phone {
       for (const { line, i } of eligible) {
         const el = this.bubble(i, line); if (!el) continue;
         this.inner.append(el); el.classList.add('in');
-        this.rows.unshift({ el, line, spans: [...el.querySelectorAll('.w')] });
+        const reply=this.appendListener(i,line,el);
+        this.rows.unshift({ el, reply, line, spans: [...el.querySelectorAll('.w')] });
       }
       return;
     }
     const el = this.bubble(S.idx, S.line); this.inner.append(el);
-    this.rows.unshift({ el, spans: [...el.querySelectorAll('.w')] });
-    while (this.rows.length > 9) this.rows.pop().el.remove();
+    const reply=this.appendListener(S.idx,S.line,el);
+    this.rows.unshift({ el, reply, spans: [...el.querySelectorAll('.w')] });
+    while (this.rows.length > 9) { const old=this.rows.pop(); old.el.remove(); old.reply?.remove(); }
     requestAnimationFrame(() => el.classList.add('in'));
   }
   tick(S) {

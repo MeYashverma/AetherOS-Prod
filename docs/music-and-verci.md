@@ -105,3 +105,10 @@ Source & connection → **Test Discord sticker API** checks the browser's catalo
 TTML names embedded in agent metadata are displayed as singer labels. Stable agent references are now retained for editable singer labels under **Source & connection → TTML singer names**. Assignments are saved locally per track artist/title and agent reference; clearing an assignment restores the TTML name. Unnamed TTML agents do not reliably identify a vocalist, so the app does not assign the first listed artist to `v1` by guesswork. Enter the correct name when the file omits it.
 
 Automatic quoted-lyric reply decorations and their setting have been removed. Manual replies/counts/threads remain; the reply thread no longer repeats a quoted lyric. The reaction dropdown arrow is removed. Open the reaction/reply menu with right-click, a 450ms hold (cancelled on drag), or keyboard Context Menu / Shift+F10 on a focused message. Existing attached reaction pills remain tappable.
+
+
+### Credit-assisted singer labels and fictional listeners
+
+Generic TTML labels now use a complete matching artist-credit list (including a featured artist in the title) when simple `v1`, `v2`, etc. references can be mapped by numeric order. Names are **inferred from credits**, visibly marked as inferred, not verified vocal attribution. Explicit agent names and locally saved overrides take priority. Recognized lyric singer tags can provide a name as well. Ambiguous credit counts and joint references remain unmapped. Participant-name edits invalidate the turn-plan cache, fixing stale Voice labels after an override.
+
+**Fictional listener replies** is enabled by default and can be disabled under Source & connection. During at least three consecutive lines from one participant, sparse deterministic mood/context replies appear on the opposite side. Each is labeled “Fictional listener · not lyrics”; no real singer is assigned these words. They are generated locally from curated responses, never added to the timed lyric tokens, never quoted as song lyrics, and are rebuilt consistently when seeking. No lyric text is sent to an AI service.
