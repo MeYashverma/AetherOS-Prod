@@ -73,3 +73,14 @@
 }
 
 .music-chat-options{display:flex;flex-wrap:wrap;gap:12px;padding:10px 0}.music-chat-options label{display:flex;align-items:center;gap:6px}.music-chat-options input{accent-color:#fb7185}
+.music-chat-options select{background:#1b1d28;color:#eee;border:1px solid #ffffff24;border-radius:7px;padding:5px 8px;font:inherit}
+
+.music-chat-options .music-reaction-stats{flex-basis:100%;color:#8f9d9a;font-size:10px;line-height:1.5}
+
+.music-stickerly-library{border-top:1px solid #ffffff12;padding-top:6px}
+.music-stickerly-library a{color:#8bddc8;text-decoration:underline}
+.music-stickerly-library form{flex-wrap:wrap}
+.music-stickerly-library input{flex:1 1 200px}
+.music-stickerly-library select{background:#1b1d28;border:1px solid #ffffff24;color:#eee;border-radius:7px;padding:6px}
+#music-stickerly-saved>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}
+#music-stickerly-saved>div>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

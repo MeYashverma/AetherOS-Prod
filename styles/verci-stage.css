@@ -169,9 +169,6 @@
 .verci-stage .nd-wa .b s{display:block;font-size:3.5cqw;font-weight:700;text-decoration:none;margin-bottom:.3cqw}
 .verci-stage .nd-wa .b time{display:flex;justify-content:flex-end;align-items:center;gap:1cqw;font-size:2.7cqw;color:rgba(233,237,239,.55);margin-top:.3cqw}
 .verci-stage .nd-wa .b time svg{width:4cqw;height:2.4cqw;stroke:#53bdeb;fill:none;stroke-width:1.6}
-.verci-stage .nd-wa .b.big{background:transparent!important;padding:0 1cqw;font-size:12cqw;font-weight:800;line-height:1;letter-spacing:-.03em}
-.verci-stage .nd-wa .b.big time{display:none}
-.verci-stage .nd-wa .b.big.out{text-align:right}
 .verci-stage .nd-wa .w[data-s="0"]{opacity:.34}
 .verci-stage .nd-wa .typing{display:flex;gap:1.2cqw;padding:3.4cqw 3.6cqw}
 .verci-stage .nd-wa .typing i{width:2.2cqw;height:2.2cqw;border-radius:50%;background:#8696a0;animation:verci-dot 1s infinite}
@@ -347,5 +344,68 @@
 .verci-stage .nd-wa .chat-gif{margin-top:2cqw;max-width:46cqw;overflow:hidden;border-radius:2cqw}
 .verci-stage .nd-wa .chat-gif[hidden]{display:none}
 .verci-stage .nd-wa .chat-gif img{display:block;width:100%;max-height:30cqw;object-fit:cover}
-.verci-stage .nd-wa .chat-gif small{display:block;font-size:2.5cqw;color:#a7b8be;padding:1cqw 0}
 @media(prefers-reduced-motion:reduce){.verci-stage .nd-wa .chat-gif{display:none!important}}
+
+/* Locally rendered meme-style stickers: transparent cutout feel, no remote assets. */
+.verci-stage .nd-wa .chat-sticker{width:42cqw;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:1cqw;padding:3cqw 2cqw;margin:2cqw auto 1cqw;transform:rotate(-5deg);filter:drop-shadow(0 1cqw 1cqw #0005)}
+.verci-stage .nd-wa .chat-sticker>span{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:19cqw;line-height:1.2;filter:drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff)}
+.verci-stage .nd-wa .chat-sticker>strong{display:block;max-width:100%;padding:1.5cqw 2.5cqw;background:#fbf6dc;color:#16211d;border:1px solid #192b2440;border-radius:2cqw;font:900 3cqw/1.2 Inter,system-ui,sans-serif;letter-spacing:.02em;text-align:center;white-space:normal;text-wrap:balance}
+.verci-stage .nd-wa .chat-sticker[data-mood="heartbreak"]>strong,.verci-stage .nd-wa .chat-sticker[data-mood="sad"]>strong{background:#e0dcff}
+.verci-stage .nd-wa .chat-sticker[data-mood="confidence"]>strong,.verci-stage .nd-wa .chat-sticker[data-mood="money"]>strong{background:#bcf0cb}
+.verci-stage .nd-wa .chat-sticker[data-mood="love"]>strong{background:#ffd4e4}
+
+/* Short lines keep the same typography and bubble shape as every other lyric. */
+.verci-stage .nd-wa .b{overflow-wrap:anywhere;min-width:12cqw}
+.verci-stage .nd-wa .b>p{font:inherit;letter-spacing:normal;line-height:1.3}
+.verci-stage .nd-wa .b .chat-quote{display:block;width:100%;max-width:100%;margin:0 0 2cqw;padding:2cqw 2.5cqw;background:#0003;border:0;border-left:.8cqw solid #6cd8be;border-radius:1.5cqw;color:#cddbd7;text-align:left;cursor:pointer;font:inherit;line-height:1.25;box-shadow:none}
+.verci-stage .nd-wa .chat-quote>small{display:block;font-size:2.8cqw;font-weight:600;color:#8bddc8;margin-bottom:.8cqw}
+.verci-stage .nd-wa .chat-quote>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:3.3cqw;font-weight:400}
+.verci-stage .nd-wa .chat-quote:focus-visible{outline:.5cqw solid #8bddc8;outline-offset:.5cqw}
+.verci-stage .nd-wa .chat-text-reaction{display:table;max-width:100%;margin:1.8cqw 0 .5cqw auto;padding:1cqw 2cqw;border-radius:5cqw;border:1px solid #ffffff1c;background:#101c22;color:#d2e3dd;font:500 3.2cqw/1.3 "Apple Color Emoji","Segoe UI Emoji",system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere}
+
+/* Compatibility with cached renderers: GIF tiles show media only, never captions. */
+.verci-stage .nd-wa .chat-gif>:not(img){display:none!important}
+
+/* Message-attached reactions and real local reply threads. */
+.verci-stage .nd-wa .b{position:relative}
+.verci-stage .nd-wa .b.has-chat-reaction{margin-bottom:6cqw}
+.verci-stage .nd-wa .b>p{padding-right:3cqw}
+.verci-stage .nd-wa .b .chat-message-actions{position:absolute;right:.4cqw;top:.3cqw;border:0;background:transparent;padding:.5cqw 1cqw;color:#adc6bd;font:600 4cqw/1 system-ui;opacity:.5;cursor:pointer;border-radius:2cqw}
+.verci-stage .nd-wa .b:hover .chat-message-actions,.verci-stage .nd-wa .b:focus-within .chat-message-actions{opacity:1}
+.verci-stage .nd-wa .b .chat-reaction-pill{position:absolute;bottom:-4.5cqw;left:2cqw;display:flex;align-items:center;justify-content:center;min-width:9cqw;min-height:7cqw;padding:.6cqw 1.8cqw;border:.6cqw solid #0b141a;border-radius:99px;background:#26373c;color:#fff;font-size:4.8cqw;line-height:1.1;box-shadow:0 .5cqw 1cqw #0003;cursor:pointer}
+.verci-stage .nd-wa .b.out .chat-reaction-pill{left:auto;right:2cqw}
+.verci-stage .nd-wa .b .chat-reply-count{display:block;border:0;background:transparent;color:#78d9bb;font:600 3.2cqw/1.4 system-ui;padding:1cqw 0;cursor:pointer}
+.verci-stage .nd-wa .chat-interaction-panel{position:absolute;inset:12% 3% 4%;z-index:20;display:flex;flex-direction:column;gap:2.5cqw;min-height:0;overflow:auto;padding:4cqw;border:1px solid #ffffff26;border-radius:5cqw;background:#18252bf5;backdrop-filter:blur(18px);box-shadow:0 0 0 100vmax #0005;color:#edf6f1;font:400 clamp(10px,4cqw,15px)/1.4 system-ui;overscroll-behavior:contain}
+.verci-stage .nd-wa .chat-interaction-head{display:flex;align-items:center;justify-content:space-between;gap:2cqw;flex-shrink:0}
+.verci-stage .nd-wa .chat-interaction-panel button{cursor:pointer;border:0;border-radius:2cqw;padding:2cqw;background:#253a41;color:inherit;font:inherit;flex-shrink:0}
+.verci-stage .nd-wa .chat-interaction-panel button:focus-visible,.verci-stage .nd-wa .chat-reply-form textarea:focus-visible{outline:2px solid #76dbb9;outline-offset:1px}
+.verci-stage .nd-wa .chat-interaction-panel .chat-panel-close{font-size:6cqw;line-height:1;padding:1cqw 3cqw}
+.verci-stage .nd-wa .chat-selected-lyric{flex-shrink:0;margin:0;border-left:1cqw solid #70d6b4;border-radius:2cqw;padding:2cqw 3cqw;background:#0003;max-height:20cqw;overflow:auto;overflow-wrap:anywhere}
+.verci-stage .nd-wa .chat-reaction-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5cqw;flex-shrink:0}
+.verci-stage .nd-wa .chat-reaction-picker button{font-family:"Apple Color Emoji","Segoe UI Emoji",system-ui;font-size:7cqw;padding:2cqw 0;min-height:11cqw}
+.verci-stage .nd-wa .chat-reaction-picker button[aria-pressed=true]{background:#52766d;box-shadow:inset 0 0 0 1px #88e5c7}
+.verci-stage .nd-wa .chat-menu-action{text-align:left}
+.verci-stage .nd-wa .chat-local-note{font-size:3cqw;color:#a8bcb6;flex-shrink:0}
+.verci-stage .nd-wa .chat-local-thread{flex:1;min-height:12cqw;overflow:auto;display:flex;flex-direction:column;gap:2cqw;overscroll-behavior:contain}
+.verci-stage .nd-wa .chat-local-reply{align-self:flex-end;max-width:95%;padding:2cqw 3cqw;border-radius:3cqw;background:#005c4b;overflow-wrap:anywhere;white-space:pre-wrap;flex-shrink:0}
+.verci-stage .nd-wa .chat-local-reply small{color:#9ed6c3;font-size:3cqw}
+.verci-stage .nd-wa .chat-local-reply p{margin:1cqw 0}
+.verci-stage .nd-wa .chat-reply-form{display:flex;flex:0 0 auto;flex-direction:column;gap:2cqw;min-width:0;margin:0}
+.verci-stage .nd-wa .chat-reply-form textarea{width:100%;min-height:14cqw;resize:vertical;border:1px solid #78988a66;border-radius:2cqw;background:#101b20;color:#fff;padding:2cqw;font:inherit}
+.verci-stage .nd-wa .chat-reply-form button{align-self:flex-end;background:#07836c;padding:2cqw 5cqw}
+.verci-stage .nd-wa .chat-reply-form button:disabled{opacity:.4;cursor:default}
+
+/* Real Sticker.ly PNG/WebP assets retain their transparent sticker silhouette. */
+.verci-stage .nd-wa .chat-sticker.has-stickerly-image{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
+.verci-stage .nd-wa .chat-sticker.has-stickerly-image>span,.verci-stage .nd-wa .chat-sticker.has-stickerly-image>strong{display:none}
+.verci-stage .nd-wa .chat-sticker .chat-stickerly-image{display:block;width:100%;height:auto;max-height:42cqw;object-fit:contain}
+.verci-stage .nd-wa .chat-sticker .chat-stickerly-image[hidden]{display:none}
+
+/* Discord's official catalogue includes vector Lottie animations and raster stickers. */
+.verci-stage .nd-wa .chat-sticker.has-discord-sticker{transform:none;filter:drop-shadow(0 1cqw 1.5cqw #0004)}
+.verci-stage .nd-wa .chat-sticker.has-discord-sticker>span,.verci-stage .nd-wa .chat-sticker.has-discord-sticker>strong{display:none}
+.verci-stage .nd-wa .chat-discord-media{width:100%;max-width:42cqw}
+.verci-stage .nd-wa .chat-discord-media[hidden]{display:none}
+.verci-stage .nd-wa .chat-discord-image{display:block;width:100%;max-height:42cqw;object-fit:contain}
+.verci-stage .nd-wa .chat-discord-lottie{width:100%;aspect-ratio:1;overflow:hidden}
+.verci-stage .nd-wa .chat-discord-lottie svg{display:block;width:100%!important;height:100%!important}

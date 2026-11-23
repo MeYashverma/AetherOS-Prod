@@ -1,7 +1,10 @@
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
-import { addChatReaction } from './chat-reactions.js';
+import { cleanupStickerJobs } from '../providers/automatic-stickers.js';
+import { ChatInteractions } from './chat-interactions.js';
+import { addConversation } from './chat-conversation.js';
+import { addChatReaction } from './chat-reactions.js?v=gif-media-only-5';
 import { Phone } from './phone.js';
 
 /* iPhone 17 lock screen: Dynamic Island, big clock, glass notification stack, media player, flashlight and camera. */
@@ -75,6 +78,7 @@ export class Money extends Phone {
     requestAnimationFrame(() => el.classList.add('in'));
   }
   tick(S) {
+    cleanupStickerJobs(this);
     const r = this.rows[0]; if (!r || !S.line) return;
     if (this.ctx.lyrics.format === 'TTML') {
       for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
@@ -152,11 +156,14 @@ export class Messages extends Phone {
     const t = this.P.T[i], P = this.P; if (!t) return null;
     const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
     const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
-    const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}${t.big ? ' big' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
+    const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
     addChatReaction(this, b, line.text, i);
+    addConversation(this, b, line, i);
+    this.chatInteractions ||= new ChatInteractions(this);
+    this.chatInteractions.attach(b, i);
     return b;
   }
-  destroy() { this.reactionAbort?.abort(); super.destroy(); }
+  destroy() { cleanupStickerJobs(this,true); this.chatInteractions?.destroy(); this.reactionAbort?.abort(); super.destroy(); }
   onLine(S) {
     if (!S.line || S.gap) return;
     const t = this.P.T[S.idx]; if (!t) return;
@@ -182,6 +189,7 @@ export class Messages extends Phone {
     requestAnimationFrame(() => el.classList.add('in'));
   }
   tick(S) {
+    cleanupStickerJobs(this);
     const r = this.rows[0]; if (!r || !S.line) return;
     if (this.ctx.lyrics.format === 'TTML') {
       for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
