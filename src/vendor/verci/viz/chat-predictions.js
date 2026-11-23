@@ -15,7 +15,16 @@ export function createPredictor(lines=[]) {
   const prefix=partial.toLocaleLowerCase().replace(/’/g,"'");
   const previous=tokens.at(partial?-2:-1)?.toLocaleLowerCase().replace(/’/g,"'");
   const pairs=next.get(previous);
-  return [...counts].filter(([word])=>!prefix||word.startsWith(prefix)).sort((a,b)=>((pairs?.get(b[0])||0)*20+b[1])-((pairs?.get(a[0])||0)*20+a[1])||a[0].localeCompare(b[0])).slice(0,3).map(([key])=>forms.get(key));
+  let candidates=[...counts].filter(([word])=>!prefix||word.startsWith(prefix));
+  // iOS keeps the bar populated: if the current fragment has no prefix match, show
+  // contextual next-word predictions instead of an empty row. Only fall back when
+  // we have a previous word with known continuations; unknown single fragments
+  // (e.g. "zzzzzz") stay empty so the engine can signal no suggestion.
+  if(!candidates.length && prefix && previous && next.has(previous)){
+    candidates=[...counts];
+  }
+  candidates.sort((a,b)=>((pairs?.get(b[0])||0)*20+b[1])-((pairs?.get(a[0])||0)*20+a[1])||a[0].localeCompare(b[0]));
+  return candidates.slice(0,3).map(([key])=>forms.get(key));
  };
 }
 export function applyPrediction(text,suggestion,selectionStart=text.length,selectionEnd=selectionStart){

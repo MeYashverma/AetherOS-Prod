@@ -24,8 +24,9 @@ export class Notifications extends Phone {
     const P = planTurns(L, s.artist); this.P = P;
     const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
     const art=s.artwork||'';
+    const avatar=art?`<img alt="" src="${esc(art)}" onerror="this.style.display='none'">`:`<span class="chat-avatar-fallback" aria-hidden="true">${esc((title||"?").trim()[0]||"?")}</span>`;
     this.ph.innerHTML = `<div class="sb"><span class="chat-clock">${localChatTime()}</span><span class="ios-status" aria-hidden="true"><svg viewBox="0 0 48 16"><path d="M1 13V10h3v3zm5 0V7h3v6zm5 0V4h3v9zm5 0V1h3v12z" fill="currentColor"/><path d="M24 5q7-6 14 0m-11 3q4-4 8 0m-5 3h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><i></i></span></div>
-      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(art)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
+      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg>${avatar}<div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
       <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
@@ -163,8 +164,9 @@ export class Messages extends Phone {
     const P = planTurns(L, s.artist); this.P = P;
     const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
     const art=s.artwork||'';
+    const avatar=art?`<img alt="" src="${esc(art)}" onerror="this.style.display='none'">`:`<span class="chat-avatar-fallback" aria-hidden="true">${esc((title||"?").trim()[0]||"?")}</span>`;
     this.ph.innerHTML = `<div class="sb"><span class="chat-clock">${localChatTime()}</span><span class="ios-status" aria-hidden="true"><svg viewBox="0 0 48 16"><path d="M1 13V10h3v3zm5 0V7h3v6zm5 0V4h3v9zm5 0V1h3v12z" fill="currentColor"/><path d="M24 5q7-6 14 0m-11 3q4-4 8 0m-5 3h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><i></i></span></div>
-      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg><img alt="" src="${esc(art)}"><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
+      <header><svg viewBox="0 0 24 24" class="bk"><path d="M15 5l-7 7 7 7"/></svg>${avatar}<div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
       <svg viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.5"/><path d="M15 11l6-3v8l-6-3"/></svg><svg viewBox="0 0 24 24"><path d="M6 4l3 4-2 2c1 3 3 5 6 6l2-2 4 3-1 3c-9 1-16-6-14-14z"/></svg></header>
       <div class="thread"><div class="inner"><div class="chip">TODAY</div></div></div>
       <footer><svg viewBox="0 0 24 24" class="composer-plus"><path d="M12 3v18M3 12h18"/></svg><span class="inp"><em>Message</em></span><svg class="composer-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v14H3z"/><circle cx="12" cy="13" r="4"/></svg><b class="snd" data-k="send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg></b></footer>
