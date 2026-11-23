@@ -409,3 +409,8 @@
 .verci-stage .nd-wa .chat-discord-lottie svg{display:block;width:100%!important;height:100%!important}
 
 .verci-stage .nd-wa .chat-fictional-reply.listener-left{background:#202c33;margin-left:3.2cqw;margin-right:auto}
+
+.verci-stage .nd-wa .chat-fictional-reply[hidden]{display:none}
+.verci-stage .nd-wa .listener-arrival{animation:listener-send .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes listener-send{from{opacity:0;transform:translateY(2cqw) scale(.94)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.verci-stage .nd-wa .listener-arrival{animation:none}}

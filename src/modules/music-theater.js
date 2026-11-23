@@ -125,7 +125,7 @@ function render() {
   }
   const singerFields = $('music-singer-names');
   if (state.lyrics?.format === 'TTML' && state.lyrics.speakers?.length) {
-    const hint = document.createElement('p'); hint.textContent = 'TTML singer names · use the metadata name or enter the correct singer for each voice. Names may be inferred from credit order when all voices match; this is not verified attribution. Override any incorrect name here.'; singerFields.append(hint);
+    const hint = document.createElement('p'); hint.textContent = 'TTML singer names · use the metadata name or enter the correct singer for each voice. Auto-filled names use track credits when all voices match. Credit order is not verified vocal attribution; correct any name here.'; singerFields.append(hint);
     const key = JSON.stringify([state.song?.artist || '', state.song?.title || '']);
     (state.lyrics.originalSpeakers || state.lyrics.speakers).forEach((name,i) => {
       const id = state.lyrics.speakerIds?.[i] || String(i);
