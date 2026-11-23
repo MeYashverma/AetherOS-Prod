@@ -1,3 +1,5 @@
+import { createPredictor, predictionBar } from './chat-predictions.js';
+import { messageTime } from './chat-clock.js';
 // Per-song, in-memory chat state. Replies are local notes, never singer dialogue.
 const sessions=new WeakMap();
 export class ChatInteractions {
@@ -29,18 +31,20 @@ export class ChatInteractions {
   bubble.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-startX)>10 || Math.abs(e.clientY-startY)>10)clear();});
   this.update(bubble,index);
  }
- update(bubble,index){
+ update(bubble,index,animate=false){
   bubble.querySelectorAll('.chat-reaction-pill,.chat-reply-count').forEach(e=>e.remove());
   const record=this.record(index),emoji=record.reaction===undefined?bubble.dataset.autoReaction:record.reaction;
   bubble.classList.toggle('has-chat-reaction',!!emoji);
   if(emoji){
    const pill=this.button(emoji,'chat-reaction-pill chat-emoji',()=>this.open(index));
    pill.setAttribute('aria-label',`${record.reaction===undefined?'Suggested':'Your'} reaction ${emoji}; change reaction`);pill.title=record.reaction===undefined?'Suggested contextual reaction':'Your local reaction';
+   if(animate||record.presentedEmoji!==emoji)pill.classList.add('reaction-arrival');
    bubble.append(pill);
   }
+  record.presentedEmoji=emoji;
   if(record.replies.length){const count=this.button(`↪ ${record.replies.length} ${record.replies.length===1?'reply':'replies'}`,'chat-reply-count',()=>this.openThread(index));bubble.append(count);}
  }
- refresh(index){this.viz.ph.querySelectorAll(`[data-message-index="${index}"]`).forEach(b=>this.update(b,index));}
+ refresh(index){this.viz.ph.querySelectorAll(`[data-message-index="${index}"]`).forEach(b=>this.update(b,index,true));}
  close(){this.panel?.remove();this.panel=null;if(this.focusReturn?.isConnected)this.focusReturn.focus({preventScroll:true});}
  shell(title){
   this.close();this.focusReturn=document.activeElement;
@@ -77,12 +81,12 @@ export class ChatInteractions {
   if(record.reaction!==undefined || this.viz.ph.querySelector(`[data-message-index="${index}"]`)?.dataset.autoReaction)panel.append(this.button('Remove reaction','chat-menu-action',()=>{record.reaction='';this.refresh(index);this.close();}));
  }
  openThread(index,focusInput=false){
-  const panel=this.shell('Lyric replies');
+  const panel=this.shell('Lyric replies');panel.classList.add('chat-reply-sheet');
   const hint=document.createElement('small');hint.className='chat-local-note';hint.textContent='Local notes · not lyrics · not sent to anyone';panel.append(hint);
   const list=document.createElement('div');list.className='chat-local-thread';list.setAttribute('role','log');list.setAttribute('aria-live','polite');
-  const draw=()=>{
+  const draw=(animate=false)=>{
    list.replaceChildren();
-   for(const reply of this.record(index).replies){const row=document.createElement('div');row.className='chat-local-reply';const who=document.createElement('small');who.textContent='You · local reply';const text=document.createElement('p');text.textContent=reply;row.append(who,text);list.append(row);}
+   this.record(index).replies.forEach((reply,i)=>{const row=document.createElement('div');row.className='chat-local-reply';if(animate&&i===this.record(index).replies.length-1)row.classList.add('message-arrival');const who=document.createElement('small');who.textContent='You · local reply';const text=document.createElement('p');text.textContent=reply;const time=document.createElement('time');time.textContent=messageTime(this.viz.ctx.lyrics,`manual:${index}:${i}`);row.append(who,text,time);list.append(row);});
    if(!list.children.length){const empty=document.createElement('p');empty.textContent='No replies yet. Add your thoughts below.';list.append(empty);}
    list.scrollTop=list.scrollHeight;
   };draw();panel.append(list);
@@ -90,7 +94,7 @@ export class ChatInteractions {
   const input=document.createElement('textarea');input.maxLength=280;input.rows=2;input.placeholder='Reply to this lyric…';input.setAttribute('aria-label','Your local reply');
   const send=document.createElement('button');send.type='submit';send.textContent='Send';
   send.disabled=this.record(index).replies.length>=50;
-  form.append(input,send);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();const record=this.record(index);if(!text || record.replies.length>=50)return;record.replies.push(text.slice(0,280));input.value='';draw();this.refresh(index);send.disabled=record.replies.length>=50;input.focus();};
+  form.append(predictionBar(this.viz.predict || createPredictor(this.viz.ctx.lyrics.lines),input),input,send);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();const record=this.record(index);if(!text || record.replies.length>=50)return;record.replies.push(text.slice(0,280));input.value='';draw(true);this.refresh(index);send.disabled=record.replies.length>=50;input.focus();};
   input.onkeydown=e=>{if(e.key==='Enter' && !e.shiftKey){e.preventDefault();form.requestSubmit();}};
   panel.append(form);if(focusInput)input.focus();
  }

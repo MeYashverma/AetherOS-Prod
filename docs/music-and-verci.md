@@ -121,3 +121,19 @@ Singer names no longer carry visible inference badges or chat-header credit note
 Listener replies now wait 550ms after the triggering lyric, then spend 0.9–3.4 seconds typing on the playback clock. Outgoing replies use the existing composer, keyboard, key highlights and typing plan; incoming replies show typing dots. Sent replies animate into the thread (reduced motion disables the arrival animation). Pausing freezes progress; seeking reconstructs state without timeout-driven delayed sends. Lyrics retain their original timing.
 
 Local reply selection weighs the current lyric most strongly, with two recent lines as context, negation-aware mood matching, phrase-specific overthinking/ghosting/time-pressure cues, and a serious-distress override. Expanded banks include cheeky, cute, sarcastic, exaggerated and emoji-only messages; repeated same-mood choruses rotate through the bank instead of repeating the same line. This is a deterministic curated engine, not a claim of AI-level understanding or unlimited unique responses. No lyric text is uploaded.
+
+
+### iOS-style chat and local timestamps
+
+The chat scene now follows the dark iOS reference: black thread (no doodle wallpaper), gray incoming and teal outgoing messages, blue header/composer controls, a status-bar cutout and signal/battery icons, and a gray keyboard with a suggestion strip and home indicator. Reaction/reply controls use a bottom-sheet presentation; manual reply threads still do not duplicate quoted lyrics.
+
+Header time uses the device's local 24-hour clock. Lyric, listener and manual reply timestamps now show local send/display time instead of song position. A per-lyrics-object timestamp map preserves existing times across TTML rebuilds, seeks and scene remounts. Listener time is recorded when it becomes sent, not while typing. Lyric timing, seeking and the playback engine remain unchanged.
+
+Added bottom-sheet entrance, reaction pop, new message/reply arrival, and remote media fade/scale animations. The keyboard and typing continue to follow playback. Chat-scoped `prefers-reduced-motion` rules disable decorative animations and transitions. The animated keyboard suggestions use the local word-completion engine described below.
+
+
+### Local keyboard predictions
+
+The animated keyboard prediction strip now updates as each lyric/listener word is typed, rather than showing fixed placeholder words. A per-song offline vocabulary and word-pair model ranks up to three prefix completions or next-word suggestions. It learns vocabulary from the current lyric file plus a small conversational baseline; it does not upload text or train a remote model.
+
+Manual reply composers expose a matching tappable prediction strip. Selecting a suggestion completes the word before the caret (or inserts a next word), preserves text after the selection, restores focus/caret, updates suggestions, and respects the reply length limit. The animated playback strip remains display-only so tapping it cannot rewrite lyrics or disrupt synchronization. This is lightweight completion, not OS-level autocorrect or a generative language model.
