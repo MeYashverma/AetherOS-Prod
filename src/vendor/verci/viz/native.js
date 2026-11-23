@@ -1,5 +1,6 @@
 import { createPredictor } from './chat-predictions.js';
 import { localChatTime, messageTime } from './chat-clock.js';
+import { splitChatAsides } from './chat-asides.js';
 // "Native Design" family: the song as real-looking phone screens. These keep their own colours.
 import { $, esc, clamp, lerp, rnd, Viz, wordsHTML, light } from './core.js';
 import { wordPos } from '../lrc.js';
@@ -162,6 +163,7 @@ export class Messages extends Phone {
     }
     this.predict=createPredictor(L.lines);
     const P = planTurns(L, s.artist); this.P = P;
+    this.asides = new Map();
     const title = P.group || P.two ? s.title : P.names[0], sub = (P.group || P.two ? P.names.join(', ') : 'online · visual turns');
     const art=s.artwork||'';
     const avatar=`<span class="chat-avatar" aria-hidden="true"><span class="chat-avatar-fallback">${esc((title||"?").trim()[0]||"?")}</span>${art?`<img alt="" src="${esc(art)}" onerror="this.remove()">`:''}</span>`;
@@ -179,20 +181,62 @@ export class Messages extends Phone {
     this.predictionText = ""; this.shown = ""; this.kbo = false;
     this.clock = this.ph.querySelector(".chat-clock");
   }
+  outgoing(turn) { return !!turn && !this.P.group && turn.who === 1; }
+  lyricSegments(i, line) {
+    if (!this.asides.has(i)) {
+      const singers = [...(this.ctx.lyrics.speakers || []), this.ctx.song.artist];
+      this.asides.set(i, splitChatAsides(line, singers));
+    }
+    return this.asides.get(i);
+  }
   bubble(i, line) {
     const t = this.P.T[i], P = this.P; if (!t) return null;
-    const out = P.two ? t.who === 1 : P.group ? false : t.who === 1, mm = messageTime(this.ctx.lyrics,`lyric:${i}`);
+    const out = this.outgoing(t), mm = messageTime(this.ctx.lyrics,`lyric:${i}`);
     const nm = (P.group || P.two) && t.fresh ? `<s style="color:${NAME_COL[t.who % 6]}">${esc(P.names[t.who] || '')}</s>` : '';
     const b = $('div', `b ${out ? 'out' : 'in'}${t.fresh ? ' tail' : ''}`, `${nm}<p>${wordsHTML(line.tokens)}</p><time>${mm}${out ? '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>' : ''}</time>`);
-    
-    // Ensure this.inner exists for tests that call bubble() before build()
+
+    // Ensure this.inner exists for tests that call bubble() before build().
     if (!this.inner) this.inner = this.ph.querySelector('.inner');
-    
+
     addChatReaction(this, b, line.text, i);
     addConversation(this, b, line, i);
     this.chatInteractions ||= new ChatInteractions(this);
     this.chatInteractions.attach(b, i);
     return b;
+  }
+  lyricBubbles(i, line) {
+    const segments = this.lyricSegments(i, line);
+    if (!segments) {
+      const el = this.bubble(i, line);
+      return { el, parts: [{ el, line, spans: [...el.querySelectorAll('.w')] }] };
+    }
+    // Keep the source line intact. Only this chat view splits a sung aside from
+    // its main lyric; merged main tokens still light at their original times.
+    const mainTokens = segments.filter(s => !s.aside).flatMap(s => s.tokens);
+    const mainLine = { ...line, text: mainTokens.map(t => t.text).join(' ').trim(), tokens: mainTokens };
+    const out = this.outgoing(this.P.T[i]);
+    const parts = [];
+    let main = null;
+    for (const segment of segments) {
+      let el, partLine;
+      if (segment.aside) {
+        partLine = { ...line, text: segment.text, tokens: segment.tokens };
+        const mm = messageTime(this.ctx.lyrics, `lyric:${i}`);
+        el = $('div', `b ${out ? 'in' : 'out'} tail chat-aside`, `<p>${wordsHTML(segment.tokens)}</p><time>${mm}${out ? '' : '<svg viewBox="0 0 18 10"><path d="M1 5l3 3 6-7M7 8l1 1 7-8"/></svg>'}</time>`);
+        el.setAttribute('aria-label', `${segment.text}, lyric from the other participant`);
+      } else if (!main && mainTokens.length) {
+        partLine = mainLine;
+        el = main = this.bubble(i, mainLine);
+      } else continue;
+      parts.push({ el, line: partLine, spans: [...el.querySelectorAll('.w')] });
+    }
+    // A line consisting only of a sung aside is still a lyric users can react to.
+    if (!main && parts.length) {
+      this.chatInteractions ||= new ChatInteractions(this);
+      this.chatInteractions.attach(parts[0].el, i);
+      parts[0].el.setAttribute('aria-label', `${parts[0].line.text}, lyric from the other participant; right-click or hold to react or reply`);
+    }
+    return { el: main || parts[0]?.el, parts };
   }
   appendListener(index,line,el) {
     if(this.ctx.opts?.listenerReplies?.()===false)return null;
@@ -234,7 +278,7 @@ export class Messages extends Phone {
     const t = this.P.T[S.idx]; if (!t) return;
     if (S.jump) { if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove()); this.rows = []; this.typing = null; }
     this.sendFlash = S.t;
-    if (this.rows[0]) this.full(this.rows[0].el);
+    if (this.rows[0]) for (const part of this.rows[0].parts) this.full(part.el);
     this.typing?.remove(); this.typing = null;
     // TTML can have simultaneous agents. Rebuild a small deterministic window on
     // each line change so equal-start duet lines and backward seeks aren't lost.
@@ -242,19 +286,32 @@ export class Messages extends Phone {
       if(this.inner) this.inner.querySelectorAll('.b').forEach(e => e.remove());
       const eligible = this.ctx.lyrics.lines.map((line, i) => ({ line, i })).filter(x => x.line.text && x.line.t <= S.t).slice(-9);
       for (const { line, i } of eligible) {
-        const el = this.bubble(i, line); if (!el) continue;
-        if(this.inner) this.inner.append(el); el.classList.add('in');
-        if(!S.jump&&i===S.idx)el.classList.add('message-arrival');
-        const reply=this.appendListener(i,line,el);
-        this.rows.unshift({ el, reply, line, spans: [...el.querySelectorAll('.w')] });
+        const row = this.lyricBubbles(i, line);
+        for (const part of row.parts) {
+          if(this.inner) this.inner.append(part.el);
+          part.el.classList.add('in');
+          if(!S.jump&&i===S.idx)part.el.classList.add('message-arrival');
+        }
+        const reply=this.appendListener(i,line,row.el);
+        this.rows.unshift({ ...row, reply });
       }
       return;
     }
-    const el = this.bubble(S.idx, S.line); if(!this.inner) this.inner=this.ph.querySelector('.inner'); if(this.inner) this.inner.append(el);
-    const reply=this.appendListener(S.idx,S.line,el);
-    this.rows.unshift({ el, reply, spans: [...el.querySelectorAll('.w')] });
-    while (this.rows.length > 9) { const old=this.rows.pop(); old.el.remove(); old.reply?.remove(); }
-    requestAnimationFrame(() => { el.classList.add('in');if(!S.jump)el.classList.add('message-arrival'); });
+    const row = this.lyricBubbles(S.idx, S.line);
+    if(!this.inner) this.inner=this.ph.querySelector('.inner');
+    if(this.inner) for (const part of row.parts) this.inner.append(part.el);
+    const reply=this.appendListener(S.idx,S.line,row.el);
+    this.rows.unshift({ ...row, reply });
+    while (this.rows.length > 9) {
+      const old=this.rows.pop();
+      old.parts.forEach(part => part.el.remove()); old.reply?.remove();
+    }
+    requestAnimationFrame(() => {
+      for (const part of row.parts) {
+        part.el.classList.add('in');
+        if(!S.jump)part.el.classList.add('message-arrival');
+      }
+    });
   }
   tick(S) {
     if (!this.down) this.down = [];
@@ -273,18 +330,21 @@ export class Messages extends Phone {
     const clock=this.ph.querySelector('.chat-clock');if(clock)clock.textContent=localChatTime();
     const listener=this.listenerFrame(S.t);
     const r = this.rows[0]; if (!r || !S.line) return;
-    if (this.ctx.lyrics.format === 'TTML') {
-      for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
-    } else light(r.spans, S.gap ? 99 : S.pos);
+    const litRows = this.ctx.lyrics.format === 'TTML' ? this.rows : [r];
+    for (const row of litRows) for (const part of row.parts) {
+      light(part.spans, S.gap && row === r ? 99 : wordPos(part.line.tokens, S.t));
+    }
     const L = this.ctx.lyrics; let ni = S.idx + 1; while (L.lines[ni] && !L.lines[ni].text) ni++;
-    const nx = L.lines[ni], nt = this.P.T[ni], out = !!nt && (this.P.two ? nt.who === 1 : this.P.group ? false : nt.who === 1);
-    // Green (outgoing) lines are typed on a real-looking keyboard that rises just before the bubble is sent.
+    const nx = L.lines[ni], nt = this.P.T[ni], out = this.outgoing(nt);
+    const nextParts = nx && this.lyricSegments(ni, nx);
+    const nextMain = nextParts ? nextParts.filter(part => !part.aside).map(part => part.text).join(' ').trim() : nx?.text;
+    // Only type the words assigned to this participant, never an extracted aside.
     let kb = false, typed = '', last = null, p = 0;
-    if (nx && out) {
-      const dur = clamp(nx.text.length * 0.065 + 0.5, 0.9, 2.8), start = Math.max(nx.t - dur, S.line.t + 0.35), d = nx.t - start;
+    if (nx && out && nextMain) {
+      const dur = clamp(nextMain.length * 0.065 + 0.5, 0.9, 2.8), start = Math.max(nx.t - dur, S.line.t + 0.35), d = nx.t - start;
       if (d > 0.3 && S.t >= start - 0.5) {
         kb = true; p = clamp((S.t - start) / d);
-        let pl = this.plans.get(ni); if (!pl) this.plans.set(ni, pl = typingPlan(nx.text, ni));
+        let pl = this.plans.get(ni); if (!pl) this.plans.set(ni, pl = typingPlan(nextMain, ni));
         ({ str: typed, last } = typedAt(pl, p)); this.dur = d; this.ev = last && last.u * d;
       }
     }
@@ -307,7 +367,7 @@ export class Messages extends Phone {
       if (last.t === 'b') hit('back'); else { const c = last.ch.toLowerCase(); if (last.shift) hit('shift'); hit(c === ' ' ? 'space' : /[a-z]/.test(c) ? c : 'sym'); }
     }
     if (kb && p >= 0.985) { const g = this.keys.go; g.classList.add('down'); this.down.push(g); }
-    const want = !listener && nx && nt && !out && S.t > nx.t - 1.5;
+    const want = !!(!listener && nx && nt && !out && nextMain && S.t > nx.t - 1.5);
     if (want && !this.typing) {
       this.typing = $('div', 'b typing in' + (nt.fresh ? ' tail' : ''), '<i></i><i></i><i></i>'); if(this.inner) this.inner.append(this.typing); requestAnimationFrame(() => this.typing?.classList.add('in'));
       this.sub.textContent = this.P.group ? (this.P.names[nt.who] || '') + ' is typing…' : 'typing…';

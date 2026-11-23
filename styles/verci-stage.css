@@ -159,7 +159,7 @@
 .verci-stage .nd-wa .b.in{background:#202c33;transform-origin:left bottom}
 .verci-stage .nd-wa .b.out{background:#10564e;margin-left:auto;transform-origin:right bottom}
 .verci-stage .nd-wa .b.tail{margin-top:2.4cqw}
-.verci-stage .nd-wa .b.in.tail{border-top-left-radius:0}
+.verci-stage .nd-wa .b.in:not(.out).tail{border-top-left-radius:0}
 .verci-stage .nd-wa .b.out.tail{border-top-right-radius:0}
 .verci-stage .nd-wa .b s{display:block;font-size:3.5cqw;font-weight:700;text-decoration:none;margin-bottom:.3cqw}
 .verci-stage .nd-wa .b time{display:flex;justify-content:flex-end;align-items:center;gap:1cqw;font-size:2.7cqw;color:#b3b3b3;font-variant-numeric:tabular-nums;margin-top:.3cqw}
@@ -414,9 +414,9 @@
 .verci-stage .nd-wa .ios-status{display:flex;align-items:center;gap:1cqw}
 .verci-stage .nd-wa .ios-status svg{width:12cqw;height:4cqw}
 .verci-stage .nd-wa .ios-status i{width:5cqw;height:2.5cqw;border:1px solid #aaa;border-radius:.7cqw;background:#f2f2f2;box-shadow:inset 0 0 0 .4cqw #161616}
-/* WhatsApp-style single row, vertically centered inside the requested 44+61pt
-   navigation area. The status bar, composer and home safe-area keep their sizes. */
-.verci-stage .nd-wa header{display:flex;flex-direction:row;align-items:center;gap:1.6cqw;padding:0 2.6cqw;background:#1f2c34;flex:none;height:26.9cqw;border-bottom:0.5px solid rgba(255,255,255,.06);box-sizing:border-box}
+/* Compact 56pt WhatsApp-style contact row. The status bar, composer and
+   home safe-area retain their independent template proportions. */
+.verci-stage .nd-wa header{display:flex;flex-direction:row;align-items:center;gap:1.6cqw;padding:0 2.6cqw;background:#1f2c34;flex:none;height:14.4cqw;border-bottom:0.5px solid rgba(255,255,255,.06);box-sizing:border-box}
 .verci-stage .nd-wa header .chat-avatar{position:relative;display:grid;place-items:center;width:8cqw;height:8cqw;flex:none;border-radius:50%;overflow:hidden;order:1}
 .verci-stage .nd-wa header .chat-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .verci-stage .nd-wa header .chat-contact{flex:1 1 auto;min-width:0;order:2;line-height:1.2}
@@ -443,11 +443,13 @@
 .verci-stage .nd-wa .b.in,.verci-stage .nd-wa .chat-fictional-reply.listener-left{background:#202c33}
 .verci-stage .nd-wa .b.out{background:#005c4b}
 .verci-stage .nd-wa .b.tail{margin-top:2cqw}
-.verci-stage .nd-wa .b.in.tail{border-top-left-radius:.6cqw}
+.verci-stage .nd-wa .b.in:not(.out).tail{border-top-left-radius:.6cqw}
 .verci-stage .nd-wa .b.out.tail{border-top-right-radius:.6cqw}
 .verci-stage .nd-wa .b.tail::before{content:"";position:absolute;top:0;width:2cqw;height:2.6cqw;pointer-events:none}
-.verci-stage .nd-wa .b.in.tail::before{left:-1.7cqw;background:#202c33;clip-path:polygon(100% 0,100% 100%,0 0)}
-.verci-stage .nd-wa .b.out.tail::before{right:-1.7cqw;background:#005c4b;clip-path:polygon(0 0,100% 0,0 100%)}
+/* .in also means "arrived" on outgoing bubbles: only true incoming messages
+   may set left. Otherwise both offsets are set and CSS draws the green tail on the left. */
+.verci-stage .nd-wa .b.in:not(.out).tail::before{left:-1.7cqw;right:auto;background:#202c33;clip-path:polygon(100% 0,100% 100%,0 0)}
+.verci-stage .nd-wa .b.out.tail::before{left:auto;right:-1.7cqw;background:#005c4b;clip-path:polygon(0 0,100% 0,0 100%)}
 .verci-stage .nd-wa .b time{margin-top:.6cqw;color:#aebbc2;font-size:2.7cqw;font-variant-numeric:tabular-nums}
 .verci-stage .nd-wa .b.out time{color:#afd2c7}
 .verci-stage .nd-wa footer{height:15.9cqw;padding:2.5cqw 3cqw;gap:2cqw;background:#1f2c34;border-top:1px solid #ffffff0d}

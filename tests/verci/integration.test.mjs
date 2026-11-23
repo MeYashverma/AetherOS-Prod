@@ -85,11 +85,12 @@ assert.ok(!/border-radius:(?:50|54)px/.test(frameCSS), 'no capsule-like native p
 assert.match(frameCSS, /\.phone\.nd-ios\{[^}]*border-radius:15% \/ 7%/, 'template corner radius is relative to the phone, never the stage');
 assert.doesNotMatch(frameCSS, /\.phone(?:\.nd-wa|\.nd-ios)?\{[^}]*border-radius:\d+cqw/, 'cqw on the phone itself resolves against the stage and clips the corners');
 assert.match(frameCSS, /\.nd-wa \.sb\{[^}]*height:15\.9cqw/, '62pt status bar');
-assert.match(frameCSS, /\.nd-wa header\{display:flex;flex-direction:row;align-items:center;[^}]*height:26\.9cqw/, '105pt navigation area has one centered WhatsApp-style row');
+assert.match(frameCSS, /\.nd-wa header\{display:flex;flex-direction:row;align-items:center;[^}]*height:14\.4cqw/, 'compact 56pt navigation area keeps one centered WhatsApp-style row');
 assert.match(frameCSS, /header :is\(\.nav-actions,\.nav-title\)\{display:contents\}/, 'cached two-row markup flattens into the same row');
 assert.doesNotMatch(frameCSS, /header:has\(> \.bk\)\{display:grid/, 'cached flat markup must not stack contact details');
 assert.match(frameCSS, /\.nd-wa \.b\{[^}]*font-size:4\.1cqw/, 'message text scales with the phone instead of inheriting the desktop font');
-assert.match(frameCSS, /\.nd-wa \.b\.in\.tail::before\{[^}]*clip-path:/, 'incoming bubbles retain a shaped tail');
+assert.match(frameCSS, /\.nd-wa \.b\.in:not\(\.out\)\.tail::before\{[^}]*left:-1\.7cqw;right:auto;[^}]*clip-path:/, 'incoming bubbles have only a left tail');
+assert.match(frameCSS, /\.nd-wa \.b\.out\.tail::before\{[^}]*left:auto;right:-1\.7cqw;[^}]*clip-path:/, 'arrived outgoing bubbles have only a right tail');
 assert.match(frameCSS, /\.nd-wa \.kr i:not\(\.sp\):not\(\.space\)\.down::after\{[^}]*top:-1cqw/, 'pressed key stays below the suggestions');
 assert.match(frameCSS, /\.nd-wa footer\{height:15\.9cqw/, '62pt composer');
 assert.match(frameCSS, /\.nd-wa \.phone-home\{height:8\.7cqw/, '34pt home safe area');
