@@ -1,34 +1,52 @@
 // AetherOS — Window DOM Templates (network-workspace-templates)
 Object.assign(WindowContents, {
     presence: `
-                <div class="flex flex-col h-full bg-gradient-to-br from-os-800 to-black relative overflow-hidden p-4 text-xs font-mono" id="presence-console-panel">
-                    <!-- Loaded dynamically via os.renderPresenceDashboard() -->
-                </div>
-            `,
+        <div class="flex flex-col h-full bg-[#07090f]/95 relative overflow-hidden p-4 text-xs select-none" id="presence-console-panel"></div>
+    `,
 
     feed: `
-                <div class="flex flex-col h-full bg-os-900 text-xs font-mono" id="signal-feed-root">
-                    <div class="h-10 border-b border-white/5 px-4 flex justify-between items-center text-[10px] font-mono text-os-accent uppercase">
-                        <span>Global Signal Intercept</span>
-                        <span class="text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> LIVE_STREAM</span>
+        <div class="flex flex-col h-full bg-[#07090f]/95 text-xs select-none" id="signal-feed-root">
+            <div class="os-toolbar">
+                <div class="os-segmented flex-wrap" id="feed-source-tabs">
+                    <button type="button" data-feed-src="all" onclick="os.feedSetSource('all')" class="os-seg-btn active hover-target cursor-none">All</button>
+                    <button type="button" data-feed-src="hn" onclick="os.feedSetSource('hn')" class="os-seg-btn hover-target cursor-none">Hacker News</button>
+                    <button type="button" data-feed-src="devto" onclick="os.feedSetSource('devto')" class="os-seg-btn hover-target cursor-none">Dev.to</button>
+                    <button type="button" data-feed-src="github" onclick="os.feedSetSource('github')" class="os-seg-btn hover-target cursor-none">GitHub</button>
+                    <button type="button" data-feed-src="reddit" onclick="os.feedSetSource('reddit')" class="os-seg-btn hover-target cursor-none">Reddit</button>
+                    <button type="button" data-feed-src="saved" onclick="os.feedSetSource('saved')" class="os-seg-btn hover-target cursor-none">Saved <span id="feed-saved-count" class="ml-0.5 opacity-70">0</span></button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-3 h-3 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <input id="feed-search-input" type="text" placeholder="Filter stories..." oninput="os.feedSetSearch(this.value)"
+                            class="os-input pl-7 pr-2.5 py-1 w-40 text-[11px]">
                     </div>
-                    <div class="flex-1 p-3 overflow-y-hidden relative bg-black/20">
-                        <div class="absolute inset-0 opacity-10 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')]"></div>
-                        <div class="h-full overflow-y-auto space-y-2 pr-1 relative z-10" id="signal-stream-container">
-                            <div class="py-6 text-center text-gray-500 text-[10px] animate-pulse">
-                                TUNING EXTERNAL FREQUENCIES...
-                            </div>
-                        </div>
-                    </div>
-                    <div class="border-t border-white/5 p-2 bg-black/40 text-[9px] text-gray-500 flex justify-between items-center">
-                        <span id="signal-sources-lbl">SOURCES: AWAITING UPLINK...</span>
-                        <span id="signal-buffer-count" class="font-bold text-white">BUFFER: 0</span>
+                    <button type="button" onclick="os.initSignalFeed(true)" class="os-btn hover-target cursor-none" title="Refresh feeds"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                </div>
+            </div>
+
+            <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[360px_1fr] overflow-hidden">
+                <div class="border-r border-white/[0.07] overflow-y-auto p-2.5 space-y-1.5 bg-black/25" id="signal-stream-container">
+                    <div class="py-10 text-center text-gray-400 text-xs">Loading stories from Hacker News, Dev.to, GitHub &amp; Reddit...</div>
+                </div>
+                <div class="hidden md:flex flex-col min-h-0 overflow-y-auto p-5 bg-[#090c14]/70 select-text" id="feed-reader-pane">
+                    <div class="m-auto text-center text-gray-500 max-w-xs space-y-2">
+                        <i data-lucide="newspaper" class="w-8 h-8 mx-auto text-gray-600"></i>
+                        <div class="text-sm font-medium text-gray-300">Select a story to read</div>
+                        <div class="text-xs text-gray-500 leading-relaxed">Read full Dev.to articles, inspect Hacker News top comments, or clip stories straight to Files.</div>
                     </div>
                 </div>
-            `,
+            </div>
+
+            <div class="border-t border-white/[0.07] px-3.5 py-1.5 bg-black/45 text-[11px] text-gray-400 flex justify-between items-center shrink-0">
+                <span id="signal-sources-lbl">Connecting to feeds...</span>
+                <span id="signal-buffer-count" class="font-mono text-gray-300 tabular-nums">0 stories</span>
+            </div>
+        </div>
+    `,
 
     floor796: `
-                <div class="h-full flex flex-col bg-[#060607] overflow-hidden font-mono relative" id="floor796-root">
+                <div class="h-full flex flex-col bg-[#060607] overflow-hidden relative" id="floor796-root">
                     <div class="absolute inset-0 pointer-events-none opacity-30" style="background:radial-gradient(circle at 10% 8%,rgba(250,204,21,.12),transparent 32%),radial-gradient(circle at 85% 0%,rgba(59,130,246,.13),transparent 36%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:auto,auto,28px 28px,28px 28px;"></div>
                     <div class="relative z-10 h-12 px-3 border-b border-white/10 bg-black/60 flex items-center gap-2 shrink-0">
                         <div class="flex items-center gap-2 pr-3 border-r border-white/10"><span class="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,.9)] animate-pulse"></span><span class="text-white font-display uppercase tracking-widest text-sm">Floor796 Explorer</span><span id="floor796-status" class="text-[9px] text-gray-500 uppercase">BRIDGE READY</span></div>
@@ -68,7 +86,7 @@ Object.assign(WindowContents, {
             `,
 
     wplace: `
-                <div class="h-full flex flex-col bg-[#050507] overflow-hidden font-mono relative" id="wplace-root">
+                <div class="h-full flex flex-col bg-[#050507] overflow-hidden relative" id="wplace-root">
                     <div class="absolute inset-0 pointer-events-none opacity-25" style="background:radial-gradient(circle at 12% 0%,rgba(79,70,229,.18),transparent 35%),radial-gradient(circle at 88% 10%,rgba(236,72,153,.14),transparent 34%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:auto,auto,32px 32px,32px 32px;"></div>
                     <div class="relative z-10 h-12 px-3 border-b border-white/10 bg-black/55 flex items-center gap-2 shrink-0">
                         <div class="flex items-center gap-2 pr-3 border-r border-white/10"><span class="w-2 h-2 rounded-full bg-fuchsia-400 shadow-[0_0_12px_rgba(232,121,249,.9)] animate-pulse"></span><span class="text-white font-display uppercase tracking-widest text-sm">Wplace Live</span><span id="wplace-status" class="text-[9px] text-gray-500 uppercase">EMBED READY</span></div>
@@ -90,523 +108,512 @@ Object.assign(WindowContents, {
             `,
 
     browser: `
-                <div class="flex flex-col h-full bg-[#08080a] overflow-hidden font-mono" id="browser-root">
+        <div class="flex flex-col h-full bg-[#07090f] overflow-hidden text-xs" id="browser-root">
+            <div class="flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.07] bg-black/50 shrink-0">
+                <button type="button" onclick="os.browserNav('back')" id="browser-btn-back" title="Back"
+                    class="os-btn px-2 py-1.5 hover-target cursor-none disabled:opacity-35">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="os.browserNav('forward')" id="browser-btn-fwd" title="Forward"
+                    class="os-btn px-2 py-1.5 hover-target cursor-none disabled:opacity-35">
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="os.browserShowHome()" title="Start Page"
+                    class="os-btn px-2 py-1.5 hover-target cursor-none">
+                    <i data-lucide="home" class="w-3.5 h-3.5"></i>
+                </button>
 
-                    <!-- Toolbar -->
-                    <div class="flex items-center gap-1.5 px-2 py-2 border-b border-white/5 bg-black/50 shrink-0">
-                        <button onclick="os.browserNav('back')" id="browser-btn-back" title="Back"
-                            class="p-1.5 rounded hover:bg-white/10 transition text-gray-500 hover:text-white cursor-none hover-target disabled:opacity-30">
-                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="os.browserNav('forward')" id="browser-btn-fwd" title="Forward"
-                            class="p-1.5 rounded hover:bg-white/10 transition text-gray-500 hover:text-white cursor-none hover-target">
-                            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                        </button>
+                <div class="flex-1 relative flex items-center">
+                    <i data-lucide="globe" class="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
+                    <input id="browser-url-input" type="text"
+                        class="w-full os-input pl-9 pr-16 py-1.5 text-xs font-mono cursor-text"
+                        placeholder="Search Wikipedia / DuckDuckGo or enter a URL..."
+                        onkeydown="if(event.key==='Enter') os.browserGo()">
+                    <button type="button" onclick="os.browserGo()"
+                        class="absolute right-1 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-medium text-white transition cursor-none hover-target">
+                        Go
+                    </button>
+                </div>
 
-                        <!-- URL bar -->
-                        <div class="flex-1 relative flex items-center">
-                            <i data-lucide="globe" class="absolute left-2.5 w-3 h-3 text-gray-500 pointer-events-none"></i>
-                            <input id="browser-url-input" type="text"
-                                class="w-full bg-black/60 border border-white/10 rounded pl-8 pr-24 py-1.5 text-[11px] text-white font-mono focus:outline-none focus:border-white/25 transition cursor-none hover-target"
-                                placeholder="Search or enter URL..."
-                                onkeydown="if(event.key==='Enter') os.browserGo()">
-                            <button onclick="os.browserGo()"
-                                class="absolute right-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded text-[9px] text-white uppercase tracking-wider transition cursor-none hover-target">
-                                GO
+                <button type="button" onclick="os.browserToggleFav()" id="browser-btn-fav" title="Bookmark page"
+                    class="os-btn px-2 py-1.5 hover-target cursor-none">
+                    <i data-lucide="star" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="os.browserClipToVFS && os.browserClipToVFS()" title="Save Reader Clip to Files"
+                    class="os-btn px-2.5 py-1.5 hover-target cursor-none">
+                    <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i> Clip
+                </button>
+                <button type="button" onclick="os.browserOpenExternal()" title="Open in host browser tab"
+                    class="os-btn px-2 py-1.5 hover-target cursor-none">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-1 px-2.5 pt-1.5 pb-0 border-b border-white/[0.06] bg-black/30 shrink-0 overflow-x-auto no-scrollbar" id="browser-tabs-row"></div>
+
+            <div class="flex-1 overflow-hidden relative">
+                <div id="browser-home" class="absolute inset-0 overflow-y-auto p-5 space-y-5">
+                    <div class="max-w-2xl mx-auto space-y-5">
+                        <div class="flex gap-2 mt-1">
+                            <div class="flex-1 relative">
+                                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                                <input id="browser-search-big" type="text"
+                                    class="w-full os-input pl-10 pr-4 py-2.5 text-sm cursor-text"
+                                    placeholder="Search the web or Wikipedia..."
+                                    onkeydown="if(event.key==='Enter') os.browserSearch(this.value)">
+                            </div>
+                            <button type="button" onclick="os.browserSearch(document.getElementById('browser-search-big').value)"
+                                class="px-4 py-2.5 os-btn-primary text-xs cursor-none hover-target">
+                                Search
                             </button>
                         </div>
 
-                        <button onclick="os.browserOpenExternal()" title="Open in new tab" aria-label="Open in new tab"
-                            class="p-1.5 rounded hover:bg-white/10 transition text-gray-500 hover:text-white cursor-none hover-target">
-                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="os.browserToggleFav()" id="browser-btn-fav"
-                            class="p-1.5 rounded hover:bg-white/10 transition text-gray-500 hover:text-yellow-400 cursor-none hover-target">
-                            <i data-lucide="star" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Tabs row -->
-                    <div class="flex gap-1 px-2 pt-1.5 pb-0 border-b border-white/5 shrink-0 overflow-x-auto no-scrollbar" id="browser-tabs-row"></div>
-
-                    <!-- Content area — two views: home / preview -->
-                    <div class="flex-1 overflow-hidden relative">
-
-                        <!-- HOME VIEW: shown when no active page -->
-                        <div id="browser-home" class="absolute inset-0 overflow-y-auto p-4 space-y-5">
-
-                            <!-- Search bar (big) -->
-                            <div class="flex gap-2 mt-1">
-                                <div class="flex-1 relative">
-                                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-                                    <input id="browser-search-big" type="text"
-                                        class="w-full bg-black/50 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-white/25 cursor-none hover-target"
-                                        placeholder="Search DuckDuckGo..."
-                                        onkeydown="if(event.key==='Enter') os.browserSearch(this.value)">
-                                </div>
-                                <button onclick="os.browserSearch(document.getElementById('browser-search-big').value)"
-                                    class="px-4 py-2.5 bg-white/8 border border-white/10 rounded-lg text-sm text-white hover:bg-white/15 transition cursor-none hover-target">
-                                    Search
-                                </button>
-                            </div>
-
-                            <!-- Quick launch tiles -->
-                            <div>
-                                <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-2">QUICK LAUNCH</div>
-                                <div class="grid grid-cols-4 gap-2" id="browser-quicklaunch"></div>
-                            </div>
-
-                            <!-- Bookmarks -->
-                            <div id="browser-bookmarks-section" class="hidden">
-                                <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
-                                    <span>BOOKMARKS</span>
-                                    <button onclick="os.browserClearBookmarks()" class="text-red-500/60 hover:text-red-400 text-[8px] cursor-none hover-target">CLEAR ALL</button>
-                                </div>
-                                <div class="space-y-1" id="browser-bookmarks-list"></div>
-                            </div>
-
-                            <!-- Session history -->
-                            <div id="browser-history-section" class="hidden">
-                                <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
-                                    <span>SESSION HISTORY</span>
-                                    <button onclick="os.browserClearHistory()" class="text-red-500/60 hover:text-red-400 text-[8px] cursor-none hover-target">CLEAR</button>
-                                </div>
-                                <div class="space-y-0.5" id="browser-history-list"></div>
-                            </div>
+                        <div>
+                            <div class="text-[11px] font-semibold text-gray-400 mb-2.5">Speed Dial</div>
+                            <div class="grid grid-cols-4 gap-2.5" id="browser-quicklaunch"></div>
                         </div>
 
-                        <!-- PREVIEW VIEW: shown when a page is "loaded" -->
-                        <div id="browser-preview" class="absolute inset-0 hidden flex-col">
-
-                            <!-- Preview meta bar -->
-                            <div class="flex items-center justify-between px-3 py-1.5 bg-black/60 border-b border-white/5 shrink-0">
-                                <div class="flex items-center gap-2 text-[10px]">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                                    <span class="text-gray-400" id="browser-preview-domain">--</span>
-                                    <span class="text-gray-600">·</span>
-                                    <span class="text-gray-500" id="browser-preview-title">--</span>
-                                </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="os.browserOpenExternal()"
-                                        class="flex items-center gap-1 px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] text-white hover:bg-white/15 transition cursor-none hover-target">
-                                        <i data-lucide="external-link" class="w-3 h-3"></i> OPEN IN BROWSER
-                                    </button>
-                                    <button onclick="os.browserShowHome()"
-                                        class="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] text-gray-400 hover:text-white hover:bg-white/10 transition cursor-none hover-target">
-                                        HOME
-                                    </button>
-                                </div>
+                        <div id="browser-bookmarks-section" class="hidden">
+                            <div class="text-[11px] font-semibold text-gray-400 mb-2 flex items-center justify-between">
+                                <span>Bookmarks</span>
+                                <button type="button" onclick="os.browserClearBookmarks()" class="text-rose-400/80 hover:text-rose-300 text-[11px] cursor-none hover-target">Clear all</button>
                             </div>
-
-                            <!-- Fetch content area -->
-                            <div class="flex-1 overflow-y-auto p-4 no-scrollbar" id="browser-preview-content"></div>
+                            <div class="space-y-1" id="browser-bookmarks-list"></div>
                         </div>
 
-                    </div>
-
-                    <!-- Status bar -->
-                    <div class="flex items-center justify-between px-3 py-1 border-t border-white/5 bg-black/40 shrink-0 text-[9px] text-gray-600">
-                        <span id="browser-status">READY</span>
-                        <span class="text-gray-700">AETHEROS WEBPROXY v2 · TABS OPEN IN HOST BROWSER</span>
+                        <div id="browser-history-section" class="hidden">
+                            <div class="text-[11px] font-semibold text-gray-400 mb-2 flex items-center justify-between">
+                                <span>Recent History</span>
+                                <button type="button" onclick="os.browserClearHistory()" class="text-rose-400/80 hover:text-rose-300 text-[11px] cursor-none hover-target">Clear</button>
+                            </div>
+                            <div class="space-y-0.5" id="browser-history-list"></div>
+                        </div>
                     </div>
                 </div>
-            `,
+
+                <div id="browser-preview" class="absolute inset-0 hidden flex-col">
+                    <div class="flex items-center justify-between px-3.5 py-1.5 bg-black/55 border-b border-white/[0.07] shrink-0 gap-2">
+                        <div class="flex items-center gap-2 text-xs min-w-0">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                            <span class="text-gray-200 font-medium shrink-0" id="browser-preview-domain">--</span>
+                            <span class="text-gray-600">·</span>
+                            <span class="text-gray-400 truncate" id="browser-preview-title">--</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <div class="os-segmented">
+                                <button type="button" id="browser-mode-reader" onclick="os.browserSetRenderMode('reader')" class="os-seg-btn active hover-target cursor-none">Reader View</button>
+                                <button type="button" id="browser-mode-embed" onclick="os.browserSetRenderMode('embed')" class="os-seg-btn hover-target cursor-none">Live Embed</button>
+                            </div>
+                            <button type="button" onclick="os.browserOpenExternal()" class="os-btn hover-target cursor-none">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> New Tab
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-5 no-scrollbar select-text" id="browser-preview-content"></div>
+                    <iframe id="browser-iframe-view" title="Live Web View" src="about:blank" class="hidden flex-1 w-full border-0 bg-white" referrerpolicy="no-referrer"></iframe>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between px-3.5 py-1 border-t border-white/[0.06] bg-black/45 shrink-0 text-[11px] text-gray-400">
+                <span id="browser-status">Ready</span>
+                <span class="text-gray-500">Reader Mode + Live Embed</span>
+            </div>
+        </div>
+    `,
 
     globe: `
-                <div class="w-full h-full bg-[#0a0a0c] relative overflow-hidden flex font-mono text-[11px] text-gray-400" id="globe-root">
-
-                    <!-- LEFT PANEL: Detail sidebar -->
-                    <div class="w-60 bg-[#08080a] border-r border-white/5 flex flex-col z-20 shrink-0 h-full overflow-hidden">
-
-                        <!-- Search + refresh bar -->
-                        <div class="p-2 border-b border-white/5 bg-black/40 space-y-2">
-                            <div class="relative">
-                                <i data-lucide="search" class="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500"></i>
-                                <input type="text" id="flight-radar-search"
-                                    class="w-full bg-black/60 border border-white/10 rounded py-1.5 pl-7 pr-2 text-[10px] text-white focus:outline-none focus:border-white/30 cursor-none hover-target"
-                                    placeholder="Search callsign / ICAO..."
-                                    oninput="os.filterFlights(this.value)">
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <button onclick="os.fetchGlobeData()" id="globe-refresh-btn"
-                                    class="flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target">
-                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> REFRESH
-                                </button>
-                                <span id="globe-flight-count" class="text-[9px] text-green-400 font-bold tracking-wider">0 LIVE</span>
-                            </div>
-                        </div>
-
-                        <!-- Selected flight detail panel (shown when a flight is clicked) -->
-                        <div id="radar-detail-panel" class="border-b border-white/5 bg-black/30 hidden">
-                            <div id="radar-detail-embed-note" class="hidden px-2 py-1 text-[9px] text-yellow-300 bg-yellow-500/10 border-b border-yellow-500/20">
-                                EMBED VIEW active: selected-flight telemetry is paused; switch to LIVE FEED to re-enable.
-                            </div>
-
-                            <!-- Aircraft image strip -->
-                            <div class="relative h-20 bg-black overflow-hidden">
-                                <div id="radar-aircraft-img" class="absolute inset-0 bg-cover bg-center opacity-60"></div>
-                                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-                                <div class="absolute bottom-1.5 left-2 right-2 flex justify-between items-end z-10">
-                                    <div>
-                                        <div class="text-white font-bold text-sm tracking-wider" id="rd-callsign">THY171</div>
-                                        <div class="text-[9px] text-gray-400" id="rd-icao">4BB199</div>
-                                    </div>
-                                    <button onclick="os.deselectFlight()"
-                                        class="text-[9px] bg-red-900/50 border border-red-500/30 text-red-400 px-1.5 py-0.5 rounded cursor-none hover-target">✕</button>
-                                </div>
-                            </div>
-
-                            <!-- Metadata grid -->
-                            <div class="p-2 space-y-1 text-[10px]">
-                                <!-- SPATIAL section -->
-                                <div class="text-[8px] text-os-accent tracking-widest uppercase border-b border-white/5 pb-0.5 mb-1">SPATIAL</div>
-                                <div class="grid grid-cols-2 gap-x-2 gap-y-0.5">
-                                    <span class="text-gray-500">Groundspeed</span><span class="text-white font-bold text-right" id="rd-speed">-- kt</span>
-                                    <span class="text-gray-500">Baro. alt.</span><span class="text-yellow-400 font-bold text-right" id="rd-baro">-- ft</span>
-                                    <span class="text-gray-500">Geo. alt.</span><span class="text-white text-right" id="rd-geoalt">-- ft</span>
-                                    <span class="text-gray-500">Vert. Rate</span><span class="text-right" id="rd-vrate">-- ft/min</span>
-                                    <span class="text-gray-500">Track</span><span class="text-white text-right" id="rd-track">--°</span>
-                                    <span class="text-gray-500">Position</span><span class="text-green-400 text-right font-mono text-[9px]" id="rd-pos">--, --</span>
-                                </div>
-
-                                <!-- SIGNAL section -->
-                                <div class="text-[8px] text-os-accent tracking-widest uppercase border-b border-white/5 pb-0.5 mb-1 mt-2">SIGNAL</div>
-                                <div class="grid grid-cols-2 gap-x-2 gap-y-0.5">
-                                    <span class="text-gray-500">Source</span><span class="text-blue-400 font-bold text-right" id="rd-source">ADS-B</span>
-                                    <span class="text-gray-500">Squawk</span><span class="text-orange-400 font-bold text-right" id="rd-squawk">----</span>
-                                    <span class="text-gray-500">Country</span><span class="text-white text-right truncate" id="rd-country">--</span>
-                                    <span class="text-gray-500">ICAO24</span><span class="text-green-400 font-mono text-right" id="rd-icao24">------</span>
-                                </div>
-
-                                <!-- FLIGHT section -->
-                                <div class="text-[8px] text-os-accent tracking-widest uppercase border-b border-white/5 pb-0.5 mb-1 mt-2">FLIGHT INFO</div>
-                                <div class="grid grid-cols-2 gap-x-2 gap-y-0.5">
-                                    <span class="text-gray-500">Reg.</span><span class="text-white text-right" id="rd-reg">--</span>
-                                    <span class="text-gray-500">Type</span><span class="text-white text-right" id="rd-type">--</span>
-                                    <span class="text-gray-500">Route</span><span class="text-white text-right font-bold" id="rd-route">--</span>
-                                    <span class="text-gray-500">On Ground</span><span class="text-right" id="rd-ground">--</span>
-                                </div>
-
-                                <!-- Track history button -->
-                                <button onclick="os.fetchAndDrawVesselTrail(os.selectedFlight)"
-                                    class="w-full mt-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target flex items-center justify-center gap-1">
-                                    <i data-lucide="route" class="w-3 h-3"></i> LOAD FLIGHT PATH
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Flight list -->
-                        <div class="flex-1 overflow-y-auto p-1.5 space-y-0.5 no-scrollbar" id="flight-manifest-list">
-                            <div class="text-center text-gray-500 py-6 text-[10px] animate-pulse uppercase tracking-widest">Scanning airspace...</div>
-                        </div>
-
-                        <!-- Altitude color legend (matches OpenSky map) -->
-                        <div class="border-t border-white/5 p-2 bg-black/40 shrink-0">
-                            <div class="text-[8px] text-gray-500 uppercase tracking-widest mb-1">Altitude (ft)</div>
-                            <div class="flex h-2.5 rounded overflow-hidden w-full">
-                                <div class="flex-1" style="background:#ff0000"></div>
-                                <div class="flex-1" style="background:#ff4400"></div>
-                                <div class="flex-1" style="background:#ff8800"></div>
-                                <div class="flex-1" style="background:#ffcc00"></div>
-                                <div class="flex-1" style="background:#aaff00"></div>
-                                <div class="flex-1" style="background:#00ff88"></div>
-                                <div class="flex-1" style="background:#00ffff"></div>
-                                <div class="flex-1" style="background:#0099ff"></div>
-                                <div class="flex-1" style="background:#0044ff"></div>
-                                <div class="flex-1" style="background:#8800ff"></div>
-                            </div>
-                            <div class="flex justify-between text-[8px] text-gray-600 mt-0.5">
-                                <span>0</span><span>10k</span><span>20k</span><span>40k+</span>
-                            </div>
-                        </div>
+        <div class="w-full h-full bg-[#07090f] relative overflow-hidden flex text-xs text-gray-300 select-none" id="globe-root">
+            <div class="w-64 bg-[#080a11] border-r border-white/[0.07] flex flex-col z-20 shrink-0 h-full overflow-hidden">
+                <div class="p-2.5 border-b border-white/[0.07] bg-black/35 space-y-2">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
+                        <input type="text" id="flight-radar-search"
+                            class="w-full os-input py-1.5 pl-8 pr-2.5 text-xs cursor-text"
+                            placeholder="Callsign, country, ICAO..."
+                            oninput="os.filterFlights(this.value)">
                     </div>
-
-                    <!-- MAIN MAP AREA -->
-                    <div class="flex-1 relative" id="radar-map-wrapper">
-                        <!-- Radar header controls -->
-                        <div class="absolute top-2 left-2 z-10 flex items-center gap-1">
-                            <button id="radar-mode-leaflet-btn" onclick="os.switchRadarView('leaflet')"
-                                class="bg-black/70 border border-white/20 rounded px-2 py-1 text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target">LIVE FEED</button>
-                            <button id="radar-mode-embed-btn" onclick="os.switchRadarView('embed')"
-                                class="bg-black/70 border border-white/10 rounded px-2 py-1 text-[9px] text-gray-400 hover:text-white hover:bg-white/10 transition cursor-none hover-target">EMBED VIEW</button>
-                        </div>
-
-                        <!-- Leaflet map fills this -->
-                        <div id="radar-leaflet-map" class="absolute inset-0" style="z-index:1; cursor:crosshair;"></div>
-                        <div id="radar-embed-shell" class="absolute inset-0 hidden bg-black" style="z-index:1;">
-                            <iframe id="radar-embed-frame"
-                                class="w-full h-full border-0"
-                                referrerpolicy="no-referrer"
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
-                        </div>
-                        <div id="radar-embed-warning" class="hidden absolute top-12 left-2 z-10 bg-yellow-500/15 border border-yellow-500/40 text-yellow-300 rounded px-2 py-1 text-[9px]">
-                            proxied view; availability depends on relay
-                        </div>
-
-                        <!-- Top-right HUD overlay -->
-                        <div class="absolute top-2 right-2 z-10 pointer-events-none space-y-1">
-                            <div class="bg-black/70 border border-white/10 rounded px-2 py-1 text-[9px] font-mono text-right">
-                                <div class="text-white font-bold" id="globe-event-title">RADAR OFFLINE</div>
-                                <div class="text-yellow-400" id="globe-event-mag">-- VECTORS</div>
-                                <div class="text-gray-400" id="globe-event-time">--</div>
-                            </div>
-                        </div>
-
-                        <!-- Map controls overlay (pointer-events: auto) -->
-                        <div class="absolute top-16 left-2 z-10 flex flex-col gap-1">
-                            <button onclick="os.radarMap && os.radarMap.setView([20, 0], 2)"
-                                class="bg-black/70 border border-white/10 rounded px-2 py-1 text-[9px] text-white hover:bg-white/10 transition cursor-none hover-target">⊕ RESET</button>
-                        </div>
+                    <div class="flex items-center justify-between">
+                        <button type="button" onclick="os.fetchGlobeData()" id="globe-refresh-btn" class="os-btn hover-target cursor-none">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
+                        </button>
+                        <span id="globe-flight-count" class="text-[11px] text-emerald-300 font-mono font-semibold tabular-nums">0 aircraft</span>
                     </div>
                 </div>
-            `,
+
+                <div id="radar-detail-panel" class="border-b border-white/[0.07] bg-black/30 hidden">
+                    <div id="radar-detail-embed-note" class="hidden px-2.5 py-1.5 text-[10px] text-amber-200 bg-amber-500/10 border-b border-amber-500/20">
+                        Embed view active — switch back to Live Map for live aircraft selection.
+                    </div>
+                    <div class="relative h-20 bg-black overflow-hidden">
+                        <div id="radar-aircraft-img" class="absolute inset-0 bg-cover bg-center opacity-65"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"></div>
+                        <div class="absolute bottom-1.5 left-2.5 right-2.5 flex justify-between items-end z-10">
+                            <div>
+                                <div class="text-white font-bold text-sm font-mono" id="rd-callsign">THY171</div>
+                                <div class="text-[10px] text-gray-400 font-mono" id="rd-icao">4BB199</div>
+                            </div>
+                            <button type="button" onclick="os.deselectFlight()" class="text-[10px] bg-white/10 hover:bg-rose-500/30 text-gray-200 px-1.5 py-0.5 rounded cursor-none hover-target">✕</button>
+                        </div>
+                    </div>
+                    <div class="p-2.5 space-y-1.5 text-[11px]">
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                            <span class="text-gray-400">Groundspeed</span><span class="text-white font-mono font-semibold text-right tabular-nums" id="rd-speed">-- kt</span>
+                            <span class="text-gray-400">Baro Alt</span><span class="text-amber-300 font-mono font-semibold text-right tabular-nums" id="rd-baro">-- ft</span>
+                            <span class="text-gray-400">Geo Alt</span><span class="text-white font-mono text-right tabular-nums" id="rd-geoalt">-- ft</span>
+                            <span class="text-gray-400">Climb Rate</span><span class="text-right font-mono tabular-nums" id="rd-vrate">-- ft/min</span>
+                            <span class="text-gray-400">Heading</span><span class="text-white font-mono text-right tabular-nums" id="rd-track">--°</span>
+                            <span class="text-gray-400">Coords</span><span class="text-emerald-300 text-right font-mono text-[10px] tabular-nums" id="rd-pos">--, --</span>
+                            <span class="text-gray-400">Source</span><span class="text-sky-300 font-medium text-right" id="rd-source">ADS-B</span>
+                            <span class="text-gray-400">Squawk</span><span class="text-amber-300 font-mono text-right" id="rd-squawk">----</span>
+                            <span class="text-gray-400">Country</span><span class="text-white text-right truncate" id="rd-country">--</span>
+                            <span class="text-gray-400">ICAO24</span><span class="text-gray-300 font-mono text-right" id="rd-icao24">------</span>
+                            <span class="text-gray-400">Reg / Type</span><span class="text-white text-right truncate"><span id="rd-reg">--</span> · <span id="rd-type">--</span></span>
+                            <span class="text-gray-400">Status</span><span class="text-right"><span id="rd-route" class="hidden">--</span><span id="rd-ground">--</span></span>
+                        </div>
+                        <button type="button" onclick="os.fetchAndDrawVesselTrail(os.selectedFlight)" class="w-full mt-1.5 os-btn justify-center hover-target cursor-none">
+                            <i data-lucide="route" class="w-3 h-3"></i> Show Flight Trail
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-1.5 space-y-0.5 no-scrollbar" id="flight-manifest-list">
+                    <div class="text-center text-gray-400 py-8 text-xs">Loading live ADS-B traffic...</div>
+                </div>
+
+                <div class="border-t border-white/[0.07] p-2.5 bg-black/40 shrink-0">
+                    <div class="text-[10px] text-gray-400 mb-1">Altitude (ft)</div>
+                    <div class="flex h-2 rounded-full overflow-hidden w-full">
+                        <div class="flex-1" style="background:#ef4444"></div>
+                        <div class="flex-1" style="background:#f97316"></div>
+                        <div class="flex-1" style="background:#eab308"></div>
+                        <div class="flex-1" style="background:#84cc16"></div>
+                        <div class="flex-1" style="background:#10b981"></div>
+                        <div class="flex-1" style="background:#06b6d4"></div>
+                        <div class="flex-1" style="background:#3b82f6"></div>
+                        <div class="flex-1" style="background:#8b5cf6"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-gray-500 mt-1">
+                        <span>0</span><span>10k</span><span>25k</span><span>40k+</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 relative" id="radar-map-wrapper">
+                <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 flex-wrap">
+                    <div class="os-segmented bg-black/80 backdrop-blur-md">
+                        <button type="button" id="radar-mode-leaflet-btn" onclick="os.switchRadarView('leaflet')" class="os-seg-btn active hover-target cursor-none">Live Map</button>
+                        <button type="button" id="radar-mode-embed-btn" onclick="os.switchRadarView('embed')" class="os-seg-btn hover-target cursor-none">ADS-B Exchange</button>
+                    </div>
+                    <div class="hidden lg:flex items-center gap-1 bg-black/75 backdrop-blur-md border border-white/10 rounded-lg p-0.5 text-[10.5px]">
+                        <button type="button" onclick="os.radarJumpRegion && os.radarJumpRegion(20,0,2)" class="px-2 py-0.5 rounded hover:bg-white/10 text-gray-200 cursor-none hover-target">World</button>
+                        <button type="button" onclick="os.radarJumpRegion && os.radarJumpRegion(50,10,4)" class="px-2 py-0.5 rounded hover:bg-white/10 text-gray-200 cursor-none hover-target">Europe</button>
+                        <button type="button" onclick="os.radarJumpRegion && os.radarJumpRegion(39,-96,4)" class="px-2 py-0.5 rounded hover:bg-white/10 text-gray-200 cursor-none hover-target">N. America</button>
+                        <button type="button" onclick="os.radarJumpRegion && os.radarJumpRegion(22,79,4)" class="px-2 py-0.5 rounded hover:bg-white/10 text-gray-200 cursor-none hover-target">India</button>
+                        <button type="button" onclick="os.radarJumpRegion && os.radarJumpRegion(35,136,4)" class="px-2 py-0.5 rounded hover:bg-white/10 text-gray-200 cursor-none hover-target">E. Asia</button>
+                    </div>
+                </div>
+
+                <div id="radar-leaflet-map" class="absolute inset-0" style="z-index:1; cursor:grab;"></div>
+                <div id="radar-embed-shell" class="absolute inset-0 hidden bg-black" style="z-index:1;">
+                    <iframe id="radar-embed-frame" class="w-full h-full border-0" referrerpolicy="no-referrer"
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+                </div>
+                <div id="radar-embed-warning" class="hidden absolute top-12 left-2.5 z-10 bg-amber-500/15 border border-amber-500/35 text-amber-200 rounded-lg px-2.5 py-1 text-[11px]">
+                    External ADS-B map view
+                </div>
+
+                <div class="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+                    <div class="bg-black/80 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 text-[11px] text-right">
+                        <div class="text-white font-semibold" id="globe-event-title">Connecting ADS-B...</div>
+                        <div class="text-emerald-300 font-mono text-[10.5px] tabular-nums" id="globe-event-mag">--</div>
+                        <div class="text-gray-400 font-mono text-[10px]" id="globe-event-time">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
 
     market: `
-                <div class="flex flex-col h-full bg-[#050505] relative overflow-hidden p-4">
-                    <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center">
-                                <i data-lucide="bitcoin" class="w-5 h-5 text-yellow-500"></i>
-                            </div>
-                            <div>
-                                <div class="text-white font-display text-lg leading-none tracking-wide">BTC/USDT</div>
-                                <div class="text-[9px] font-mono text-gray-500 uppercase mt-0.5" id="market-status-lbl">BINANCE WSS STREAM (1M)</div>
-                            </div>
+        <div class="flex flex-col h-full bg-[#07090f] text-xs select-none overflow-hidden" id="market-root">
+            <div class="os-toolbar">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-300 font-bold font-mono text-xs" id="market-coin-badge">₿</div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white font-semibold text-sm" id="market-symbol-title">BTC / USDT</span>
+                            <span class="os-badge text-[10px]" id="market-status-lbl">Connecting...</span>
                         </div>
-                        <div class="text-right">
-                            <div id="market-price" class="text-2xl font-mono font-bold text-white leading-none tracking-tight">--</div>
-                            <div id="market-change" class="text-[10px] font-mono text-gray-500 uppercase mt-1">--</div>
-                        </div>
-                    </div>
-                    <div class="flex-1 relative w-full border border-white/5 rounded bg-[#020202] overflow-hidden shadow-os-recessed">
-                        <canvas id="market-canvas" class="absolute inset-0 w-full h-full"></canvas>
-                        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0),rgba(255,255,255,0)50%,rgba(0,0,0,0.2)50%,rgba(0,0,0,0.2))] bg-[length:100%_4px] pointer-events-none"></div>
                     </div>
                 </div>
-            `,
+
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div class="os-segmented" id="market-tf-group">
+                        <button type="button" data-mkt-tf="1m" onclick="os.marketSetInterval('1m')" class="os-seg-btn active hover-target cursor-none">1m</button>
+                        <button type="button" data-mkt-tf="15m" onclick="os.marketSetInterval('15m')" class="os-seg-btn hover-target cursor-none">15m</button>
+                        <button type="button" data-mkt-tf="1h" onclick="os.marketSetInterval('1h')" class="os-seg-btn hover-target cursor-none">1h</button>
+                        <button type="button" data-mkt-tf="4h" onclick="os.marketSetInterval('4h')" class="os-seg-btn hover-target cursor-none">4h</button>
+                        <button type="button" data-mkt-tf="1d" onclick="os.marketSetInterval('1d')" class="os-seg-btn hover-target cursor-none">1D</button>
+                    </div>
+                    <div class="os-segmented">
+                        <button type="button" id="mkt-style-candles" onclick="os.marketSetChartStyle('candles')" class="os-seg-btn active hover-target cursor-none">Candles</button>
+                        <button type="button" id="mkt-style-area" onclick="os.marketSetChartStyle('area')" class="os-seg-btn hover-target cursor-none">Area</button>
+                    </div>
+                </div>
+
+                <div class="text-right">
+                    <div id="market-price" class="text-lg font-mono font-bold text-white leading-none tabular-nums">--</div>
+                    <div id="market-change" class="text-[11px] font-mono text-gray-400 mt-0.5 tabular-nums">--</div>
+                </div>
+            </div>
+
+            <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[200px_1fr] overflow-hidden">
+                <aside class="border-r border-white/[0.07] bg-black/30 p-2 overflow-y-auto space-y-1" id="market-watchlist"></aside>
+
+                <div class="flex flex-col min-h-0 p-3 gap-2.5">
+                    <div class="flex items-center justify-between px-2 text-[11px] font-mono text-gray-400 tabular-nums" id="market-ohlc-bar">
+                        <span>Hover chart to inspect candle OHLC</span>
+                        <span id="market-24h-range">24h High/Low: --</span>
+                    </div>
+                    <div class="flex-1 relative w-full border border-white/[0.07] rounded-xl bg-[#04060b] overflow-hidden">
+                        <canvas id="market-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-[11px]">Quick Convert:</span>
+                            <input id="market-conv-coin" type="number" step="any" value="1" oninput="os.marketConvert('coin')" class="os-input w-24 py-1 px-2 text-xs font-mono tabular-nums">
+                            <span id="market-conv-sym" class="text-gray-300 font-mono font-semibold text-[11px]">BTC</span>
+                            <span class="text-gray-500">=</span>
+                            <span class="text-gray-400 font-mono">$</span>
+                            <input id="market-conv-usd" type="number" step="any" oninput="os.marketConvert('usd')" class="os-input w-32 py-1 px-2 text-xs font-mono tabular-nums">
+                            <span class="text-gray-400 font-mono text-[11px]">USD</span>
+                        </div>
+                        <span class="text-[11px] text-gray-500" id="market-feed-note">Binance Vision REST + Live WebSocket</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
 
     entityscanner: `
-                <div class="flex flex-col h-full bg-[#050505] text-xs font-mono relative overflow-hidden" id="entityscanner-root">
-                    <div class="h-10 border-b border-white/5 bg-black/60 px-4 flex justify-between items-center shrink-0 z-10 shadow-os-recessed">
-                        <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                            <span class="text-green-500 font-bold tracking-widest text-[10px]">OS_SCOUTER // RADAR_MATRIX</span>
+        <div class="flex flex-col h-full bg-[#07090f] text-xs relative overflow-hidden select-none" id="entityscanner-root">
+            <div class="os-toolbar">
+                <div class="os-segmented">
+                    <button type="button" onclick="os.switchScannerTab('stats')" id="scan-tab-stats" class="os-seg-btn active hover-target cursor-none">Stats &amp; Lore</button>
+                    <button type="button" onclick="os.switchScannerTab('evolution')" id="scan-tab-evolution" class="os-seg-btn hover-target cursor-none">Evolutions &amp; Forms</button>
+                    <button type="button" onclick="os.switchScannerTab('combat')" id="scan-tab-combat" class="os-seg-btn hover-target cursor-none">1v1 Arena</button>
+                    <button type="button" onclick="os.switchScannerTab('intercepts')" id="scan-tab-intercepts" class="os-seg-btn hover-target cursor-none">Favorites &amp; Recent</button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="os.scannerRandomEntity && os.scannerRandomEntity()" class="os-btn hover-target cursor-none" title="Random Pokémon or Anime Character">
+                        <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Random
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex overflow-hidden min-h-0">
+                <div class="w-[38%] min-w-[240px] border-r border-white/[0.07] bg-black/30 p-4 flex flex-col justify-between shrink-0">
+                    <div class="space-y-2.5">
+                        <div class="flex gap-1.5">
+                            <div class="flex-1 relative">
+                                <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"></i>
+                                <input type="text" id="scanner-search-input" class="w-full os-input py-1.5 pl-8 pr-2 text-xs cursor-text" placeholder="Pokémon, Dragon Ball, or Anime hero..." onkeydown="if(event.key==='Enter') os.runEntityScan()">
+                            </div>
+                            <button type="button" onclick="os.runEntityScan()" class="os-btn-primary px-3 py-1.5 text-xs cursor-none hover-target">Search</button>
                         </div>
-                        <div class="flex gap-4">
-                            <button onclick="os.switchScannerTab('stats')" id="scan-tab-stats" class="hover-target cursor-none text-white font-semibold border-b border-white pb-0.5 uppercase tracking-wider text-[9px]">DIAGNOSTICS</button>
-                            <button onclick="os.switchScannerTab('evolution')" id="scan-tab-evolution" class="hover-target cursor-none text-gray-500 hover:text-white uppercase tracking-wider text-[9px]">PROG_CHAINS</button>
-                            <button onclick="os.switchScannerTab('combat')" id="scan-tab-combat" class="hover-target cursor-none text-gray-500 hover:text-white uppercase tracking-wider text-[9px]">COMBAT_SIM</button>
-                            <button onclick="os.switchScannerTab('intercepts')" id="scan-tab-intercepts" class="hover-target cursor-none text-gray-500 hover:text-white uppercase tracking-wider text-[9px]">SIGNAL_LOG</button>
+                        <div class="flex gap-1 flex-wrap">
+                            <button type="button" onclick="os.setScannerPreset('charizard')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Charizard</button>
+                            <button type="button" onclick="os.setScannerPreset('mewtwo')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Mewtwo</button>
+                            <button type="button" onclick="os.setScannerPreset('gengar')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Gengar</button>
+                            <button type="button" onclick="os.setScannerPreset('pikachu')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Pikachu</button>
+                            <button type="button" onclick="os.setScannerPreset('goku')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Goku</button>
+                            <button type="button" onclick="os.setScannerPreset('vegeta')" class="px-2 py-0.5 rounded-md bg-white/[0.05] hover:bg-white/10 text-[10.5px] text-gray-300 cursor-none hover-target">Vegeta</button>
                         </div>
                     </div>
 
-                    <div class="flex-1 flex overflow-hidden">
-                        <div class="w-[40%] border-r border-white/5 bg-[#030304] p-4 flex flex-col justify-between relative overflow-hidden shrink-0">
-                            <div class="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-30">
-                                <div class="w-36 h-36 rounded-full border border-dashed border-green-500/50 animate-spin" style="animation-duration: 10s;"></div>
-                                <div class="absolute w-48 h-48 rounded-full border border-green-500/20"></div>
-                                <div class="absolute w-full h-px bg-green-500/10"></div>
-                                <div class="absolute h-full w-px bg-green-500/10"></div>
-                            </div>
-                            
-                            <div class="relative z-20 space-y-2">
-                                <div class="text-[8px] text-os-accent tracking-widest uppercase">Entity Query Intercept</div>
-                                <div class="flex gap-1.5">
-                                    <div class="flex-1 relative">
-                                        <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
-                                        <input type="text" id="scanner-search-input" class="w-full bg-black/60 border border-white/10 rounded py-1.5 pl-8 pr-2 text-[11px] text-white focus:outline-none focus:border-green-500/40 cursor-none hover-target" placeholder="Goku, Vegeta, Mewtwo..." onkeydown="if(event.key==='Enter') os.runEntityScan()">
-                                    </div>
-                                    <button onclick="os.runEntityScan()" class="px-3 bg-green-950/40 border border-green-500/30 rounded text-green-400 font-bold hover:bg-green-900/40 transition-all cursor-none hover-target text-[10px]">SCAN</button>
-                                </div>
-                                <div class="flex gap-1">
-                                    <button onclick="os.setScannerPreset('goku')" class="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[8px] text-gray-500 hover:text-white hover:border-white/15 cursor-none hover-target">GOKU</button>
-                                    <button onclick="os.setScannerPreset('vegeta')" class="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[8px] text-gray-500 hover:text-white hover:border-white/15 cursor-none hover-target">VEGETA</button>
-                                    <button onclick="os.setScannerPreset('mewtwo')" class="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[8px] text-gray-500 hover:text-white hover:border-white/15 cursor-none hover-target">MEWTWO</button>
-                                    <button onclick="os.setScannerPreset('pikachu')" class="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[8px] text-gray-500 hover:text-white hover:border-white/15 cursor-none hover-target">PIKACHU</button>
-                                </div>
-                            </div>
-
-                            <div class="my-auto py-4 flex flex-col items-center justify-center relative z-20">
-                                <div class="w-40 h-40 rounded bg-black/40 border border-green-500/20 flex items-center justify-center relative overflow-hidden shadow-inner group">
-                                    <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(34,197,94,0)_50%,rgba(34,197,94,0.15)_50%)] bg-[length:100%_4px] pointer-events-none z-10 animate-pulse"></div>
-                                    <div class="absolute left-0 right-0 h-0.5 bg-green-400 opacity-60 z-10" id="scanner-sweep-bar" style="top: 0%;"></div>
-                                    
-                                    <img id="scanner-entity-img" class="w-full h-full object-contain p-2 relative z-0 transition-all duration-300" src="https://dragonball-api.com/characters/goku_normal.webp" alt="Scanned Vessel">
-                                    <div class="absolute bottom-2 left-2 px-1.5 py-0.5 bg-green-950/80 border border-green-500/40 text-[8px] text-green-400 font-bold tracking-widest uppercase rounded" id="scanner-lock-lbl">LOCK_ACQUIRED</div>
-                                </div>
-                            </div>
-
-                            <div class="border-t border-white/5 pt-3 relative z-20 space-y-1.5 font-mono text-[9px] text-gray-400">
-                                <div class="flex justify-between"><span>SIGNAL_STRENGTH:</span><span class="text-white font-bold" id="scanner-sig-pct">98.4%</span></div>
-                                <div class="flex justify-between"><span>SPECTRAL_INDEX:</span><span class="text-green-500 font-bold" id="scanner-spectral-lbl">BIO_ENERGY_OK</span></div>
-                                <div class="flex justify-between"><span>ENTITY_RATING:</span><span class="text-red-400 font-bold" id="scanner-rating-lbl">CLASS SSS</span></div>
-                            </div>
+                    <div class="my-auto py-3 flex flex-col items-center justify-center">
+                        <div class="w-44 h-44 rounded-2xl bg-gradient-to-b from-white/[0.05] to-black/40 border border-white/[0.08] flex items-center justify-center relative overflow-hidden">
+                            <img id="scanner-entity-img" class="w-full h-full object-contain p-3 transition-transform duration-300 hover:scale-105" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" alt="Character Artwork">
+                            <span class="absolute top-2 left-2 os-badge text-[10px]" id="scanner-lock-lbl">PokéAPI</span>
                         </div>
-
-                        <div class="flex-1 bg-[#08080a] p-4 overflow-y-auto relative flex flex-col justify-between">
-                            <div id="scanner-tab-view-stats" class="space-y-4 flex-1">
-                                <div class="flex justify-between items-start border-b border-white/5 pb-2">
-                                    <div>
-                                        <h3 class="text-white font-bold text-sm tracking-wider uppercase" id="scanner-name">Goku</h3>
-                                        <div class="text-[9px] text-os-accent uppercase font-mono mt-0.5" id="scanner-meta-affiliation">Z Fighter // Saiyan</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-[9px] bg-red-950/40 border border-red-500/30 text-red-400 font-bold px-2 py-0.5 rounded tracking-widest uppercase" id="scanner-danger-class">PLANET BUSTER</span>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3" id="scanner-stat-matrix"></div>
-
-                                <div class="space-y-2">
-                                    <div class="text-[8px] text-os-accent tracking-widest uppercase font-bold">Threat & Combat Assessment</div>
-                                    <p class="text-gray-400 leading-relaxed text-[10px]" id="scanner-assessment">
-                                        Entity emits extreme, non-standard biomorphic Ki waves. Scanning registers zero malicious intent but unmatched combat output potential. Recommended protocols: Hostility suppression, standard diplomatic links.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div id="scanner-tab-view-evolution" class="space-y-4 flex-1 hidden">
-                                <div class="border-b border-white/5 pb-2">
-                                    <h3 class="text-white font-bold text-xs tracking-wider uppercase">Metamorphic Transformation Progression</h3>
-                                    <div class="text-[8px] text-os-accent uppercase">Dynamic bio-energy scaling paths</div>
-                                </div>
-                                <div class="space-y-2" id="scanner-evolution-chain"></div>
-                            </div>
-
-                            <div id="scanner-tab-view-combat" class="space-y-4 flex-1 hidden">
-                                <div class="border-b border-white/5 pb-2 flex justify-between items-center">
-                                    <div>
-                                        <h3 class="text-white font-bold text-xs tracking-wider uppercase">High-Fidelity Battle Matrix</h3>
-                                        <div class="text-[8px] text-os-accent uppercase">Weighted statistical fight simulator</div>
-                                    </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-[8px] text-gray-500 uppercase">Scale Mode:</span>
-                                        <button onclick="os.toggleCombatScaling()" id="btn-combat-scale" class="px-1.5 py-0.5 bg-green-500/10 border border-green-500/30 rounded text-[8px] text-green-400 font-mono font-bold cursor-none hover-target">BALANCED</button>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-11 gap-2 items-center">
-                                    <div class="col-span-5 bg-black/40 border border-white/5 p-2 rounded relative">
-                                        <div class="text-[8px] text-os-accent uppercase font-bold mb-1">Left Combatant</div>
-                                        <select id="combat-fighter-left" class="w-full bg-os-900 border border-white/10 rounded p-1 text-white text-[10px] focus:outline-none focus:border-green-500/40 cursor-none hover-target" onchange="os.updateCombatFighter('left')"></select>
-                                    </div>
-                                    <div class="col-span-1 text-center font-display text-white font-bold opacity-40 text-sm">VS</div>
-                                    <div class="col-span-5 bg-black/40 border border-white/5 p-2 rounded relative">
-                                        <div class="text-[8px] text-os-accent uppercase font-bold mb-1">Right Combatant</div>
-                                        <select id="combat-fighter-right" class="w-full bg-os-900 border border-white/10 rounded p-1 text-white text-[10px] focus:outline-none focus:border-green-500/40 cursor-none hover-target" onchange="os.updateCombatFighter('right')"></select>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[9px]"><span id="combat-left-name" class="text-white font-bold truncate">--</span><span id="combat-left-hp-readout" class="text-gray-400 font-mono">100/100</span></div>
-                                        <div class="w-full h-2 bg-os-900 rounded overflow-hidden relative border border-white/5">
-                                            <div id="combat-left-hp-bar" class="absolute right-0 top-0 bottom-0 bg-green-500 w-full transition-all duration-150"></div>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-[9px]"><span id="combat-right-hp-readout" class="text-gray-400 font-mono">100/100</span><span id="combat-right-name" class="text-white font-bold truncate">--</span></div>
-                                        <div class="w-full h-2 bg-os-900 rounded overflow-hidden relative border border-white/5">
-                                            <div id="combat-right-hp-bar" class="absolute left-0 top-0 bottom-0 bg-green-500 w-full transition-all duration-150"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-black/60 border border-white/5 rounded-lg p-3 h-32 overflow-y-auto font-mono text-[9px] text-green-400/80 space-y-1 no-scrollbar" id="combat-feed-log">
-                                    <div class="text-center text-gray-500 py-6 uppercase tracking-widest text-[8px] animate-pulse">Waiting for combat initialization...</div>
-                                </div>
-
-                                <button onclick="os.engageScouterCombat()" id="btn-engage-combat" class="w-full py-2.5 bg-green-600/20 border border-green-500/30 text-green-400 font-semibold text-xs uppercase tracking-widest rounded hover:bg-green-600/40 transition hover-target cursor-none shadow-os-btn">
-                                    Engage Scouter Battle Matrix
-                                </button>
-                            </div>
-
-                            <div id="scanner-tab-view-intercepts" class="space-y-4 flex-1 hidden">
-                                <div class="border-b border-white/5 pb-2 flex justify-between items-center">
-                                    <div>
-                                        <h3 class="text-white font-bold text-xs tracking-wider uppercase">Scouter Signal Intercept Stream</h3>
-                                        <div class="text-[8px] text-os-accent uppercase">Live cross-universe sensor logs</div>
-                                    </div>
-                                    <span class="text-green-500 text-[8px] flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> SCANNING...</span>
-                                </div>
-                                <div class="space-y-2 h-64 overflow-y-auto pr-1 no-scrollbar" id="scanner-intercepts-stream"></div>
-                            </div>
-
-                            <div class="border-t border-white/5 pt-3 mt-4 text-[9px] text-os-accent flex justify-between items-center shrink-0">
-                                <span id="scouter-last-update-time">UPLINK: ACTIVE // 2026-05-24</span>
-                                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> SC_NODE_ONLINE</span>
-                            </div>
+                        <div class="flex items-center gap-1.5 mt-3">
+                            <button type="button" id="scanner-shiny-btn" onclick="os.scannerToggleShiny && os.scannerToggleShiny()" class="hidden os-btn hover-target cursor-none text-amber-300">✦ Shiny</button>
+                            <button type="button" id="scanner-cry-btn" onclick="os.scannerPlayCry && os.scannerPlayCry()" class="hidden os-btn hover-target cursor-none text-sky-300">🔊 Cry</button>
+                            <button type="button" id="scanner-fav-btn" onclick="os.scannerToggleFavorite && os.scannerToggleFavorite()" class="os-btn hover-target cursor-none">☆ Favorite</button>
                         </div>
+                    </div>
+
+                    <div class="border-t border-white/[0.07] pt-3 space-y-1.5 text-[11px] text-gray-400">
+                        <div class="flex justify-between"><span>Universe</span><span class="text-white font-medium" id="scanner-spectral-lbl">Pokémon</span></div>
+                        <div class="flex justify-between"><span>Types / Role</span><span class="text-sky-300 font-medium" id="scanner-sig-pct">Fire · Flying</span></div>
+                        <div class="flex justify-between"><span>Tier</span><span class="text-amber-300 font-semibold" id="scanner-rating-lbl">S-Tier</span></div>
                     </div>
                 </div>
-            `,
+
+                <div class="flex-1 p-5 overflow-y-auto relative flex flex-col justify-between select-text">
+                    <div id="scanner-tab-view-stats" class="space-y-4 flex-1">
+                        <div class="flex justify-between items-start border-b border-white/[0.07] pb-3">
+                            <div>
+                                <h3 class="text-white font-display font-bold text-lg" id="scanner-name">Charizard</h3>
+                                <div class="text-xs text-gray-400 mt-0.5" id="scanner-meta-affiliation">#006 · Flame Pokémon · Fire / Flying</div>
+                            </div>
+                            <span class="os-badge text-amber-300" id="scanner-danger-class">BST 534</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5" id="scanner-stat-matrix"></div>
+
+                        <div class="space-y-1.5">
+                            <div class="text-[11px] text-gray-400 font-semibold">Pokédex / Biographical Entry</div>
+                            <p class="text-gray-300 leading-relaxed text-xs" id="scanner-assessment">
+                                Spits fire that is hot enough to melt boulders. Known to cause forest fires unintentionally.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="scanner-tab-view-evolution" class="space-y-4 flex-1 hidden">
+                        <div class="border-b border-white/[0.07] pb-2.5">
+                            <h3 class="text-white font-semibold text-sm">Evolution Line &amp; Alternate Forms</h3>
+                            <div class="text-[11px] text-gray-400">Click any stage to inspect stats &amp; artwork</div>
+                        </div>
+                        <div class="space-y-2" id="scanner-evolution-chain"></div>
+                    </div>
+
+                    <div id="scanner-tab-view-combat" class="space-y-4 flex-1 hidden">
+                        <div class="border-b border-white/[0.07] pb-2.5 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-white font-semibold text-sm">1v1 Stat Arena</h3>
+                                <div class="text-[11px] text-gray-400">Turn-based matchup simulator using real base stats</div>
+                            </div>
+                            <button type="button" onclick="os.toggleCombatScaling()" id="btn-combat-scale" class="os-btn text-emerald-300 cursor-none hover-target">Mode: Balanced</button>
+                        </div>
+
+                        <div class="grid grid-cols-11 gap-2 items-center">
+                            <div class="col-span-5 os-card p-2.5">
+                                <div class="text-[10px] text-gray-400 font-medium mb-1">Challenger 1</div>
+                                <select id="combat-fighter-left" class="w-full os-input p-1.5 text-xs cursor-none hover-target" onchange="os.updateCombatFighter('left')"></select>
+                            </div>
+                            <div class="col-span-1 text-center font-display text-gray-400 font-bold text-xs">VS</div>
+                            <div class="col-span-5 os-card p-2.5">
+                                <div class="text-[10px] text-gray-400 font-medium mb-1">Challenger 2</div>
+                                <select id="combat-fighter-right" class="w-full os-input p-1.5 text-xs cursor-none hover-target" onchange="os.updateCombatFighter('right')"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs"><span id="combat-left-name" class="text-white font-semibold truncate">--</span><span id="combat-left-hp-readout" class="text-gray-400 font-mono tabular-nums">100/100</span></div>
+                                <div class="w-full h-2.5 bg-black/50 rounded-full overflow-hidden relative border border-white/[0.07]">
+                                    <div id="combat-left-hp-bar" class="absolute right-0 top-0 bottom-0 bg-emerald-400 w-full transition-all duration-150"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs"><span id="combat-right-hp-readout" class="text-gray-400 font-mono tabular-nums">100/100</span><span id="combat-right-name" class="text-white font-semibold truncate">--</span></div>
+                                <div class="w-full h-2.5 bg-black/50 rounded-full overflow-hidden relative border border-white/[0.07]">
+                                    <div id="combat-right-hp-bar" class="absolute left-0 top-0 bottom-0 bg-emerald-400 w-full transition-all duration-150"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-black/50 border border-white/[0.07] rounded-xl p-3 h-36 overflow-y-auto font-mono text-[11px] text-gray-200 space-y-1" id="combat-feed-log">
+                            <div class="text-center text-gray-500 py-8 text-xs font-sans">Pick two characters above and start the match.</div>
+                        </div>
+
+                        <button type="button" onclick="os.engageScouterCombat()" id="btn-engage-combat" class="w-full py-2.5 os-btn-primary text-xs hover-target cursor-none">
+                            Start 1v1 Match
+                        </button>
+                    </div>
+
+                    <div id="scanner-tab-view-intercepts" class="space-y-3 flex-1 hidden">
+                        <div class="border-b border-white/[0.07] pb-2.5 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-white font-semibold text-sm">Saved Favorites &amp; Recent Lookups</h3>
+                                <div class="text-[11px] text-gray-400">Click any entry to load immediately</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 overflow-y-auto pr-1" id="scanner-intercepts-stream"></div>
+                    </div>
+
+                    <div class="border-t border-white/[0.07] pt-2.5 mt-4 text-[11px] text-gray-500 flex justify-between items-center shrink-0">
+                        <span id="scouter-last-update-time">Data: PokéAPI v2 · Dragon Ball API · Jikan v4</span>
+                        <span class="text-gray-400">Character Dex</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
 
     filemanager: `
-                <div class="fm-shell flex flex-col h-full bg-[#050506] text-[11px] font-mono overflow-hidden relative" id="filemanager-root">
-                    <div class="absolute inset-0 pointer-events-none opacity-30 fm-scanlines"></div>
-                    <div class="h-12 shrink-0 border-b border-white/5 bg-black/55 flex items-center gap-2 px-3 relative z-10">
-                        <button onclick="os.fmGoBack()" class="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-gray-400 hover:text-white cursor-none hover-target" title="Back"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
-                        <button onclick="os.fmOpenPath('/Archive')" class="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-gray-400 hover:text-white cursor-none hover-target" title="Root"><i data-lucide="home" class="w-4 h-4"></i></button>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-[8px] uppercase tracking-[0.25em] text-os-accent mb-0.5">Archive Pathway</div>
-                            <div id="fm-breadcrumbs" class="flex items-center gap-1 text-gray-400 overflow-hidden whitespace-nowrap"></div>
-                        </div>
-                        <div class="w-72 relative shrink-0">
-                            <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500"></i>
-                            <input id="fm-search-input" oninput="os.fmSearch(this.value)" onkeydown="if(event.key==='Enter'){os.fmWikiSearch(this.value)}" placeholder="Search Wikipedia — e.g. Tony Stark (Marvel Cinematic Universe)" class="w-full bg-black/70 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-[11px] text-white focus:outline-none focus:border-white/25 cursor-none hover-target">
-                        </div>
-                        <button onclick="window.AetherVFS && AetherVFS.triggerUploadDialog()" class="px-3 py-2 rounded bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/25 cursor-none hover-target flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Upload</button>
-                        <button onclick="os.fmWikiSearch(document.getElementById('fm-search-input').value)" class="px-3 py-2 rounded bg-white/10 border border-white/10 text-white hover:bg-white/15 cursor-none hover-target flex items-center gap-2"><i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>Fetch Wiki</button>
-                        <button onclick="os.fmQuickLook()" class="px-3 py-2 rounded bg-white/10 border border-white/10 text-white hover:bg-white/15 cursor-none hover-target flex items-center gap-2"><i data-lucide="eye" class="w-3.5 h-3.5"></i>Quick Look</button>
-                    </div>
-                    <div class="h-9 shrink-0 border-b border-white/5 bg-[#070709]/90 flex items-center justify-between px-3 relative z-10">
-                        <div class="flex items-center gap-1" id="fm-tabs"></div>
-                        <div class="flex items-center gap-3 text-[9px] text-gray-500 uppercase tracking-wider">
-                            <span id="fm-status-live" class="text-green-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> index synchronized</span>
-                            <span id="fm-count-label">0 objects</span>
-                        </div>
-                    </div>
-                    <div class="flex-1 min-h-0 grid grid-cols-[220px_minmax(300px,1fr)_330px] relative z-10">
-                        <aside class="border-r border-white/5 bg-black/35 flex flex-col min-h-0">
-                            <div class="p-3 border-b border-white/5">
-                                <div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Navigation</div>
-                                <div id="fm-sidebar" class="space-y-1"></div>
-                            </div>
-                            <div class="p-3 border-b border-white/5 min-h-0 flex-1">
-                                <div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Folder Tree</div>
-                                <div id="fm-tree" class="space-y-1 overflow-y-auto h-full pr-1"></div>
-                            </div>
-                            <div class="p-3 bg-black/25">
-                                <div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Recent / History</div>
-                                <div id="fm-history" class="space-y-1 max-h-24 overflow-y-auto pr-1"></div>
-                            </div>
-                        </aside>
-                        <main class="flex flex-col min-w-0 min-h-0 bg-[#08080a]/70">
-                            <div class="grid grid-cols-[34px_1fr_95px_90px_82px] gap-2 px-3 py-2 border-b border-white/5 text-[8px] uppercase tracking-widest text-gray-500 bg-black/25">
-                                <span></span><span>Name</span><span>Kind</span><span>Signal</span><span>Links</span>
-                            </div>
-                            <div id="fm-file-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
-                        </main>
-                        <aside class="border-l border-white/5 bg-black/40 min-h-0 flex flex-col">
-                            <div id="fm-preview" class="flex-1 min-h-0 overflow-y-auto"></div>
-                            <div class="h-36 border-t border-white/5 bg-[#060607] p-3 shrink-0">
-                                <div class="text-[9px] uppercase tracking-widest text-os-accent mb-2">Smart Recommendations</div>
-                                <div id="fm-recommendations" class="grid grid-cols-2 gap-2"></div>
-                            </div>
-                        </aside>
-                    </div>
-                    <div id="fm-hover-preview" class="hidden absolute z-40 w-64 p-3 rounded-lg fm-glass pointer-events-none text-[10px] text-gray-300"></div>
-                    <div id="fm-quicklook-modal" class="hidden absolute inset-0 z-50 bg-black/75 backdrop-blur-sm items-center justify-center p-8">
-                        <div class="w-full max-w-2xl max-h-full rounded-2xl fm-glass overflow-hidden shadow-2xl">
-                            <div class="h-11 border-b border-white/10 flex items-center justify-between px-4 bg-black/50">
-                                <div class="flex items-center gap-2 text-white font-bold uppercase tracking-wider"><i data-lucide="eye" class="w-4 h-4"></i><span id="fm-ql-title">Quick Look</span></div>
-                                <button onclick="os.fmCloseQuickLook()" class="text-gray-500 hover:text-white cursor-none hover-target"><i data-lucide="x" class="w-5 h-5"></i></button>
-                            </div>
-                            <div id="fm-ql-body" class="p-5 overflow-y-auto max-h-[70vh]"></div>
-                        </div>
-                    </div>
+        <div class="fm-shell flex flex-col h-full bg-[#07090f] text-xs overflow-hidden relative select-none" id="filemanager-root">
+            <div class="os-toolbar">
+                <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                    <button type="button" onclick="os.fmGoBack()" class="os-btn px-2 py-1.5 hover-target cursor-none" title="Back"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i></button>
+                    <button type="button" onclick="os.fmOpenPath('/Archive')" class="os-btn px-2 py-1.5 hover-target cursor-none" title="Home"><i data-lucide="home" class="w-3.5 h-3.5"></i></button>
+                    <div id="fm-breadcrumbs" class="flex items-center gap-1 text-gray-300 overflow-hidden whitespace-nowrap px-1.5"></div>
                 </div>
-            `,
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="w-56 relative">
+                        <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"></i>
+                        <input id="fm-search-input" oninput="os.fmSearch(this.value)" onkeydown="if(event.key==='Enter' && this.value.trim()){os.fmWikiSearch(this.value)}" placeholder="Filter files or Enter for Wiki..." class="w-full os-input pl-8 pr-2.5 py-1.5 text-xs cursor-text">
+                    </div>
+                    <button type="button" onclick="os.fmPromptNewFile && os.fmPromptNewFile()" class="os-btn hover-target cursor-none" title="Create new text/markdown file"><i data-lucide="file-plus" class="w-3.5 h-3.5 text-sky-300"></i> New File</button>
+                    <button type="button" onclick="os.fmPromptNewFolder && os.fmPromptNewFolder()" class="os-btn hover-target cursor-none" title="Create new folder"><i data-lucide="folder-plus" class="w-3.5 h-3.5 text-amber-300"></i> New Folder</button>
+                    <button type="button" onclick="window.AetherVFS && AetherVFS.triggerUploadDialog()" class="os-btn hover-target cursor-none text-emerald-300"><i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload</button>
+                    <button type="button" onclick="os.fmWikiSearch(document.getElementById('fm-search-input').value)" class="os-btn hover-target cursor-none" title="Import Wikipedia article into Files"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Import Wiki</button>
+                </div>
+            </div>
+
+            <div class="h-8 shrink-0 border-b border-white/[0.06] bg-black/35 flex items-center justify-between px-3 relative z-10">
+                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar" id="fm-tabs"></div>
+                <div class="flex items-center gap-3 text-[11px] text-gray-400 shrink-0">
+                    <span id="fm-status-live" class="text-emerald-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> IndexedDB Ready</span>
+                    <span id="fm-count-label" class="font-mono tabular-nums">0 items</span>
+                </div>
+            </div>
+
+            <div class="flex-1 min-h-0 grid grid-cols-[200px_minmax(280px,1fr)_320px] relative z-10">
+                <aside class="border-r border-white/[0.07] bg-black/30 flex flex-col min-h-0">
+                    <div class="p-3 border-b border-white/[0.06]">
+                        <div class="text-[10.5px] font-semibold text-gray-400 mb-2">Locations</div>
+                        <div id="fm-sidebar" class="space-y-1"></div>
+                    </div>
+                    <div class="p-3 border-b border-white/[0.06] min-h-0 flex-1 overflow-hidden flex flex-col">
+                        <div class="text-[10.5px] font-semibold text-gray-400 mb-2">Folders</div>
+                        <div id="fm-tree" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+                    </div>
+                    <div class="p-3 bg-black/20">
+                        <div class="text-[10.5px] font-semibold text-gray-400 mb-1.5">Recent</div>
+                        <div id="fm-history" class="space-y-1 max-h-24 overflow-y-auto pr-1"></div>
+                    </div>
+                </aside>
+
+                <main class="flex flex-col min-w-0 min-h-0 bg-[#090c14]/60">
+                    <div class="grid grid-cols-[30px_1fr_86px_86px_74px] gap-2 px-3 py-2 border-b border-white/[0.06] text-[10.5px] font-medium text-gray-400 bg-black/25">
+                        <span></span><span>Name</span><span>Kind</span><span>Source</span><span>Size</span>
+                    </div>
+                    <div id="fm-file-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+                </main>
+
+                <aside class="border-l border-white/[0.07] bg-black/35 min-h-0 flex flex-col">
+                    <div id="fm-preview" class="flex-1 min-h-0 overflow-y-auto select-text"></div>
+                    <div class="h-32 border-t border-white/[0.06] bg-black/40 p-3 shrink-0">
+                        <div class="text-[10.5px] font-semibold text-gray-400 mb-2">Related Items</div>
+                        <div id="fm-recommendations" class="grid grid-cols-2 gap-1.5"></div>
+                    </div>
+                </aside>
+            </div>
+
+            <div id="fm-hover-preview" class="hidden absolute z-40 w-64 p-3 rounded-xl fm-glass pointer-events-none text-xs text-gray-200"></div>
+            <div id="fm-quicklook-modal" class="hidden absolute inset-0 z-50 bg-black/75 backdrop-blur-sm items-center justify-center p-6">
+                <div class="w-full max-w-2xl max-h-full rounded-2xl fm-glass overflow-hidden shadow-2xl border border-white/10">
+                    <div class="h-11 border-b border-white/10 flex items-center justify-between px-4 bg-black/60">
+                        <div class="flex items-center gap-2 text-white font-semibold text-xs"><i data-lucide="eye" class="w-4 h-4 text-sky-400"></i><span id="fm-ql-title">Quick Look</span></div>
+                        <button type="button" onclick="os.fmCloseQuickLook()" class="text-gray-400 hover:text-white cursor-none hover-target"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                    <div id="fm-ql-body" class="p-5 overflow-y-auto max-h-[70vh] select-text"></div>
+                </div>
+            </div>
+        </div>
+    `,
 
     wikiboard: `
                 <div class="flex flex-col h-full bg-[#050505] relative overflow-hidden" id="wikiboard-root">
@@ -643,16 +650,16 @@ Object.assign(WindowContents, {
                         <div id="wb-minimap-label">MAP</div>
                     </div>
                     <div class="wb-status-bar">
-                        <span>WIKIBOARD // INFINITE CANVAS</span>
+                        <span>WikiBoard Canvas</span>
                         <span style="color:#333">|</span>
-                        <span>SCROLL ON CANVAS → ZOOM &nbsp;·&nbsp; SCROLL ON CARD → SCROLL &nbsp;·&nbsp; DRAG → PAN &nbsp;·&nbsp; MINIMAP → NAVIGATE</span>
+                        <span>Scroll canvas to zoom · Scroll card to read · Drag to pan · Click minimap to jump</span>
                         <span style="margin-left:auto;" id="wb-status-msg">Ready</span>
                     </div>
                 </div>
             `,
 
     aetherbridge: `
-                <div class="h-full flex text-xs font-mono text-gray-300 overflow-hidden" style="background:linear-gradient(135deg,rgba(3,3,8,0.97),rgba(5,5,15,0.97));position:relative">
+                <div class="h-full flex text-xs text-gray-300 overflow-hidden" style="background:linear-gradient(135deg,rgba(7,9,15,0.98),rgba(10,13,22,0.98));position:relative">
                     <div class="w-56 shrink-0 flex flex-col border-r border-white/5" style="background:rgba(0,0,0,0.45)">
                         <div class="px-3 py-2.5 border-b border-white/5 flex items-center gap-2">
                             <i data-lucide="radio-tower" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -775,7 +782,7 @@ Object.assign(WindowContents, {
                                         <label class="flex items-center gap-2 cursor-none"><input type="checkbox" id="ab-sync-downloads" class="accent-emerald-400"><span class="text-[9px] text-white/50">Downloads</span></label>
                                         <label class="flex items-center gap-2 cursor-none"><input type="checkbox" id="ab-sync-documents" class="accent-emerald-400"><span class="text-[9px] text-white/50">Documents</span></label>
                                         <label class="flex items-center gap-2 cursor-none"><input type="checkbox" id="ab-sync-photos" class="accent-emerald-400"><span class="text-[9px] text-white/50">Photos</span></label>
-                                        <label class="flex items-center gap-2 cursor-none"><input type="checkbox" id="ab-sync-notes" class="accent-emerald-400"><span class="text-[9px] text-white/50">Notes App</span></label>
+                                        <label class="flex items-center gap-2 cursor-none"><input type="checkbox" id="ab-sync-devpad" class="accent-emerald-400"><span class="text-[9px] text-white/50">DevPad &amp; Markdown</span></label>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2 pt-2">
@@ -789,7 +796,7 @@ Object.assign(WindowContents, {
             `,
 
     aetherlink: `
-                <div class="h-full flex text-xs font-mono text-gray-300 overflow-hidden" style="background:linear-gradient(135deg,rgba(3,3,10,0.98),rgba(6,3,18,0.98));position:relative">
+                <div class="h-full flex text-xs text-gray-300 overflow-hidden" style="background:linear-gradient(135deg,rgba(7,9,16,0.98),rgba(11,9,22,0.98));position:relative">
                     <div class="w-52 shrink-0 flex flex-col border-r border-white/5" style="background:rgba(0,0,0,0.5)">
                         <div class="px-3 py-2.5 border-b border-white/5 flex items-center gap-2">
                             <i data-lucide="link-2" class="w-3.5 h-3.5 text-violet-400"></i>

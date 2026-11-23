@@ -1,225 +1,615 @@
-// AetherOS — Data Stream Terminal, System Monitor, Cloudflare Speed Test, Task Manager & Diagnostics
+// AetherOS — Interactive Unix-Style Terminal Shell, Activity & Speed Monitor, and Task Manager
 window.extendOS({
-    logTerminal: (txt) => {
-                const feed = document.getElementById('terminal-feed');
-                const stamp = new Date().toLocaleTimeString();
-                const msg = String(txt || '');
-                if (feed) {
-                    const line = document.createElement('div');
-                    const critical = /error|fail|denied|corrupt/i.test(msg);
-                    const good = /ok|sync|connected|success|online/i.test(msg);
-                    line.className = `group grid grid-cols-[72px_54px_1fr] gap-2 items-start px-2 py-1.5 rounded border ${critical?'bg-red-950/20 border-red-500/20 text-red-200':good?'bg-green-950/10 border-green-500/15 text-green-200':'bg-white/[0.025] border-white/5 text-green-300/90'} hover:bg-white/[0.055] transition-colors`;
-                    const tag = critical ? 'ALERT' : good ? 'SYNC' : 'EVT';
-                    line.innerHTML = `<span class="text-gray-500">${stamp}</span><span class="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-os-accent text-center">${tag}</span><span class="select-text break-words">${os._html ? os._html(msg) : msg}</span>`;
-                    feed.appendChild(line);
-                    while(feed.children.length > 160) feed.firstChild.remove();
-                    feed.scrollTop = feed.scrollHeight;
-                }
-                os._terminalStats = os._terminalStats || { packets:0, errors:0, entropy:0, latency:0 };
-                os._terminalStats.packets += 1;
-                if (/error|fail/i.test(msg)) os._terminalStats.errors += 1;
-                if (os._terminalUpdateStats) os._terminalUpdateStats();
-            },
-
-    _terminalStats: { packets:0, errors:0, entropy:0, latency:0 },
-
+    _sysLogs: [],
+    _terminalCwd: '/Archive',
+    _terminalTab: 'shell',
+    _terminalMatrixOn: false,
     _terminalIntervals: [],
 
-    initDataStream: () => {
-                const root = document.getElementById('terminal-out');
-                if (!root) return;
-                if (root.dataset.ready === '1') return;
-                (os._terminalIntervals||[]).forEach(clearInterval); os._terminalIntervals = [];
-                root.dataset.ready = '1';
-                const cliInput = document.getElementById('terminal-cli');
-                os._terminalHistory = os._terminalHistory || [];
-                os._terminalHistIdx = -1;
-                if (cliInput) {
-                    cliInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter' && cliInput.value.trim() !== '') {
-                            const val = cliInput.value.trim();
-                            os._terminalHistory.unshift(val);
-                            if (os._terminalHistory.length > 50) os._terminalHistory.pop();
-                            os._terminalHistIdx = -1;
-                            os.terminalRunCommand(val);
-                            cliInput.value = '';
-                        } else if (e.key === 'ArrowUp' && os._terminalHistory.length) {
-                            e.preventDefault();
-                            os._terminalHistIdx = Math.min(os._terminalHistory.length - 1, os._terminalHistIdx + 1);
-                            cliInput.value = os._terminalHistory[os._terminalHistIdx] || '';
-                        } else if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            os._terminalHistIdx = Math.max(-1, os._terminalHistIdx - 1);
-                            cliInput.value = os._terminalHistIdx >= 0 ? (os._terminalHistory[os._terminalHistIdx] || '') : '';
-                        }
-                    });
-                }
-                const side = document.getElementById('terminal-sidecar');
-                if (side) side.innerHTML = ['OPEN_METEO','JIKAN','NASA','COINGECKO','WIKIPEDIA'].map((n,i)=>`<div class="flex items-center justify-between p-2 rounded bg-white/[0.035] border border-white/5"><span class="text-gray-400">${n}</span><span class="text-green-400">${i%2?'SYNC':'IDLE'}</span></div>`).join('');
-                ['AetherOS Kernel v1.0.0 initializing...','Loading modules [OK]','Mounting local storage [OK]','Packet tap attached to Resource Timing API','Neural command parser online'].forEach(x=>os.logTerminal(x));
-                os._terminalIntervals.push(setInterval(()=>{
-                    if (!document.getElementById('terminal-out')) return;
-                    const samples=['API pulse received','Resource timing delta mapped','Window compositor heartbeat','LocalStorage journal clean','ISS orbital packet cached','Media telemetry normalized','Entropy pool stirred','UI thread frame budget stable'];
-                    if (Math.random() > .45) os.logTerminal(samples[Math.floor(Math.random()*samples.length)]);
-                    os._terminalStats.packets += Math.floor(8+Math.random()*40);
-                    os._terminalStats.latency = Math.floor(12+Math.random()*140);
-                    os._terminalStats.entropy = Math.random()*9.99;
-                    if (Math.random()>.92) os._terminalStats.errors++;
-                    os._terminalUpdateStats();
-                }, 1800));
-                os._terminalAnimate();
-            },
+    logTerminal: (txt) => {
+        const stamp = new Date().toLocaleTimeString([], { hour12: false });
+        const msg = String(txt || '').trim();
+        if (!msg) return;
 
-    _terminalUpdateStats: () => {
-                const s=os._terminalStats;
-                const p=document.getElementById('term-packets'), e=document.getElementById('term-errors'), l=document.getElementById('term-latency'), en=document.getElementById('term-entropy');
-                if(p)p.textContent=String(s.packets).padStart(4,'0'); if(e)e.textContent=String(s.errors).padStart(2,'0'); if(l)l.textContent=s.latency+'ms'; if(en)en.textContent=s.entropy.toFixed(2);
-            },
+        os._sysLogs = os._sysLogs || [];
+        os._sysLogs.push({ stamp, msg });
+        if (os._sysLogs.length > 200) os._sysLogs.shift();
+
+        const countEl = document.getElementById('term-syslog-count');
+        if (countEl) countEl.textContent = String(os._sysLogs.length);
+
+        const sysFeed = document.getElementById('terminal-syslog-feed');
+        if (sysFeed) {
+            const row = document.createElement('div');
+            const isErr = /error|fail|denied|offline/i.test(msg);
+            const isOk = /ok|sync|connected|ready|complete|saved/i.test(msg);
+            row.className = `flex items-start gap-2.5 px-2.5 py-1 rounded-md border ${
+                isErr ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                      : isOk ? 'bg-emerald-500/[0.07] border-emerald-500/15 text-emerald-200'
+                             : 'bg-white/[0.025] border-white/[0.05] text-gray-300'
+            }`;
+            const safe = os._html ? os._html(msg) : msg.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+            row.innerHTML = `<span class="text-gray-500 shrink-0 tabular-nums">${stamp}</span><span class="break-words min-w-0 flex-1">${safe}</span>`;
+            sysFeed.appendChild(row);
+            while (sysFeed.children.length > 160) sysFeed.firstChild.remove();
+            sysFeed.scrollTop = sysFeed.scrollHeight;
+        }
+    },
+
+    terminalClearSyslog: () => {
+        os._sysLogs = [];
+        const sysFeed = document.getElementById('terminal-syslog-feed');
+        if (sysFeed) sysFeed.innerHTML = '';
+        const countEl = document.getElementById('term-syslog-count');
+        if (countEl) countEl.textContent = '0';
+    },
+
+    terminalSetTab: (tab) => {
+        os._terminalTab = tab === 'syslog' ? 'syslog' : 'shell';
+        const shellPane = document.getElementById('terminal-shell-pane');
+        const sysPane = document.getElementById('terminal-syslog-pane');
+        if (shellPane) shellPane.classList.toggle('hidden', os._terminalTab !== 'shell');
+        if (sysPane) sysPane.classList.toggle('hidden', os._terminalTab !== 'syslog');
+        document.querySelectorAll('[data-term-tab]').forEach((b) => {
+            b.classList.toggle('active', b.getAttribute('data-term-tab') === os._terminalTab);
+        });
+        if (os._terminalTab === 'syslog') {
+            const sysFeed = document.getElementById('terminal-syslog-feed');
+            if (sysFeed && !sysFeed.children.length && (os._sysLogs || []).length) {
+                const copy = [...os._sysLogs];
+                os._sysLogs = [];
+                copy.forEach((entry) => os.logTerminal(entry.msg));
+            }
+        } else {
+            document.getElementById('terminal-cli')?.focus();
+        }
+    },
+
+    terminalWrite: (text, tone = 'default') => {
+        const feed = document.getElementById('terminal-feed');
+        if (!feed) return;
+        const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+        const toneClass = tone === 'error' ? 'text-rose-300'
+            : tone === 'success' ? 'text-emerald-300'
+            : tone === 'muted' ? 'text-gray-400'
+            : tone === 'accent' ? 'text-sky-300'
+            : tone === 'prompt' ? 'text-white font-semibold mt-1.5'
+            : 'text-gray-200';
+        String(text ?? '').split('\n').forEach((ln) => {
+            const div = document.createElement('div');
+            div.className = `whitespace-pre-wrap break-words ${toneClass}`;
+            div.innerHTML = esc(ln);
+            feed.appendChild(div);
+        });
+        while (feed.children.length > 350) feed.firstChild.remove();
+        feed.scrollTop = feed.scrollHeight;
+    },
+
+    terminalCopyOutput: () => {
+        const feed = document.getElementById('terminal-feed');
+        if (!feed || !navigator.clipboard) return;
+        navigator.clipboard.writeText(feed.innerText || '').then(() => {
+            window.Notifications && Notifications.push('Terminal', 'Copied shell session output to clipboard');
+        });
+    },
+
+    terminalToggleMatrix: () => {
+        os._terminalMatrixOn = !os._terminalMatrixOn;
+        const canvas = document.getElementById('terminal-matrix-canvas');
+        const btn = document.getElementById('term-matrix-btn');
+        if (canvas) canvas.classList.toggle('hidden', !os._terminalMatrixOn);
+        if (btn) btn.classList.toggle('text-emerald-300', os._terminalMatrixOn);
+        if (os._terminalMatrixOn) os._terminalAnimate();
+    },
+
+    _terminalSyncCwdUI: () => {
+        const cwd = os._terminalCwd || '/Archive';
+        const badge = document.getElementById('terminal-cwd-badge');
+        const prompt = document.getElementById('terminal-prompt-path');
+        if (badge) badge.textContent = cwd;
+        if (prompt) prompt.textContent = cwd;
+    },
+
+    _terminalResolvePath: (rawTarget) => {
+        const cur = os._terminalCwd || '/Archive';
+        const t = String(rawTarget || '').trim();
+        if (!t || t === '.') return cur;
+        if (t === '~') return '/Archive';
+        if (t === '..') {
+            const parts = cur.split('/').filter(Boolean);
+            if (parts.length <= 1) return '/Archive';
+            parts.pop();
+            return '/' + parts.join('/');
+        }
+        if (t.startsWith('/')) return t.replace(/\/+$/, '') || '/Archive';
+        return (cur === '/' ? '' : cur) + '/' + t.replace(/\/+$/, '');
+    },
+
+    initDataStream: () => {
+        const root = document.getElementById('terminal-out');
+        if (!root) return;
+        if (root.dataset.ready === '1') return;
+        (os._terminalIntervals || []).forEach(clearInterval);
+        os._terminalIntervals = [];
+        root.dataset.ready = '1';
+
+        os._terminalHistory = os._terminalHistory || [];
+        os._terminalHistIdx = -1;
+        os._terminalSyncCwdUI();
+
+        const countEl = document.getElementById('term-syslog-count');
+        if (countEl) countEl.textContent = String((os._sysLogs || []).length);
+
+        const cliInput = document.getElementById('terminal-cli');
+        const COMMANDS = [
+            'help', 'neofetch', 'sysinfo', 'pwd', 'ls', 'cd', 'tree', 'cat', 'touch', 'mkdir',
+            'write', 'rm', 'grep', 'ps', 'top', 'kill', 'open', 'closeall', 'space', 'snap',
+            'theme', 'calc', 'curl', 'ping', 'echo', 'date', 'uptime', 'whoami', 'uname',
+            'history', 'dmesg', 'logs', 'matrix', 'clear', 'lock', 'backup', 'wiki'
+        ];
+
+        if (cliInput) {
+            cliInput.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+                    e.preventDefault();
+                    const f = document.getElementById('terminal-feed');
+                    if (f) f.innerHTML = '';
+                    return;
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const val = cliInput.value;
+                    const parts = val.split(/\s+/);
+                    if (parts.length <= 1) {
+                        const prefix = parts[0].toLowerCase();
+                        const match = COMMANDS.find((cmd) => cmd.startsWith(prefix));
+                        if (match) cliInput.value = match + ' ';
+                    } else {
+                        const cmd = parts[0].toLowerCase();
+                        const arg = parts.slice(1).join(' ').toLowerCase();
+                        if (cmd === 'open' || cmd === 'kill') {
+                            const ids = Object.keys(window.AETHER_MODULE_REGISTRY || {});
+                            const m = ids.find((id) => id.startsWith(arg));
+                            if (m) cliInput.value = `${cmd} ${m}`;
+                        } else if (['cd', 'ls', 'cat', 'rm'].includes(cmd) && os.fmChildrenForPath) {
+                            const items = os.fmChildrenForPath(os._terminalCwd || '/Archive');
+                            const m = items.find((n) => (n.name || '').toLowerCase().startsWith(arg));
+                            if (m) cliInput.value = `${cmd} ${m.name}`;
+                        }
+                    }
+                    return;
+                }
+                if (e.key === 'Enter' && cliInput.value.trim() !== '') {
+                    const val = cliInput.value.trim();
+                    os._terminalHistory.unshift(val);
+                    if (os._terminalHistory.length > 80) os._terminalHistory.pop();
+                    os._terminalHistIdx = -1;
+                    os.terminalRunCommand(val);
+                    cliInput.value = '';
+                } else if (e.key === 'ArrowUp' && os._terminalHistory.length) {
+                    e.preventDefault();
+                    os._terminalHistIdx = Math.min(os._terminalHistory.length - 1, os._terminalHistIdx + 1);
+                    cliInput.value = os._terminalHistory[os._terminalHistIdx] || '';
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    os._terminalHistIdx = Math.max(-1, os._terminalHistIdx - 1);
+                    cliInput.value = os._terminalHistIdx >= 0 ? (os._terminalHistory[os._terminalHistIdx] || '') : '';
+                }
+            });
+            setTimeout(() => cliInput.focus(), 40);
+        }
+
+        os.terminalWrite('AetherOS Interactive Shell (ash 2.6) — Type "help" for commands or Tab to autocomplete.', 'accent');
+        os.terminalWrite('Working directory mounted at /Archive · Ctrl+L clears screen · Switch to "System Log" tab for background events.', 'muted');
+    },
 
     _terminalAnimate: () => {
-                const matrix=document.getElementById('terminal-matrix-canvas'), wave=document.getElementById('terminal-wave-canvas');
-                if(!matrix || !wave) return;
-                const mctx=matrix.getContext('2d'), wctx=wave.getContext('2d');
-                const resize=()=>{ const r=matrix.parentElement.getBoundingClientRect(); matrix.width=r.width; matrix.height=r.height; const wr=wave.getBoundingClientRect(); wave.width=Math.max(250,wr.width); wave.height=128; };
-                resize();
-                const cols=()=>Math.floor(matrix.width/14); let drops=Array.from({length:cols()},()=>Math.random()*matrix.height/14);
-                const loop=()=>{
-                    if(!document.getElementById('terminal-matrix-canvas')) return;
-                    if(drops.length!==cols()) drops=Array.from({length:cols()},()=>Math.random()*matrix.height/14);
-                    mctx.fillStyle='rgba(0,0,0,.09)'; mctx.fillRect(0,0,matrix.width,matrix.height); mctx.font='12px JetBrains Mono, monospace';
-                    for(let i=0;i<drops.length;i++){ const txt='01AETHEROS◇λΔ'[Math.floor(Math.random()*12)]; mctx.fillStyle=Math.random()>.985?'rgba(255,255,255,.9)':'rgba(74,222,128,.55)'; mctx.fillText(txt,i*14,drops[i]*14); if(drops[i]*14>matrix.height&&Math.random()>.975)drops[i]=0; drops[i]+=.45; }
-                    wctx.clearRect(0,0,wave.width,wave.height); wctx.strokeStyle='rgba(255,255,255,.7)'; wctx.lineWidth=1.5; wctx.beginPath();
-                    const t=performance.now()/360; for(let x=0;x<wave.width;x++){ const y=64+Math.sin(x*.035+t)*22+Math.sin(x*.09+t*1.7)*8+(Math.random()-.5)*4; x? wctx.lineTo(x,y):wctx.moveTo(x,y); } wctx.stroke();
-                    wctx.strokeStyle='rgba(74,222,128,.25)'; for(let y=18;y<128;y+=18){wctx.beginPath();wctx.moveTo(0,y);wctx.lineTo(wave.width,y);wctx.stroke();}
-                    requestAnimationFrame(loop);
-                };
-                window.addEventListener('resize', resize, {passive:true}); loop();
-            },
+        const matrix = document.getElementById('terminal-matrix-canvas');
+        if (!matrix || !os._terminalMatrixOn) return;
+        const mctx = matrix.getContext('2d');
+        const resize = () => {
+            if (!matrix.parentElement) return;
+            const r = matrix.parentElement.getBoundingClientRect();
+            matrix.width = Math.max(320, r.width);
+            matrix.height = Math.max(200, r.height);
+        };
+        resize();
+        const cols = () => Math.max(8, Math.floor(matrix.width / 16));
+        let drops = Array.from({ length: cols() }, () => Math.random() * matrix.height / 16);
+        const loop = () => {
+            if (!os._terminalMatrixOn || !document.getElementById('terminal-matrix-canvas')) return;
+            if (drops.length !== cols()) drops = Array.from({ length: cols() }, () => Math.random() * matrix.height / 16);
+            mctx.fillStyle = 'rgba(6, 8, 14, 0.14)';
+            mctx.fillRect(0, 0, matrix.width, matrix.height);
+            mctx.font = '12px JetBrains Mono, monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const ch = '01AETHERλΔΣ'[Math.floor(Math.random() * 11)];
+                mctx.fillStyle = 'rgba(52, 211, 153, 0.45)';
+                mctx.fillText(ch, i * 16, drops[i] * 16);
+                if (drops[i] * 16 > matrix.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i] += 0.4;
+            }
+            requestAnimationFrame(loop);
+        };
+        loop();
+    },
 
     terminalRunCommand: (cmd) => {
-                const raw = String(cmd || '').trim();
-                const c = raw.toLowerCase();
-                os.logTerminal('EXEC: ' + raw);
-                if (c === 'clear') { const f = document.getElementById('terminal-feed'); if (f) f.innerHTML = ''; return; }
-                if (c === 'help') {
-                    os.logTerminal('SHELL: neofetch | ls [path] | cat <file> | ps | kill <app> | open <app>');
-                    os.logTerminal('WM:    space <1-3> | snap <left|right|max|split> | theme <name> | lock | backup');
-                    os.logTerminal('TOOLS: curl <url> | qr <url/text> | calc <expr> | date | uptime | clear');
-                } else if (c === 'neofetch' || c === 'sysinfo') {
-                    const reg = window.AETHER_MODULE_REGISTRY || {};
-                    const totalMods = Object.keys(reg).length;
-                    const enabledMods = Object.keys(reg).filter((id) => os.isModuleEnabled && os.isModuleEnabled(id)).length;
-                    const openWins = Object.values(SystemState.windows || {}).filter((w) => w.isOpen).length;
-                    const upSec = Math.floor(performance.now() / 1000);
-                    [
-                        '   /\\      AetherOS Liquid Glass v2.0',
-                        '  /  \\     --------------------------',
-                        ` / /\\ \\    Theme:   ${SystemState.settings.active_theme || 'midnight'} (${SystemState.settings.performance_mode || 'eco'})`,
-                        `/ ____ \\   Space:   Workspace 0${SystemState.settings.active_space || 1} (${openWins} open windows)`,
-                        `/_/    \\_\\ Modules: ${enabledMods}/${totalMods} active`,
-                        `           Host:    ${navigator.hardwareConcurrency || '?'} threads · ${navigator.deviceMemory ? navigator.deviceMemory + ' GB RAM' : 'Web Runtime'} · up ${Math.floor(upSec / 60)}m ${upSec % 60}s`
-                    ].forEach((line) => os.logTerminal(line));
-                } else if (c === 'ls' || c.startsWith('ls ')) {
-                    const targetPath = raw.slice(2).trim() || '/Archive';
-                    const items = os.fmChildrenForPath ? os.fmChildrenForPath(targetPath) : [];
-                    if (!items.length) os.logTerminal(`(empty or unknown path: ${targetPath})`);
-                    else os.logTerminal(items.map((n) => n.kind === 'folder' ? `[DIR] ${n.name}/` : `${n.name} (${n.size || n.kind})`).join('  ·  '));
-                } else if (c.startsWith('cat ')) {
-                    const q = raw.slice(4).trim().toLowerCase();
-                    const found = os.fmFlatten && os.fmFlatten().find((n) => n.kind !== 'folder' && (n.name || '').toLowerCase().includes(q));
-                    if (!found) os.logTerminal(`cat: no file matching "${q}"`);
-                    else String(found.content || '(binary / image asset)').split('\n').slice(0, 18).forEach((ln) => os.logTerminal(ln));
-                } else if (c === 'ps' || c === 'top') {
-                    const open = Object.values(SystemState.windows || {}).filter((w) => w.isOpen);
-                    if (!open.length) os.logTerminal('No active user windows.');
-                    else open.forEach((w) => os.logTerminal(`[${w.id}] Space:${w.space || 1}  ${Math.round(w.width)}x${Math.round(w.height)}  "${w.title}"`));
-                } else if (c.startsWith('kill ')) {
-                    const id = c.slice(5).trim();
-                    if (window.winManager && SystemState.windows[id]?.isOpen) { window.winManager.closeWindow(id); os.logTerminal(`Terminated window [${id}].`); }
-                    else os.logTerminal(`kill: window [${id}] is not open.`);
-                } else if (c.startsWith('space ')) {
-                    const n = Number(c.slice(6).trim());
-                    if (os.switchSpace && n >= 1 && n <= 3) { os.switchSpace(n); os.logTerminal(`Switched to Workspace 0${n}.`); }
-                    else os.logTerminal('Usage: space <1|2|3>');
-                } else if (c.startsWith('snap ')) {
-                    const mode = c.slice(5).trim();
-                    if (mode === 'split') { os.tileSideBySide && os.tileSideBySide(); os.logTerminal('Tiled top 2 windows 50/50.'); }
-                    else {
-                        const z = mode === 'max' ? 'maximize' : mode;
-                        os.snapActiveWindow && os.snapActiveWindow(z);
-                        os.logTerminal(`Snapped active window -> ${z}`);
-                    }
-                } else if (c.startsWith('theme ')) {
-                    const t = c.slice(6).trim();
-                    os.applyTheme && os.applyTheme(t);
-                    os.logTerminal(`Applied theme: ${t}`);
-                } else if (c.startsWith('calc ')) {
-                    const expr = raw.slice(5).trim();
-                    if (/^[0-9+\-*/%.()\s]+$/.test(expr)) {
-                        try { os.logTerminal('= ' + Function(`"use strict";return (${expr})`)()); } catch (e) { os.logTerminal('Math error'); }
-                    } else os.logTerminal('Usage: calc 480 * 1.18');
-                } else if (c === 'date') os.logTerminal(new Date().toString());
-                else if (c === 'whoami') os.logTerminal('operator@aetheros-workstation');
-                else if (c === 'uptime') { const s = Math.floor(performance.now() / 1000); os.logTerminal(`Session uptime: ${Math.floor(s / 60)}m ${s % 60}s`); }
-                else if (c === 'lock') { os.lockScreen && os.lockScreen(); }
-                else if (c === 'backup') { window.AetherBackup && AetherBackup.triggerExportUI(); }
-                else if (c === 'scan') { os.openWindow('taskmanager'); os.logTerminal('Launching Task & Network Manager...'); }
-                else if (c === 'weather') os.openWindow('weather');
-                else if (c === 'iss') os.openWindow('iss');
-                else if (c === 'space') os.openWindow('spacexhub');
-                else if (c === 'museums') os.openWindow('worldmuseums');
-                else if (c === 'countries') os.openWindow('worldfactbook');
-                else if (c === 'books') os.openWindow('gutendex');
-                else if (c === 'shader') os.openWindow('shadertoy');
-                else if (c === 'stars') os.openWindow('stellarium');
-                else if (c === 'geo') os.openWindow('georadar');
-                else if (c === 'apis') os.openWindow('sysmon');
-                else if (c === 'matrix') { os._terminalStats.entropy = 9.99; os.logTerminal('MATRIX INTENSITY BOOSTED // entropy maxed'); }
-                else if (c.startsWith('wiki ')) {
-                    const query = raw.substring(5).trim();
-                    os.openWindow('wikiboard');
-                    setTimeout(() => {
-                        if (os.wikiboard.engine) os.wikiboard.engine.searchAndSpawn(query);
-                    }, 800);
-                    os.logTerminal('Launching WikiBoard exploration for [' + query + ']...');
+        const raw = String(cmd || '').trim();
+        if (!raw) return;
+        if (os._terminalTab === 'syslog') os.terminalSetTab('shell');
+
+        const cwd = os._terminalCwd || '/Archive';
+        const c = raw.toLowerCase();
+
+        if (c === 'clear') {
+            const f = document.getElementById('terminal-feed');
+            if (f) f.innerHTML = '';
+            return;
+        }
+
+        os.terminalWrite(`user@aetheros:${cwd}$ ${raw}`, 'prompt');
+
+        if (c === 'help') {
+            os.terminalWrite([
+                'File System : pwd · ls [dir] · cd <dir> · tree · cat <file> · touch <file> · mkdir <dir> · write <file> <text> · rm <file> · grep <query>',
+                'Processes   : ps · kill <app> · open <app> · closeall · dmesg (view system logs)',
+                'Workspace   : space <1-3> · snap <left|right|max|split> · theme <name> · lock · backup',
+                'Network/Dev : curl <url> · ping <url/host> · calc <expr> · wiki <topic> · neofetch · history · date · uptime · clear'
+            ].join('\n'), 'muted');
+            return;
+        }
+
+        if (c === 'neofetch' || c === 'sysinfo') {
+            const reg = window.AETHER_MODULE_REGISTRY || {};
+            const totalMods = Object.keys(reg).length;
+            const enabledMods = Object.keys(reg).filter((id) => os.isModuleEnabled && os.isModuleEnabled(id)).length;
+            const openWins = Object.values(SystemState.windows || {}).filter((w) => w.isOpen).length;
+            const upSec = Math.floor(performance.now() / 1000);
+            const vfsCount = os.fmFlatten ? os.fmFlatten().filter((n) => n.kind !== 'folder').length : 0;
+            os.terminalWrite([
+                '      /\\         user@aetheros',
+                '     /  \\        -------------',
+                `    / /\\ \\       OS:       AetherOS Liquid Glass 2.6 (Web Workstation)`,
+                `   / ____ \\      Shell:    ash 2.6 · cwd ${cwd}`,
+                `  /_/    \\_\\     Theme:    ${SystemState.settings.active_theme || 'midnight'} (${SystemState.settings.performance_mode || 'eco'} profile)`,
+                `                 Desktop:  Workspace 0${SystemState.settings.active_space || 1} · ${openWins} open window(s)`,
+                `                 Apps:     ${enabledMods} enabled / ${totalMods} installed · ${vfsCount} VFS files`,
+                `                 Runtime:  ${navigator.hardwareConcurrency || '?'} CPU threads · ${navigator.deviceMemory ? navigator.deviceMemory + ' GB RAM · ' : ''}uptime ${Math.floor(upSec / 60)}m ${upSec % 60}s`
+            ].join('\n'), 'accent');
+            return;
+        }
+
+        if (c === 'pwd') {
+            os.terminalWrite(cwd);
+            return;
+        }
+
+        if (c === 'cd' || c.startsWith('cd ')) {
+            const arg = raw.slice(2).trim();
+            const nextPath = arg ? os._terminalResolvePath(arg) : '/Archive';
+            const node = os.fmFindByPath ? os.fmFindByPath(nextPath) : null;
+            if (!node || node.kind !== 'folder') {
+                // Also try case-insensitive child folder match
+                const children = os.fmChildrenForPath ? os.fmChildrenForPath(cwd) : [];
+                const fuzzy = children.find((ch) => ch.kind === 'folder' && ch.name.toLowerCase() === arg.toLowerCase());
+                if (fuzzy) {
+                    os._terminalCwd = fuzzy.path;
+                    os._terminalSyncCwdUI();
+                    return;
                 }
-                else if (c.startsWith('curl ')) {
-                    const url = raw.slice(5).trim();
-                    os.logTerminal(`Fetching ${url}...`);
-                    fetch(url).then((r) => r.text()).then((t) => os.logTerminal(t.slice(0, 260))).catch((e) => os.logTerminal('curl error: ' + e.message));
-                }
-                else if (c.startsWith('open ')) {
-                    const appId = c.replace('open ', '').trim();
-                    if (SystemState.windows[appId]) {
-                        if (os.isModuleEnabled && !os.isModuleEnabled(appId)) os.setModuleEnabled(appId, true, { silent: true });
-                        os.openWindow(appId);
-                    } else os.logTerminal(`Unknown module "${appId}".`);
-                }
-                else os.logTerminal('Unknown opcode. Type help.');
-            },
+                os.terminalWrite(`cd: no such directory: ${arg}`, 'error');
+                return;
+            }
+            os._terminalCwd = node.path;
+            os._terminalSyncCwdUI();
+            return;
+        }
+
+        if (c === 'ls' || c.startsWith('ls ')) {
+            const arg = raw.slice(2).trim();
+            const targetPath = arg ? os._terminalResolvePath(arg) : cwd;
+            const folder = os.fmFindByPath ? os.fmFindByPath(targetPath) : null;
+            if (!folder || folder.kind !== 'folder') {
+                os.terminalWrite(`ls: cannot access '${arg || targetPath}': No such directory`, 'error');
+                return;
+            }
+            const items = folder.children || [];
+            if (!items.length) {
+                os.terminalWrite('(empty directory)', 'muted');
+                return;
+            }
+            const formatted = items.map((n) => n.kind === 'folder' ? `drwxr-xr-x  ${n.name}/` : `-rw-r--r--  ${(n.size || '1 KB').padStart(8)}  ${n.name}`).join('\n');
+            os.terminalWrite(formatted);
+            return;
+        }
+
+        if (c === 'tree') {
+            const start = (os.fmFindByPath && os.fmFindByPath(cwd)) || os.filemanager?.data;
+            if (!start) { os.terminalWrite('VFS not mounted.', 'error'); return; }
+            const lines = [start.name + '/'];
+            const walk = (node, prefix) => {
+                const kids = node.children || [];
+                kids.forEach((child, idx) => {
+                    const last = idx === kids.length - 1;
+                    lines.push(`${prefix}${last ? '└── ' : '├── '}${child.name}${child.kind === 'folder' ? '/' : ''}`);
+                    if (child.kind === 'folder') walk(child, prefix + (last ? '    ' : '│   '));
+                });
+            };
+            walk(start, '');
+            os.terminalWrite(lines.slice(0, 50).join('\n'));
+            return;
+        }
+
+        if (c.startsWith('cat ')) {
+            const q = raw.slice(4).trim().toLowerCase();
+            const localItems = os.fmChildrenForPath ? os.fmChildrenForPath(cwd) : [];
+            const found = localItems.find((n) => n.kind !== 'folder' && (n.name || '').toLowerCase() === q)
+                || (os.fmFlatten && os.fmFlatten().find((n) => n.kind !== 'folder' && (n.name || '').toLowerCase().includes(q)));
+            if (!found) {
+                os.terminalWrite(`cat: ${raw.slice(4).trim()}: No such file`, 'error');
+            } else {
+                os.terminalWrite(String(found.content || '(binary / media asset)').slice(0, 2400));
+            }
+            return;
+        }
+
+        if (c.startsWith('touch ')) {
+            const rawArg = raw.slice(6).trim();
+            if (!rawArg) { os.terminalWrite('Usage: touch <filename>', 'error'); return; }
+            const resolved = os._terminalResolvePath(rawArg);
+            const lastSlash = resolved.lastIndexOf('/');
+            const dirPath = lastSlash > 0 ? resolved.slice(0, lastSlash) : cwd;
+            const fileName = resolved.slice(lastSlash + 1);
+            if (os.fmCreateNewFile) {
+                os.fmCreateNewFile(fileName, '', dirPath);
+                os.terminalWrite(`Created ${dirPath}/${fileName}`, 'success');
+            } else if (window.AetherVFS) {
+                AetherVFS.putFile({ name: fileName, content: '', folder: 'User Uploads', kind: 'note' }).then(() => os.terminalWrite(`Saved ${fileName} to VFS`, 'success'));
+            }
+            return;
+        }
+
+        if (c.startsWith('mkdir ')) {
+            const rawArg = raw.slice(6).trim();
+            if (!rawArg) { os.terminalWrite('Usage: mkdir <dirname>', 'error'); return; }
+            const resolved = os._terminalResolvePath(rawArg);
+            const lastSlash = resolved.lastIndexOf('/');
+            const parentPath = lastSlash > 0 ? resolved.slice(0, lastSlash) : '/Archive';
+            const folderName = resolved.slice(lastSlash + 1);
+            const parent = os.fmFindByPath && os.fmFindByPath(parentPath);
+            if (!parent || parent.kind !== 'folder') { os.terminalWrite(`mkdir: parent directory not found: ${parentPath}`, 'error'); return; }
+            parent.children = parent.children || [];
+            const fullPath = `${parent.path}/${folderName}`;
+            if (parent.children.some((ch) => ch.name.toLowerCase() === folderName.toLowerCase())) {
+                os.terminalWrite(`mkdir: ${folderName}: File or directory exists`, 'error');
+                return;
+            }
+            parent.children.unshift({ id: 'fld-' + Date.now(), name: folderName, kind: 'folder', path: fullPath, signal: 'Local', children: [] });
+            os.fmSaveLocalTree && os.fmSaveLocalTree();
+            os.fmRender && os.fmRender();
+            os.terminalWrite(`Created directory ${fullPath}`, 'success');
+            return;
+        }
+
+        if (c.startsWith('write ')) {
+            const rest = raw.slice(6).trim();
+            const sp = rest.indexOf(' ');
+            if (sp < 1) { os.terminalWrite('Usage: write <filename> <content>', 'error'); return; }
+            const name = rest.slice(0, sp).trim();
+            const body = rest.slice(sp + 1);
+            if (os.fmCreateNewFile) {
+                os.fmCreateNewFile(name, body, cwd);
+                os.terminalWrite(`Wrote ${body.length} bytes to ${cwd}/${name}`, 'success');
+            }
+            return;
+        }
+
+        if (c.startsWith('rm ')) {
+            const name = raw.slice(3).trim().toLowerCase();
+            const parent = os.fmFindByPath && os.fmFindByPath(cwd);
+            if (!parent || !Array.isArray(parent.children)) { os.terminalWrite('rm: cannot access directory', 'error'); return; }
+            const idx = parent.children.findIndex((ch) => (ch.name || '').toLowerCase() === name);
+            if (idx < 0) { os.terminalWrite(`rm: ${raw.slice(3).trim()}: No such file in ${cwd}`, 'error'); return; }
+            const removed = parent.children.splice(idx, 1)[0];
+            if (removed.vfsId && window.AetherVFS) AetherVFS.deleteFile(removed.vfsId).catch(() => {});
+            os.fmRender && os.fmRender();
+            os.terminalWrite(`Removed ${removed.name}`, 'muted');
+            return;
+        }
+
+        if (c.startsWith('grep ')) {
+            const term = raw.slice(5).trim().toLowerCase();
+            if (!term) { os.terminalWrite('Usage: grep <pattern>', 'error'); return; }
+            const all = os.fmFlatten ? os.fmFlatten().filter((n) => n.kind !== 'folder') : [];
+            const hits = [];
+            all.forEach((f) => {
+                String(f.content || '').split('\n').forEach((ln, idx) => {
+                    if (ln.toLowerCase().includes(term)) hits.push(`${f.path}:${idx + 1}: ${ln.trim().slice(0, 100)}`);
+                });
+            });
+            os.terminalWrite(hits.length ? hits.slice(0, 20).join('\n') : `(no matches for "${term}")`, hits.length ? 'default' : 'muted');
+            return;
+        }
+
+        if (c === 'ps' || c === 'top') {
+            const open = Object.values(SystemState.windows || {}).filter((w) => w.isOpen);
+            if (!open.length) {
+                os.terminalWrite('No open application windows.', 'muted');
+            } else {
+                const rows = ['APP ID           SPACE   GEOMETRY     STATE     TITLE'];
+                open.forEach((w) => {
+                    rows.push(`${w.id.padEnd(16)} 0${w.space || 1}      ${`${Math.round(w.width)}x${Math.round(w.height)}`.padEnd(12)} ${(w.isMinimized ? 'MIN' : 'OPEN').padEnd(9)} ${w.title}`);
+                });
+                os.terminalWrite(rows.join('\n'));
+            }
+            return;
+        }
+
+        if (c === 'closeall') {
+            Object.values(SystemState.windows || {}).forEach((w) => {
+                if (w.isOpen && w.id !== 'terminal' && window.winManager) window.winManager.closeWindow(w.id);
+            });
+            os.terminalWrite('Closed all background windows.', 'success');
+            return;
+        }
+
+        if (c.startsWith('kill ')) {
+            const id = c.slice(5).trim();
+            if (window.winManager && SystemState.windows[id]?.isOpen) {
+                window.winManager.closeWindow(id);
+                os.terminalWrite(`Closed window [${id}].`, 'success');
+            } else {
+                os.terminalWrite(`kill: window [${id}] is not open.`, 'error');
+            }
+            return;
+        }
+
+        if (c.startsWith('open ')) {
+            const q = c.slice(5).trim();
+            const reg = window.AETHER_MODULE_REGISTRY || {};
+            const appId = SystemState.windows[q] ? q : Object.keys(reg).find((id) => id.includes(q) || (reg[id].label || '').toLowerCase().includes(q));
+            if (appId && SystemState.windows[appId]) {
+                if (os.isModuleEnabled && !os.isModuleEnabled(appId)) os.setModuleEnabled(appId, true, { silent: true });
+                os.openWindow(appId);
+                os.terminalWrite(`Opened ${reg[appId]?.label || appId} (${appId})`, 'success');
+            } else {
+                os.terminalWrite(`open: no app matching "${q}"`, 'error');
+            }
+            return;
+        }
+
+        if (c.startsWith('space ')) {
+            const n = Number(c.slice(6).trim());
+            if (os.switchSpace && n >= 1 && n <= 3) { os.switchSpace(n); os.terminalWrite(`Switched to Workspace 0${n}.`, 'success'); }
+            else os.terminalWrite('Usage: space <1|2|3>', 'error');
+            return;
+        }
+
+        if (c.startsWith('snap ')) {
+            const mode = c.slice(5).trim();
+            if (mode === 'split') { os.tileSideBySide && os.tileSideBySide(); os.terminalWrite('Tiled top 2 windows 50/50.', 'success'); }
+            else {
+                const z = mode === 'max' ? 'maximize' : mode;
+                os.snapActiveWindow && os.snapActiveWindow(z);
+                os.terminalWrite(`Snapped active window -> ${z}`, 'success');
+            }
+            return;
+        }
+
+        if (c.startsWith('theme ')) {
+            const t = c.slice(6).trim();
+            os.applyTheme && os.applyTheme(t);
+            os.terminalWrite(`Applied theme: ${t}`, 'success');
+            return;
+        }
+
+        if (c.startsWith('calc ') || /^=\s*/.test(raw)) {
+            const expr = raw.replace(/^(calc\s+|=\s*)/i, '').trim().replace(/\^/g, '**');
+            if (/^[0-9+\-*/%.()\s]+$/.test(expr)) {
+                try { os.terminalWrite('= ' + Function(`"use strict";return (${expr})`)(), 'success'); }
+                catch (_) { os.terminalWrite('Invalid arithmetic expression', 'error'); }
+            } else {
+                os.terminalWrite('Usage: calc (480 * 1.18) / 12', 'error');
+            }
+            return;
+        }
+
+        if (c.startsWith('echo ')) { os.terminalWrite(raw.slice(5)); return; }
+        if (c === 'date') { os.terminalWrite(new Date().toString()); return; }
+        if (c === 'whoami') { os.terminalWrite('user@aetheros'); return; }
+        if (c === 'uname' || c.startsWith('uname ')) { os.terminalWrite(`AetherOS 2.6.0-liquidglass ${navigator.platform || 'Web'} WebKit/Blink`); return; }
+        if (c === 'uptime') { const s = Math.floor(performance.now() / 1000); os.terminalWrite(`up ${Math.floor(s / 60)}m ${s % 60}s`); return; }
+        if (c === 'history') {
+            os.terminalWrite((os._terminalHistory || []).slice(0, 25).reverse().map((h, i) => `${String(i + 1).padStart(3)}  ${h}`).join('\n') || '(empty)', 'muted');
+            return;
+        }
+        if (c === 'dmesg' || c === 'logs') {
+            const logs = (os._sysLogs || []).slice(-20);
+            os.terminalWrite(logs.length ? logs.map((l) => `[${l.stamp}] ${l.msg}`).join('\n') : '(no system events logged yet)', 'muted');
+            return;
+        }
+        if (c === 'matrix') {
+            os.terminalToggleMatrix();
+            os.terminalWrite(`Matrix rain backdrop ${os._terminalMatrixOn ? 'enabled' : 'disabled'}.`, 'muted');
+            return;
+        }
+        if (c === 'lock') { os.lockScreen && os.lockScreen(); return; }
+        if (c === 'backup') { window.AetherBackup && AetherBackup.triggerExportUI(); return; }
+        if (c === 'scan') { os.openWindow('taskmanager'); return; }
+        if (c === 'weather') { os.openWindow('weather'); return; }
+        if (c === 'iss') { if (!os.isModuleEnabled('iss')) os.setModuleEnabled('iss', true, { silent: true }); os.openWindow('iss'); return; }
+        if (c === 'apis') { os.openWindow('sysmon'); return; }
+
+        if (c.startsWith('wiki ')) {
+            const query = raw.substring(5).trim();
+            os.openWindow('wikiboard');
+            setTimeout(() => { if (os.wikiboard?.engine) os.wikiboard.engine.searchAndSpawn(query); }, 600);
+            os.terminalWrite(`Opened WikiBoard for "${query}"`, 'success');
+            return;
+        }
+
+        if (c.startsWith('ping ')) {
+            let target = raw.slice(5).trim();
+            if (!/^https?:\/\//i.test(target)) target = 'https://' + target;
+            const t0 = performance.now();
+            os.terminalWrite(`PING ${target} ...`, 'muted');
+            fetch(target, { mode: 'no-cors', cache: 'no-store' })
+                .then(() => {
+                    const ms = (performance.now() - t0).toFixed(1);
+                    os.terminalWrite(`64 bytes from ${target}: time=${ms} ms (reachable)`, 'success');
+                })
+                .catch((e) => os.terminalWrite(`ping failed: ${e.message}`, 'error'));
+            return;
+        }
+
+        if (c.startsWith('curl ')) {
+            let url = raw.slice(5).trim();
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+            os.terminalWrite(`GET ${url} ...`, 'muted');
+            fetch(url)
+                .then(async (r) => {
+                    const text = await r.text();
+                    let formatted = text;
+                    try { formatted = JSON.stringify(JSON.parse(text), null, 2); } catch (_) {}
+                    os.terminalWrite(`HTTP ${r.status} (${text.length} bytes)\n` + formatted.slice(0, 1200));
+                })
+                .catch((e) => os.terminalWrite('curl error: ' + e.message, 'error'));
+            return;
+        }
+
+        // Shortcut: if command matches an app ID directly, open it
+        if (SystemState.windows[c]) {
+            if (os.isModuleEnabled && !os.isModuleEnabled(c)) os.setModuleEnabled(c, true, { silent: true });
+            os.openWindow(c);
+            os.terminalWrite(`Opened ${SystemState.windows[c].title}`, 'success');
+            return;
+        }
+
+        os.terminalWrite(`ash: command not found: ${raw.split(/\s+/)[0]} (type "help" for available commands)`, 'error');
+    },
 
     switchSysmonView: (viewId) => {
-                os.sysmonView = viewId;
-                const container = document.getElementById('sysmon-content');
-                if (!container) return;
+        os.sysmonView = viewId;
+        const container = document.getElementById('sysmon-content');
+        if (!container) return;
 
-                container.innerHTML = SysmonViews[viewId] || '';
+        container.innerHTML = SysmonViews[viewId] || '';
 
-                const tabPerf = document.getElementById('tab-sysmon-perf');
-                const tabSpeed = document.getElementById('tab-sysmon-speed');
+        const tabPerf = document.getElementById('tab-sysmon-perf');
+        const tabSpeed = document.getElementById('tab-sysmon-speed');
 
-                if (viewId === 'perf') {
-                    if (tabPerf) tabPerf.className = "hover-target cursor-none text-white font-semibold border-b border-white pb-0.5";
-                    if (tabSpeed) tabSpeed.className = "hover-target cursor-none text-gray-500 hover:text-white";
-                    os.initSysMonitor();
-                } else {
-                    if (tabPerf) tabPerf.className = "hover-target cursor-none text-gray-500 hover:text-white";
-                    if (tabSpeed) tabSpeed.className = "hover-target cursor-none text-white font-semibold border-b border-white pb-0.5";
-                    os.killSysMonitor();
-                    os.initSpeedTestUI();
-                }
-                lucide.createIcons({root: container});
-            },
+        if (tabPerf) tabPerf.classList.toggle('active', viewId === 'perf');
+        if (tabSpeed) tabSpeed.classList.toggle('active', viewId !== 'perf');
+
+        if (viewId === 'perf') {
+            os.initSysMonitor();
+        } else {
+            os.killSysMonitor();
+            os.initSpeedTestUI();
+        }
+        if (window.lucide) lucide.createIcons({ root: container });
+    },
 
     sysmonTelemetry: { frames: [], heap: [], longTasks: 0, lastReport: {} },
 
@@ -419,9 +809,9 @@ window.extendOS({
                     const typeEl = document.getElementById('sysmon-net-type'); if (typeEl) typeEl.innerText = conn.effectiveType || 'unknown';
                     const saveEl = document.getElementById('sysmon-net-save'); if (saveEl) saveEl.innerText = conn.saveData ? 'ON' : 'OFF';
                 }
-                const navEntry = performance.getEntriesByType('navigation')[0];
+                const navEntry = typeof performance.getEntriesByType === 'function' ? performance.getEntriesByType('navigation')[0] : null;
                 const loadMs = navEntry ? Math.round(navEntry.loadEventEnd || navEntry.domComplete || performance.now()) : Math.round(performance.now());
-                const resources = performance.getEntriesByType('resource');
+                const resources = typeof performance.getEntriesByType === 'function' ? performance.getEntriesByType('resource') : [];
                 const byType = resources.reduce((acc, r) => { const t = r.initiatorType || 'other'; acc[t] = (acc[t]||0)+1; return acc; }, {});
                 os.renderSysmonBars('sysmon-resource-bars', Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label,value]) => ({label,value,pct: resources.length ? value/resources.length*100 : 0})));
                 const cores = navigator.hardwareConcurrency || 1;
@@ -503,103 +893,118 @@ window.extendOS({
             },
 
     _tmTab: 'processes',
+    _tmFilter: '',
 
     initTaskManager: () => {
-                if (os._tmRefreshInterval) clearInterval(os._tmRefreshInterval);
-                os.tmSwitchTab('processes');
-                os._tmRefreshInterval = setInterval(() => {
-                    if (document.getElementById('taskmanager-content')) os.tmRefreshData();
-                }, 2000);
-            },
+        if (os._tmRefreshInterval) clearInterval(os._tmRefreshInterval);
+        os.tmSwitchTab('processes');
+        os._tmRefreshInterval = setInterval(() => {
+            if (document.getElementById('taskmanager-content')) os.tmRefreshData();
+        }, 2000);
+    },
+
+    tmCloseAllWindows: () => {
+        Object.values(SystemState.windows || {}).forEach((w) => {
+            if (w.isOpen && w.id !== 'taskmanager') os.forceKillApp(w.id);
+        });
+        os.tmRefreshData();
+    },
 
     tmSwitchTab: (tab) => {
-                os._tmTab = tab;
-                const btns = { processes: 'tm-tab-proc', performance: 'tm-tab-perf' };
-                Object.entries(btns).forEach(([t, id]) => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    if (t === tab) el.className = 'hover-target cursor-none text-white font-bold border-b border-white pb-0.5';
-                    else el.className = 'hover-target cursor-none text-gray-500 hover:text-white transition';
-                });
-                os.tmRefreshData();
-            },
+        os._tmTab = tab;
+        const btns = { processes: 'tm-tab-proc', performance: 'tm-tab-perf' };
+        Object.entries(btns).forEach(([t, id]) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active', t === tab);
+        });
+        os.tmRefreshData();
+    },
 
     tmRefresh: () => os.tmRefreshData(),
 
     tmRefreshData: () => {
-                const root = document.getElementById('taskmanager-content');
-                if (!root) return;
-                if (os._tmTab === 'processes') {
-                    const wins = Object.values(SystemState.windows);
-                    const open = wins.filter(w => w.isOpen);
-                    const closed = wins.filter(w => !w.isOpen);
-                    const mem = performance.memory;
-                    const totalMB = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
+        const root = document.getElementById('taskmanager-content');
+        if (!root) return;
+        const q = String(os._tmFilter || '').trim().toLowerCase();
+        if (os._tmTab === 'processes') {
+            const allWins = Object.values(SystemState.windows || {}).filter((w) => !q || (w.title + ' ' + w.id).toLowerCase().includes(q));
+            const open = allWins.filter((w) => w.isOpen);
+            const closed = allWins.filter((w) => !w.isOpen && (!os.isModuleEnabled || os.isModuleEnabled(w.id)));
+            const mem = performance.memory;
+            const totalMB = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
 
-                    root.innerHTML = `
-                        <div class="p-3 h-full overflow-y-auto">
-                            <div class="grid grid-cols-4 gap-1 text-[9px] text-gray-500 uppercase tracking-wider font-mono px-2 pb-1 border-b border-white/5 mb-1">
-                                <span class="col-span-2">Process</span><span>Status</span><span class="text-right">Action</span>
-                            </div>
-                            ${open.map(w => `
-                                <div class="grid grid-cols-4 gap-1 items-center px-2 py-1.5 rounded hover:bg-white/5 group">
-                                    <div class="col-span-2 flex items-center gap-2 overflow-hidden">
-                                        <i data-lucide="${w.icon || 'box'}" class="w-3 h-3 text-gray-400 flex-shrink-0"></i>
-                                        <span class="text-[10px] text-white font-mono truncate">${os.escapeHtml(w.title)}</span>
-                                    </div>
-                                    <span class="text-[9px] font-mono text-green-400">RUNNING</span>
-                                    <div class="flex justify-end gap-1">
-                                        <button onclick="os.openWindow('${w.id}')" class="px-1.5 py-0.5 bg-white/5 hover:bg-white/15 rounded text-[8px] text-gray-300 cursor-none hover-target transition">Focus</button>
-                                        <button onclick="os.forceKillApp('${w.id}')" class="px-1.5 py-0.5 bg-red-500/10 hover:bg-red-500/30 rounded text-[8px] text-red-400 cursor-none hover-target transition">Kill</button>
-                                    </div>
-                                </div>`).join('')}
-                            ${closed.length ? `<div class="text-[9px] text-gray-600 uppercase tracking-widest font-mono px-2 py-2 mt-1">Inactive Processes (${closed.length})</div>` : ''}
-                            ${closed.slice(0,8).map(w => `
-                                <div class="grid grid-cols-4 gap-1 items-center px-2 py-1 opacity-40">
-                                    <div class="col-span-2 flex items-center gap-2 overflow-hidden">
-                                        <i data-lucide="${w.icon || 'box'}" class="w-3 h-3 text-gray-600 flex-shrink-0"></i>
-                                        <span class="text-[10px] text-gray-500 font-mono truncate">${os.escapeHtml(w.title)}</span>
-                                    </div>
-                                    <span class="text-[9px] font-mono text-gray-600">IDLE</span>
-                                    <div class="flex justify-end">
-                                        <button onclick="os.openWindow('${w.id}')" class="px-1.5 py-0.5 bg-white/5 hover:bg-white/10 rounded text-[8px] text-gray-500 cursor-none hover-target transition">Launch</button>
-                                    </div>
-                                </div>`).join('')}
-                            <div class="mt-2 pt-2 border-t border-white/5 text-[9px] font-mono text-gray-500 px-2">
-                                JS Heap: <span class="text-white">${totalMB} MB</span> · Open: <span class="text-green-400">${open.length}</span> · Total: ${wins.length}
-                            </div>
-                        </div>`;
-                    lucide.createIcons({root});
-                } else {
-                    const mem = performance.memory;
-                    const heapUsed = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
-                    const heapTotal = mem ? (mem.jsHeapSizeLimit / 1048576).toFixed(0) : '--';
-                    const heapPct = mem ? Math.round(mem.usedJSHeapSize / mem.jsHeapSizeLimit * 100) : 0;
-                    const conn = navigator.connection || {};
-                    const nodes = document.querySelectorAll('*').length;
-                    root.innerHTML = `
-                        <div class="p-3 space-y-3 overflow-y-auto h-full">
-                            <div class="p-3 bg-white/3 border border-white/5 rounded-lg font-mono text-[10px]">
-                                <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">Memory</div>
-                                <div class="flex justify-between mb-1"><span class="text-gray-400">JS Heap Used</span><span class="text-white font-bold">${heapUsed} MB / ${heapTotal} MB</span></div>
-                                <div class="w-full h-2 bg-black/60 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-green-500 to-yellow-500 rounded-full" style="width:${heapPct}%"></div></div>
-                                <div class="text-gray-600 mt-1">${heapPct}% utilization</div>
-                            </div>
-                            <div class="p-3 bg-white/3 border border-white/5 rounded-lg font-mono text-[10px]">
-                                <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">Network</div>
-                                <div class="flex justify-between"><span class="text-gray-400">Type</span><span class="text-white">${(conn.effectiveType || conn.type || '--').toUpperCase()}</span></div>
-                                <div class="flex justify-between mt-1"><span class="text-gray-400">Downlink</span><span class="text-green-400">${conn.downlink ?? '--'} Mbps</span></div>
-                                <div class="flex justify-between mt-1"><span class="text-gray-400">RTT</span><span class="text-white">${conn.rtt ?? '--'} ms</span></div>
-                            </div>
-                            <div class="p-3 bg-white/3 border border-white/5 rounded-lg font-mono text-[10px]">
-                                <div class="text-[9px] text-os-accent uppercase tracking-widest mb-2">DOM</div>
-                                <div class="flex justify-between"><span class="text-gray-400">Total Nodes</span><span class="text-white font-bold">${nodes.toLocaleString()}</span></div>
-                                <div class="flex justify-between mt-1"><span class="text-gray-400">CPU Cores</span><span class="text-white">${navigator.hardwareConcurrency || '--'}</span></div>
-                                <div class="flex justify-between mt-1"><span class="text-gray-400">Device RAM</span><span class="text-white">${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '--'}</span></div>
-                            </div>
-                        </div>`;
-                }
-            },
+            root.innerHTML = `
+                <div class="p-3.5 h-full flex flex-col">
+                    <div class="grid grid-cols-12 gap-2 text-[10.5px] text-gray-400 font-medium px-2.5 pb-2 border-b border-white/[0.07] mb-1.5">
+                        <span class="col-span-5">Application</span>
+                        <span class="col-span-2">Space</span>
+                        <span class="col-span-2">State</span>
+                        <span class="col-span-3 text-right">Actions</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-1 pr-0.5">
+                        ${open.length ? open.map((w) => `
+                            <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition">
+                                <div class="col-span-5 flex items-center gap-2.5 overflow-hidden">
+                                    <i data-lucide="${w.icon || 'box'}" class="w-3.5 h-3.5 text-sky-300 shrink-0"></i>
+                                    <span class="text-xs text-white font-medium truncate">${os.escapeHtml(w.title)}</span>
+                                </div>
+                                <span class="col-span-2 text-[11px] font-mono text-gray-400">Space 0${w.space || 1}</span>
+                                <span class="col-span-2 text-[11px] font-medium ${w.isMinimized ? 'text-amber-300' : 'text-emerald-300'}">${w.isMinimized ? 'Minimized' : 'Active'}</span>
+                                <div class="col-span-3 flex justify-end gap-1.5">
+                                    <button type="button" onclick="os.openWindow('${w.id}')" class="px-2 py-1 rounded-md bg-white/[0.06] hover:bg-white/14 text-[10.5px] text-gray-200 cursor-none hover-target transition">Focus</button>
+                                    <button type="button" onclick="os.forceKillApp('${w.id}')" class="px-2 py-1 rounded-md bg-rose-500/15 hover:bg-rose-500/30 text-[10.5px] text-rose-300 cursor-none hover-target transition">Close</button>
+                                </div>
+                            </div>`).join('') : `<div class="py-6 text-center text-gray-500 text-xs">No open windows matching filter.</div>`}
+
+                        ${closed.length ? `<div class="text-[10.5px] text-gray-500 font-semibold px-2.5 pt-3 pb-1">Available Apps (${closed.length})</div>` : ''}
+                        ${closed.slice(0, 12).map((w) => `
+                            <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] opacity-70 hover:opacity-100 transition">
+                                <div class="col-span-7 flex items-center gap-2.5 overflow-hidden">
+                                    <i data-lucide="${w.icon || 'box'}" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
+                                    <span class="text-xs text-gray-300 truncate">${os.escapeHtml(w.title)}</span>
+                                </div>
+                                <span class="col-span-2 text-[11px] text-gray-500">Idle</span>
+                                <div class="col-span-3 flex justify-end">
+                                    <button type="button" onclick="os.openWindow('${w.id}')" class="px-2.5 py-1 rounded-md bg-white/[0.05] hover:bg-white/12 text-[10.5px] text-gray-300 cursor-none hover-target transition">Open</button>
+                                </div>
+                            </div>`).join('')}
+                    </div>
+                    <div class="mt-2.5 pt-2.5 border-t border-white/[0.07] flex items-center justify-between text-[11px] text-gray-400 px-1">
+                        <span>JS Heap: <b class="text-white font-mono tabular-nums">${totalMB} MB</b></span>
+                        <span>Open Windows: <b class="text-emerald-300 font-mono tabular-nums">${open.length}</b></span>
+                    </div>
+                </div>`;
+            if (window.lucide) lucide.createIcons({ root });
+        } else {
+            const mem = performance.memory;
+            const heapUsed = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
+            const heapTotal = mem ? (mem.jsHeapSizeLimit / 1048576).toFixed(0) : '--';
+            const heapPct = mem ? Math.round(mem.usedJSHeapSize / mem.jsHeapSizeLimit * 100) : 0;
+            const conn = navigator.connection || {};
+            const nodes = document.querySelectorAll('*').length;
+            root.innerHTML = `
+                <div class="p-4 space-y-3 overflow-y-auto h-full text-xs">
+                    <div class="os-card p-3.5">
+                        <div class="text-[11px] font-semibold text-gray-300 mb-2">JavaScript Heap Memory</div>
+                        <div class="flex justify-between mb-1.5"><span class="text-gray-400">Used / Limit</span><span class="text-white font-mono font-semibold tabular-nums">${heapUsed} MB / ${heapTotal} MB</span></div>
+                        <div class="w-full h-2 bg-black/60 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width:${heapPct}%"></div></div>
+                        <div class="text-gray-500 text-[11px] mt-1 font-mono">${heapPct}% allocated</div>
+                    </div>
+                    <div class="os-card p-3.5 space-y-1.5">
+                        <div class="text-[11px] font-semibold text-gray-300 mb-1">Network Link</div>
+                        <div class="flex justify-between"><span class="text-gray-400">Profile</span><span class="text-white font-mono uppercase">${conn.effectiveType || conn.type || 'Standard'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Estimated Downlink</span><span class="text-emerald-300 font-mono tabular-nums">${conn.downlink ?? '--'} Mbps</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Round-Trip Time</span><span class="text-white font-mono tabular-nums">${conn.rtt ?? '--'} ms</span></div>
+                    </div>
+                    <div class="os-card p-3.5 space-y-1.5">
+                        <div class="text-[11px] font-semibold text-gray-300 mb-1">Browser Runtime</div>
+                        <div class="flex justify-between"><span class="text-gray-400">Active DOM Elements</span><span class="text-white font-mono font-semibold tabular-nums">${nodes.toLocaleString()}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Logical CPU Threads</span><span class="text-white font-mono tabular-nums">${navigator.hardwareConcurrency || '--'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Device Memory</span><span class="text-white font-mono tabular-nums">${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Not reported'}</span></div>
+                    </div>
+                </div>`;
+        }
+    },
 
     initSpeedTestUI: () => {
                 const curve = document.getElementById('speed-chart-curve');
@@ -810,7 +1215,7 @@ window.extendOS({
                 }, 2000);
 
                 startBtn.disabled = false;
-                startBtn.innerText = "INITIALIZE UPLINK TEST";
+                startBtn.innerText = "Run Speed Test";
                 startBtn.classList.remove('opacity-50');
             }
 });

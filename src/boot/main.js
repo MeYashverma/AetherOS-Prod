@@ -166,7 +166,7 @@ window.onload = () => {
                 _netUpdateConn();
 
                 // Resource Timing API — read real page resource data
-                const entries = performance.getEntriesByType('resource');
+                const entries = typeof performance.getEntriesByType === 'function' ? performance.getEntriesByType('resource') : [];
                 const totalReqs = entries.length;
                 const newReqs = totalReqs - _rtLastCount;
                 _rtLastCount = totalReqs;
