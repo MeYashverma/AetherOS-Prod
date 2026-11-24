@@ -23,7 +23,7 @@ const L = parseLRC('[00:00.00]Hello world\n[00:03.00]Love the moon\n[00:06.00]Si
 assert.equal(STYLES.length,17);
 for (const style of STYLES) {
  const root = document.getElementById('stage');
- const viz = new style.make(root, { song:{ title:'Test',artist:'Test artist',artwork:'' }, lyrics:L, theme:{hi:'#fff',sec:'#aaa',scale:1}, duration:()=>180, opts:{hometown:()=>false} }).mount();
+ const viz = new style.make(root, { song:{ title:'Test',artist:'Test artist',artwork:'' }, lyrics:L, theme:{hi:'#fff',sec:'#aaa',scale:1}, duration:()=>180, opts:{} }).mount();
  for (const t of [0,1,4,7,1]) viz.frame(frameState(L,t), 0.016);
  assert.ok(root.children.length, style.id);
  viz.destroy(); assert.equal(root.children.length,0,style.id+' cleans up');
