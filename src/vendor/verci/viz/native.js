@@ -70,35 +70,62 @@ export class Notifications extends Phone {
 export class Money extends Phone {
   pcls = 'nd-money';
   build() {
-    this.ph.innerHTML = `<div class="head"><small>Lyrics sent</small><b>$0</b><span>$1 for every word</span></div><div class="feed"></div>`;
-    this.feed = this.ph.querySelector('.feed'); this.total = this.ph.querySelector('.head b'); this.rows = [];
+    this.ph.innerHTML = `<div class="money-status" aria-hidden="true"><span>9:41</span><i></i><span>▂▄▆ ▰</span></div>
+      <div class="money-scroll"><header class="money-heading"><div><small>LYRIC WALLET</small><b class="money-total">$0.00</b><span>Simulated · $1 for every word</span></div><span class="money-demo">DEMO</span></header>
+      <div class="money-card"><div class="card-top"><span class="card-orbit">◈</span><span>LYRIC / DIGITAL</span><span>)))</span></div><div class="card-bottom"><div><small>Virtual lyric card</small><b class="card-number">•••• 0429</b></div><span class="card-circles" aria-hidden="true"><i></i><i></i></span></div></div>
+      <button class="card-reveal" type="button" aria-pressed="false">◉ Show demo card details</button>
+      <div class="money-actions"><button class="money-freeze" type="button" aria-pressed="false"><b>❄</b><span>Freeze card</span></button><button class="money-details" type="button"><b>▤</b><span>Card info</span></button><button class="money-activity" type="button"><b>↗</b><span>Activity</span></button></div>
+      <div class="money-notice" role="status">A wallet for your words. No real money moves.</div>
+      <section class="money-account"><span class="account-icon">♫</span><div><b>Linked to this song</b><small>${esc(this.ctx.song.title || 'Untitled')} · ${esc(this.ctx.song.artist || 'Unknown artist')}</small></div><span>✓</span></section>
+      <section class="money-transactions"><div class="transactions-heading"><h3>Transactions</h3><span>LYRIC ACTIVITY</span></div><p class="money-empty">Your first lyric starts the story.</p><div class="feed"></div></section></div>
+      <footer class="money-footer"><span>SIMULATED WALLET · NOT A PAYMENT SERVICE</span><i></i></footer>`;
+    const q = s => this.ph.querySelector(s);
+    this.feed = q('.feed'); this.total = q('.money-total'); this.rows = [];
+    const notice = text => { q('.money-notice').textContent = text; };
+    q('.card-reveal').addEventListener('click', () => {
+      const shown = q('.card-reveal').getAttribute('aria-pressed') !== 'true';
+      q('.card-reveal').setAttribute('aria-pressed', String(shown));
+      q('.card-reveal').textContent = shown ? '◉ Hide demo card details' : '◉ Show demo card details';
+      q('.card-number').textContent = shown ? 'DEMO · 0000 0429' : '•••• 0429';
+    });
+    q('.money-freeze').addEventListener('click', () => {
+      this.frozen = !this.frozen; q('.money-freeze').setAttribute('aria-pressed', String(this.frozen));
+      q('.money-freeze span').textContent = this.frozen ? 'Unfreeze' : 'Freeze card';
+      q('.money-card').classList.toggle('frozen', this.frozen);
+      notice(this.frozen ? 'Demo card frozen. Lyrics and playback continue.' : 'Demo card active. No real money moves.');
+    });
+    q('.money-details').addEventListener('click', () => notice('Demo card • 0429. Each sung word adds $1 in fictional value. No bank or payment account is connected.'));
+    q('.money-activity').addEventListener('click', () => { q('.money-transactions').scrollIntoView?.({ behavior: 'auto', block: 'nearest' }); notice('Activity follows playback. Seek the song to revisit a lyric.'); });
   }
   row(i, line) {
     const hue = Math.floor(rnd(i, 3) * 360), n = line.tokens.length;
     const m = Math.floor(line.t / 60) + ':' + String(Math.floor(line.t % 60)).padStart(2, '0');
-    const r = $('div', 'tx', `<i style="--h:${hue}">${esc(line.text[0].toUpperCase())}</i><div><p>${wordsHTML(line.tokens)}</p><small>Sending</small></div><b>−$${n}</b>`);
+    const r = $('div', 'tx', `<i style="--h:${hue}">${esc((line.text || '♪')[0].toUpperCase())}</i><div><p>${wordsHTML(line.tokens)}</p><small>In progress · ${m}</small></div><b>+$${n}.00</b>`);
     r.dataset.m = m; return r;
   }
-  paid(el) { this.full(el); el.classList.add('paid'); el.querySelector('small').textContent = 'Paid · ' + el.dataset.m; }
+  paid(el) { this.full(el); el.classList.add('paid'); el.querySelector('small').textContent = 'Completed · ' + el.dataset.m; }
   onLine(S) {
-    if (!S.line || S.gap) return;
     if (S.jump) { this.feed.innerHTML = ''; this.rows = []; }
+    this.ph.querySelector('.money-empty').hidden = !!S.line;
+    if (!S.line || S.gap) return;
     if (this.rows[0]) this.paid(this.rows[0].el);
     const el = this.row(S.idx, S.line); this.feed.prepend(el);
-    this.rows.unshift({ el, spans: [...el.querySelectorAll('.w')], idx: S.idx });
+    this.rows.unshift({ el, line: S.line, spans: [...el.querySelectorAll('.w')], idx: S.idx });
     this.rows.slice(9).forEach(r => r.el.remove()); this.rows.length = Math.min(9, this.rows.length);
-    requestAnimationFrame(() => { el.classList.add('in');if(!S.jump)el.classList.add('message-arrival'); });
+    el.classList.add('in');
   }
   tick(S) {
-    cleanupStickerJobs(this);
-    const r = this.rows[0]; if (!r || !S.line) return;
-    if (this.ctx.lyrics.format === 'TTML') {
-      for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
-    } else light(r.spans, S.gap ? 99 : S.pos);
+    const r = this.rows[0];
+    if (r && S.line) {
+      if (this.ctx.lyrics.format === 'TTML') {
+        for (const row of this.rows) light(row.spans, wordPos(row.line.tokens, S.t));
+      } else light(r.spans, S.gap ? 99 : S.pos);
+      if (S.gap) this.paid(r.el);
+    }
     const L = this.ctx.lyrics; let sent = 0;
     for (let i = 0; i < S.idx; i++) sent += L.lines[i].tokens.length;
-    sent += Math.floor(Math.max(0, S.pos));
-    if (sent !== this.sent) { this.sent = sent; this.total.textContent = '$' + sent; }
+    if (S.line) sent += Math.min(S.line.tokens.length, Math.floor(Math.max(0, S.pos)));
+    if (sent !== this.sent) { this.sent = sent; this.total.textContent = '$' + sent.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
   }
 }
 
@@ -495,4 +522,4 @@ export class Messages extends Phone {
   }
 }
 
-export { MapStyle } from './map.js';
+export { MapStyle } from './map.js?v=native-map-6';

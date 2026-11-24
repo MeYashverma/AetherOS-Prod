@@ -2,8 +2,8 @@
 // `own: true` marks styles that keep their own colours regardless of the Aesthetics settings.
 import { Visual, Fisheye, FisheyeVisual, Ship } from './type.js';
 import { Codestyle, CodestyleVisual, Branches, Web, Constellation } from './scenes.js';
-// Version this import so cached previews load the current chat renderer.
-import { Notifications, Money, Messages, MapStyle } from './native.js?v=stickersapi-31';
+// Version the native-scene chain so cached clients load the current city renderer.
+import { Notifications, Money, Messages, MapStyle } from './native.js?v=native-map-6';
 import { Kinetic, Collage, Y2K, Cinema } from './art.js';
 
 export const STYLES = [
