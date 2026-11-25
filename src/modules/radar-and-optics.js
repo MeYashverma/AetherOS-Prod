@@ -93,7 +93,7 @@ window.extendOS({
                     const mapEl = document.getElementById('radar-leaflet-map');
                     if (!mapEl || os.radarMap) return;
 
-                    // Dark tile layer — CartoDB dark matter
+                    // Standard OpenStreetMap tiles: no CARTO account or API key required.
                     const map = L.map(mapEl, {
                         center: [20, 0],
                         zoom: 2,
@@ -101,14 +101,14 @@ window.extendOS({
                         attributionControl: false
                     });
 
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 19,
-                        subdomains: 'abcd'
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
                     }).addTo(map);
 
                     // Attribution (small, bottom right)
                     L.control.attribution({ prefix: false, position: 'bottomright' }).addTo(map);
-                    map.attributionControl.addAttribution('© <a href="https://opensky-network.org" style="color:#888">OpenSky</a> © <a href="https://carto.com" style="color:#888">CARTO</a>');
+                    map.attributionControl.addAttribution('Flight data: <a href="https://opensky-network.org">OpenSky</a> / <a href="https://airplanes.live">Airplanes.live</a>');
 
                     // Zoom control top-right
                     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -201,6 +201,7 @@ window.extendOS({
         }
 
         const applyFlights = (flights, providerLabel) => {
+            os._radarLastError = '';
             os.activeFlights = flights;
             os.redrawMarkers();
             os.renderFlightManifest();
@@ -219,6 +220,8 @@ window.extendOS({
             const center = os.radarMap.getCenter();
             const zoom = os.radarMap.getZoom();
             let loaded = false;
+            const feedErrors = new Set();
+            const httpIssue = (provider, status) => `${provider}: HTTP ${status}${status === 401 || status === 403 ? " (access denied)" : status === 429 ? " (rate limited)" : ""}`;
 
             if (zoom <= 3) {
                 try {
@@ -247,11 +250,13 @@ window.extendOS({
                                     squawk: s[14] || '----',
                                     posSource: ['ADS-B', 'ASTERIX', 'MLAT', 'FLARM'][s[16]] || 'ADS-B'
                                 }));
-                            applyFlights(parsed, 'OpenSky ADS-B');
-                            loaded = true;
+                            if (parsed.length) {
+                                applyFlights(parsed, 'OpenSky ADS-B');
+                                loaded = true;
+                            }
                         }
-                    }
-                } catch (_) {}
+                    } else feedErrors.add(httpIssue('OpenSky', res.status));
+                } catch (_) { feedErrors.add('OpenSky: network, CORS or timeout error'); }
             }
 
             if (!loaded) {
@@ -264,7 +269,7 @@ window.extendOS({
                 await Promise.all(hubs.map(async ([la, lo]) => {
                     try {
                         const r = await fetch(`https://api.airplanes.live/v2/point/${la.toFixed(2)}/${lo.toFixed(2)}/250`, { signal: AbortSignal.timeout(9000) });
-                        if (!r.ok) return;
+                        if (!r.ok) { feedErrors.add(httpIssue('Airplanes.live', r.status)); return; }
                         const data = await r.json();
                         (data?.ac || []).forEach((ac) => {
                             if (ac.lat == null || ac.lon == null || seen.has(ac.hex)) return;
@@ -286,10 +291,10 @@ window.extendOS({
                                 posSource: 'Airplanes.live ADS-B'
                             });
                         });
-                    } catch (_) {}
+                    } catch (_) { feedErrors.add('Airplanes.live: network, CORS or timeout error'); }
                 }));
 
-                if (!merged.length) throw new Error('Both OpenSky and Airplanes.live endpoints unreachable');
+                if (!merged.length) throw new Error([...feedErrors].join(' · ') || 'Flight feeds returned no aircraft for this area. Try another region.');
                 applyFlights(merged.slice(0, 1200), 'Airplanes.live ADS-B');
             }
         } catch (err) {
@@ -499,7 +504,7 @@ window.extendOS({
                 list.innerHTML = '';
                 if (!os.activeFlights || os.activeFlights.length === 0) {
                     const msg = os._radarLastError || 'No live ADS-B transponders returned.';
-                    list.innerHTML = `<div class="p-4 text-center text-[10px] font-mono text-gray-500 leading-relaxed">OpenSky ADS-B feed offline<br><span class="text-[8px] text-gray-600">${os.escapeHtml(msg)}</span></div>`;
+                    list.innerHTML = `<div class="p-4 text-center text-[10px] font-mono text-gray-500 leading-relaxed">Live flight data unavailable<br><span class="text-[8px] text-gray-600">${os.escapeHtml(msg)}</span></div>`;
                     return;
                 }
                 const sorted = [...os.activeFlights].sort((a,b) => b.baroAlt - a.baroAlt);

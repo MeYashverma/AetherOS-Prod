@@ -833,7 +833,7 @@ window.extendOS({
                 const label = mod ? mod.label : id;
                 const isOpen = SystemState.windows[id] && SystemState.windows[id].isOpen;
 
-                let html = `<div class="dock-ctx-item" style="pointer-events:none;color:rgba(255,255,255,0.35);font-size:10px;text-transform:uppercase;letter-spacing:1px;">${label}</div>`;
+                let html = `<div class="dock-ctx-item" style="pointer-events:none;color:rgba(255,255,255,0.35);font-size:10px;text-transform:uppercase;letter-spacing:1px;">${window.AetherDesign?.appIcon(id, 20) || ''}${label}</div>`;
                 html += '<div class="dock-ctx-sep"></div>';
 
                 if (type === 'pinned' && !isOpen) {
@@ -1043,7 +1043,7 @@ window.extendOS({
                         const isPinned = pinned.includes(mod.id);
                         html += `<div class="finder-app-item hover-target ${isRunning ? 'finder-running' : ''}" onclick="os.launchFromFinder('${mod.id}')" title="${mod.label}" oncontextmenu="event.preventDefault();os.togglePinDock('${mod.id}')">
                             <button class="finder-pin-btn ${isPinned ? 'pinned' : ''} hover-target" onclick="event.stopPropagation();os.togglePinDock('${mod.id}')" title="${isPinned ? 'Unpin from Dock' : 'Pin to Dock'}"><i data-lucide="${isPinned ? 'pin-off' : 'pin'}" class="w-3 h-3"></i></button>
-                            <div class="finder-app-icon"><i data-lucide="${mod.icon}" class="w-5 h-5 text-gray-300"></i></div>
+                            <div class="finder-app-icon app-icon-tile" style="${window.AetherDesign?.iconStyle(mod.id) || ''}">${window.AetherDesign?.iconMarkup(mod.id) || `<i data-lucide="${mod.icon}" class="w-5 h-5 text-gray-300"></i>`}</div>
                             <div class="finder-app-label">${mod.label}</div>
                         </div>`;
                     });
@@ -1169,6 +1169,7 @@ window.extendOS({
     _activeSettingsTab: 'general',
 
     _hydrateSettingsTab: (resolvedTab, panel) => {
+                window.AetherWebWallpapers?.refreshStatus();
                 if (!panel) return;
                 if (resolvedTab === 'voice') {
                     const support = document.getElementById('speech-api-support');
@@ -1643,6 +1644,7 @@ window.extendOS({
                 const wallEl = document.getElementById('lg-wallpaper');
                 if (wallEl) {
                     wallEl.style.background = t.wallpaper;
+                    if (['gallery', 'online'].includes(SystemState.settings.wallpaper_mode)) window.AetherDesign?.syncWallpaper(SystemState.settings);
                 }
                 
                 // Update cursor engine if available
@@ -1785,6 +1787,7 @@ window.extendOS({
                     }
                 }
 
+                window.AetherDesign?.syncWallpaper(SystemState.settings);
                 os.syncSakuraPetals && os.syncSakuraPetals();
                 os.syncOnekoBall && os.syncOnekoBall();
 

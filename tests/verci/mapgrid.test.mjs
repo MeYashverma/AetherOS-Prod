@@ -87,13 +87,15 @@ test('the view is lazy, bounded, and stable on either side of generation-tile se
   assert.equal(small.tiles.has('12,12'), false, 'far-away scenery is not eagerly drawn');
 });
 
-test('wheel and citadel occupy real, dry parcels regardless of landmark-query order', () => {
+test('all five attractions occupy real, dry parcels regardless of landmark-query order', () => {
   for (let i = 0; i < 32; i++) {
     const sample = Math.imul(i + 1, 0x9e3779b1) >>> 0;
     const a = new ProcWorld({ seed: sample }), b = new ProcWorld({ seed: sample });
     for (const f of a.landmarks) a.ensure(f.x, f.y);
     for (const f of [...b.landmarks].reverse()) b.ensure(f.x, f.y);
     assert.deepEqual(a.landmarks, b.landmarks, `landmarks for seed ${sample} are deterministic`);
+    assert.deepEqual(a.landmarks.map(f => f.type), ['wheel', 'citadel', 'conservatory', 'museum', 'observatory']);
+    assert.equal(new Set(a.landmarks.map(f => f.siteId)).size, 5);
     for (const f of a.landmarks) {
       const q = a.query([f.x - 130, f.y - 130, f.x + 130, f.y + 130]);
       assert.equal(q.landmarks.filter(l => l.type === f.type && l.id === f.siteId).length, 1);

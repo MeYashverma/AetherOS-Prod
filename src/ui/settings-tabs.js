@@ -94,7 +94,7 @@
                     return `
                         <div class="settings-row" data-search-item="${esc(m.label + ' ' + m.desc + ' ' + pack.label)}">
                             <div class="settings-row-main">
-                                <div class="settings-row-icon"><i data-lucide="${esc(m.icon)}" class="w-3.5 h-3.5"></i></div>
+                                <div class="settings-row-icon">${window.AetherDesign?.appIcon(m.id, 22) || ''}</div>
                                 <div class="min-w-0">
                                     <div class="settings-row-title flex items-center gap-2">
                                         <span>${esc(m.label)}</span>
@@ -273,7 +273,7 @@
         get appearance() {
             const st = s();
             const activeTheme = st.active_theme || 'midnight';
-            const wpMode = ['default', 'custom', 'mesh', 'dynamic', 'gif'].includes(st.wallpaper_mode) ? st.wallpaper_mode : 'default';
+            const wpMode = ['default', 'custom', 'mesh', 'dynamic', 'gif', 'gallery', 'online'].includes(st.wallpaper_mode) ? st.wallpaper_mode : 'default';
             const cur = st.cursor_theme || 'aether';
             const isFxCursor = FX_CURSORS.some(([id]) => id === cur);
             const nyanStd = st.cursor_nyan_standard === 'on';
@@ -336,16 +336,52 @@
                             <div class="settings-row-icon"><i data-lucide="image" class="w-3.5 h-3.5 text-sky-400"></i></div>
                             <div>
                                 <div class="settings-row-title">Desktop Wallpaper Studio</div>
-                                <div class="settings-row-desc">Liquid Glass gradient, custom local/URL wallpaper, 3-color mesh, time-of-day sky, or GIF.</div>
+                                <div class="settings-row-desc">Original 4K vector collection with automatic rotation, or keep your own wallpaper.</div>
                             </div>
                         </div>
                         <div class="os-segmented flex-wrap">
+                            <button type="button" onclick="os.setOption('wallpaper_mode','gallery')" class="os-seg-btn ${wpMode === 'gallery' ? 'active' : ''} hover-target">4K Collection</button>
+                            <button type="button" onclick="os.setOption('wallpaper_mode','online')" class="os-seg-btn ${wpMode === 'online' ? 'active' : ''} hover-target">Online Wallpapers</button>
                             <button type="button" id="opt-wp-default" onclick="os.setOption('wallpaper_mode','default')" class="os-seg-btn ${wpMode === 'default' ? 'active' : ''} hover-target cursor-none">Glass</button>
                             <button type="button" id="opt-wp-custom" onclick="os.setOption('wallpaper_mode','custom')" class="os-seg-btn ${wpMode === 'custom' ? 'active' : ''} hover-target cursor-none">Custom</button>
                             <button type="button" id="opt-wp-mesh" onclick="os.setOption('wallpaper_mode','mesh')" class="os-seg-btn ${wpMode === 'mesh' ? 'active' : ''} hover-target cursor-none">Mesh</button>
                             <button type="button" id="opt-wp-dynamic" onclick="os.setOption('wallpaper_mode','dynamic')" class="os-seg-btn ${wpMode === 'dynamic' ? 'active' : ''} hover-target cursor-none">Sky</button>
                             <button type="button" id="opt-wp-gif" onclick="os.setOption('wallpaper_mode','gif')" class="os-seg-btn ${wpMode === 'gif' ? 'active' : ''} hover-target cursor-none">GIF</button>
                         </div>
+                        ${wpMode === 'gallery' ? `
+                            <div class="wallpaper-collection-grid">
+                                ${(window.AetherDesign?.wallpapers || []).map(w => `<button type="button" aria-label="Use ${w.name} wallpaper" aria-pressed="${(st.wallpaper_collection || 'aurora') === w.id && st.wallpaper_rotation === 'off'}" onclick="SystemState.settings.wallpaper_collection='${w.id}'; SystemState.settings.wallpaper_rotation='off'; os.setOption('wallpaper_mode','gallery')" style="background-image:url('assets/wallpapers/${w.id}.svg')"><span>${w.name}</span></button>`).join('')}
+                            </div>
+                            <label class="wallpaper-cadence">Change wallpaper
+                                <select aria-label="Wallpaper rotation" onchange="os.setOption('wallpaper_rotation',this.value)">
+                                    ${[['daily','Daily'],['hourly','Every hour'],['off','Keep selected']].map(([value,label]) => `<option value="${value}" ${(st.wallpaper_rotation || 'daily') === value ? 'selected' : ''}>${label}</option>`).join('')}
+                                </select>
+                            </label>
+                            <p class="text-[10px] text-gray-400">3840 × 2160 original vector artwork. Rotates locally, works offline after first load. Selecting a thumbnail pauses rotation. No downloads from third-party wallpaper services.</p>
+                        ` : ''}
+                        ${wpMode === 'online' ? `
+                            <div class="wallpaper-online-panel">
+                                <p>Auto uses the fastest configured provider, with the GitHub collection as a fallback. Search batches are cached: Next cycles through already-found images. Provider availability, plans and resolution affect results. Artist rights remain with their owners.</p>
+                                <label class="wallpaper-cadence">Provider <select aria-label="Online wallpaper provider" onchange="if(this.value==='nexwall' &amp;&amp; SystemState.settings.wallpaper_online_quality!=='4k')SystemState.settings.wallpaper_online_quality='screen';os.setOption('wallpaper_online_provider',this.value)">
+                                    ${[['auto','Auto · fastest ready provider'],['nexwall','NexWall · demo or server key'],['pixabay','Pixabay · server key'],['unsplash','Unsplash · server key + approval'],['pexels','Pexels · server key + approval'],['github','GitHub collection · no server needed'],['wallhaven','Wallhaven · requires API server'],['commons','Wikimedia · public-domain photos']].map(([v,l]) => `<option value="${v}" ${(st.wallpaper_online_provider || 'auto') === v ? 'selected' : ''}>${l}</option>`).join('')}
+                                </select></label>
+                                <p id="wallpaper-provider-setup" class="text-[10px] text-gray-400" role="status">Checking provider setup…</p>
+                                <label class="wallpaper-cadence">Resolution <select aria-label="Online wallpaper resolution" onchange="os.setOption('wallpaper_online_quality',this.value)">
+                                    <option value="4k" ${(st.wallpaper_online_quality || 'hd') === '4k' ? 'selected' : ''}>Strict 4K · 3840×2160+</option>
+                                    <option value="screen" ${st.wallpaper_online_quality === 'screen' ? 'selected' : ''}>Screen-fit · includes cropped phone wallpapers</option>
+                                    <option value="hd" ${(st.wallpaper_online_quality || 'hd') === 'hd' ? 'selected' : ''}>Allow HD · 1920×1080+</option>
+                                </select></label>
+                                <label class="wallpaper-cadence">Theme <select aria-label="Online wallpaper theme" onchange="os.setOption('wallpaper_online_topic',this.value)">
+                                    ${[['gaming','Gaming'],['anime','Anime'],['meme','Memes'],['amoled','AMOLED / dark'],['abstract','Abstract'],['landscape','Landscapes'],['coast','Coasts'],['space','Space'],['nature','Nature'],['city','Cities'],['cars','Cars'],['animals','Animals'],['flowers','Flowers'],['minimal','Minimal'],['cyberpunk','Cyberpunk'],['mountains','Mountains']].map(([v,l]) => `<option value="${v}" ${(st.wallpaper_online_topic || 'abstract') === v ? 'selected' : ''}>${l}</option>`).join('')}
+                                </select></label>
+                                <label class="wallpaper-cadence">Search <input type="search" maxlength="80" value="${esc(st.wallpaper_online_search || '')}" placeholder="Optional: e.g. neon city, pixel art" aria-label="Wallpaper search" onchange="os.setOption('wallpaper_online_search',this.value.trim().slice(0,80))" class="os-input px-2 py-1"></label>
+                                <label class="wallpaper-cadence">Change photo <select aria-label="Online wallpaper rotation" onchange="os.setOption('wallpaper_rotation',this.value)">
+                                    ${[['daily','Daily'],['hourly','Every hour'],['off','Keep current']].map(([v,l]) => `<option value="${v}" ${(st.wallpaper_rotation || 'daily') === v ? 'selected' : ''}>${l}</option>`).join('')}
+                                </select></label>
+                                <button type="button" class="os-seg-btn" onclick="window.AetherWebWallpapers?.next()">Next wallpaper</button> <button type="button" class="os-seg-btn" onclick="window.AetherWebWallpapers?.retry()">Retry connection</button>
+                                <p id="wallpaper-online-status" role="status">Your current wallpaper stays visible while loading. NexWall is mainly phone-portrait content: use Screen-fit to include it (cropped to your desktop). Strict 4K never silently downgrades. Stock providers may not have anime or memes. Keys belong in server environment variables, never browser settings. Unsplash/Pexels require operator-confirmed approval for this use.</p>
+                            </div>
+                        ` : ''}
                         ${wpMode === 'custom' ? `
                             <div class="w-full pt-2.5 mt-1 border-t border-white/[0.06] space-y-2.5">
                                 <div class="flex flex-wrap items-center gap-2">

@@ -945,7 +945,7 @@ window.extendOS({
                         ${open.length ? open.map((w) => `
                             <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition">
                                 <div class="col-span-5 flex items-center gap-2.5 overflow-hidden">
-                                    <i data-lucide="${w.icon || 'box'}" class="w-3.5 h-3.5 text-sky-300 shrink-0"></i>
+                                    ${window.AetherDesign?.appIcon(w.id, 20) || ''}
                                     <span class="text-xs text-white font-medium truncate">${os.escapeHtml(w.title)}</span>
                                 </div>
                                 <span class="col-span-2 text-[11px] font-mono text-gray-400">Space 0${w.space || 1}</span>
@@ -960,7 +960,7 @@ window.extendOS({
                         ${closed.slice(0, 12).map((w) => `
                             <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] opacity-70 hover:opacity-100 transition">
                                 <div class="col-span-7 flex items-center gap-2.5 overflow-hidden">
-                                    <i data-lucide="${w.icon || 'box'}" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
+                                    ${window.AetherDesign?.appIcon(w.id, 20) || ''}
                                     <span class="text-xs text-gray-300 truncate">${os.escapeHtml(w.title)}</span>
                                 </div>
                                 <span class="col-span-2 text-[11px] text-gray-500">Idle</span>

@@ -522,4 +522,4 @@ export class Messages extends Phone {
   }
 }
 
-export { MapStyle } from './map.js?v=native-map-6';
+export { MapStyle } from './map.js?v=native-map-7';

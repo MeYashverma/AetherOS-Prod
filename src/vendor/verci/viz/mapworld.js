@@ -184,7 +184,13 @@ export class ProcWorld {
         y: this.river(wheelX) + this.riverHalf(wheelX) + 175 },
       { type: 'citadel', name: `${this.names[(this.seed >>> 8) % this.names.length]} Citadel`,
         description: 'Riverside citadel · generated landmark', x: keepX,
-        y: this.river(keepX) - this.riverHalf(keepX) - 50 }
+        y: this.river(keepX) - this.riverHalf(keepX) - 50 },
+      { type: 'conservatory', name: `${this.names[0]} Conservatory`,
+        description: 'Glass garden · tropical palms and a vaulted greenhouse', x: 820, y: 430 },
+      { type: 'museum', name: `${this.names[1]} Art Museum`,
+        description: 'Sculpture court · contemporary art pavilion', x: -850, y: 380 },
+      { type: 'observatory', name: `${this.names[2]} Observatory`,
+        description: 'Sky terrace · domed observatory and reflecting pool', x: 130, y: 740 }
     ];
     const taken = new Set();
     return wishes.map(wish => {

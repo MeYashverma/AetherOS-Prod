@@ -166,3 +166,9 @@ The lyric chat keeps every elapsed message in order, including TTML duets, repli
 ### Native Design Money: Lyric Wallet
 
 The light wallet scene uses an original dark virtual card, simulated word-value balance, song-linked account summary and scrolling lyric transactions. Card details can be revealed/hidden; Freeze toggles the demo card appearance without pausing lyrics; Card info and Activity explain their local-only behavior. No bank, wallet API, payment request or real transfer is involved. The visible disclaimer remains outside the scrolling activity. Balance and highlighting follow playback, including backwards seeks and TTML word timing. `money.test.mjs` covers the demo controls, seeking, pre-roll reset and TTML row timelines. Chromium checks at 320×640 and 390×844 found no page errors or horizontal overflow.
+
+### Lyric City: architecture and attractions
+
+The procedural daylight map now includes five explorable destinations: the observation wheel, riverside citadel, vaulted glass conservatory, sculpture-court art museum and domed observatory with a reflecting pool. All are original local geometry, not downloaded models or real-world places. Reserved parcels and surrounding parkland are seeded and independent of viewport-query order. Discover's next/previous controls cycle through all five destinations.
+
+Buildings now vary between glass and warm-stone towers, stepped crowns and antennas, pitched house roofs, solar-panel roofs and planted terraces. Near facades have bounded window grids; distant buildings simplify their detail. Offscreen and hidden-panel building geometry is culled, and back faces are omitted. Labels avoid the destination architecture. Chromium checks covered navigation and all five attractions at 320×640 and 390×844, with no horizontal page overflow or page errors. Performance varies by device; this remains a lightweight canvas 2.5D scene rather than a full 3D engine.

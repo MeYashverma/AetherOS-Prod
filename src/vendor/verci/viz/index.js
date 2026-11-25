@@ -3,7 +3,7 @@
 import { Visual, Fisheye, FisheyeVisual, Ship } from './type.js';
 import { Codestyle, CodestyleVisual, Branches, Web, Constellation } from './scenes.js';
 // Version the native-scene chain so cached clients load the current city renderer.
-import { Notifications, Money, Messages, MapStyle } from './native.js?v=native-map-6';
+import { Notifications, Money, Messages, MapStyle } from './native.js?v=native-map-7';
 import { Kinetic, Collage, Y2K, Cinema } from './art.js';
 
 export const STYLES = [

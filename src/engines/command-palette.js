@@ -246,7 +246,7 @@
                     const modId = cmd.slice(5);
                     const m = reg[modId];
                     if (m) {
-                        el.innerHTML = `<i data-lucide="${esc(m.icon)}" style="width:14px;height:14px;flex-shrink:0"></i> ${esc(m.label)}`;
+                        el.innerHTML = `${window.AetherDesign?.appIcon(m.id, 20) || ''} ${esc(m.label)}`;
                     }
                 }
             });
@@ -258,7 +258,7 @@
                 const row = document.createElement('div');
                 row.className = 'cmd-item flex items-center justify-between p-3 rounded hover:bg-white/5 cursor-none hover-target transition-colors';
                 row.setAttribute('data-cmd', cmd);
-                row.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${esc(m.icon)}" class="w-4 h-4 text-gray-400"></i><span class="text-white">${esc(m.label)}</span></div><span class="text-[10px] font-mono text-gray-500">App</span>`;
+                row.innerHTML = `<div class="flex items-center gap-3">${window.AetherDesign?.appIcon(m.id, 22) || ''}<span class="text-white">${esc(m.label)}</span></div><span class="text-[10px] font-mono text-gray-500">App</span>`;
                 this.resultsEl.insertBefore(row, this.resultsEl.firstChild);
                 existingMap.set(cmd, row);
             });
@@ -339,7 +339,7 @@
                         html += `
                             <div class="cmd-item flex items-center justify-between p-3 rounded hover:bg-white/5 cursor-none hover-target" data-cmd="enableopen:${m.id}">
                                 <div class="flex items-center gap-3">
-                                    <i data-lucide="${esc(m.icon)}" class="w-4 h-4 text-amber-300"></i>
+                                    ${window.AetherDesign?.appIcon(m.id, 22) || ''}
                                     <span class="text-gray-200">Enable &amp; Open <strong class="text-white">${esc(m.label)}</strong></span>
                                 </div>
                                 <span class="text-[10px] font-mono text-amber-300">OPTIONAL MODULE</span>

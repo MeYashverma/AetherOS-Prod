@@ -4,7 +4,7 @@ import { discordCatalogue, renderDiscordSticker } from '../vendor/verci/provider
 import { listMedia, renderMediaImage } from '../vendor/verci/providers/stickersapi.js?v=stickersapi-31';
 import { STICKER_MOODS, customStickers, cleanSticker } from '../vendor/verci/providers/stickerly.js';
 import { REACTION_DICTIONARY_STATS } from '../vendor/verci/viz/reaction-dictionary.js';
-import { STYLES } from '../vendor/verci/viz/index.js?v=native-map-6';
+import { STYLES } from '../vendor/verci/viz/index.js?v=native-map-7';
 import { LyricMedia } from '../vendor/verci/viz/lyric-media.js?v=stickersapi-31';
 import { frameState, esc } from '../vendor/verci/viz/core.js';
 import { parseTTML } from '../vendor/verci/ttml.js';

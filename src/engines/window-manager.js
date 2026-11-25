@@ -38,7 +38,12 @@ class WindowManager {
                     .filter(w => w && w.isOpen && !w.isMinimized)
                     .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))[0];
                 const activeAppEl = document.getElementById('active-app-name');
-                if (activeAppEl) activeAppEl.innerText = topWin ? topWin.title : 'AetherOS';
+                if (activeAppEl) {
+                    activeAppEl.innerText = topWin ? topWin.title : 'AetherOS';
+                    let icon = document.getElementById('active-app-icon');
+                    if (!icon) { icon = document.createElement('span'); icon.id = 'active-app-icon'; activeAppEl.before(icon); }
+                    icon.innerHTML = window.AetherDesign?.appIcon(topWin?.id || 'finder', 19) || '';
+                }
             }
 
             _computeClampedBounds(winData) {
@@ -145,7 +150,7 @@ class WindowManager {
                         </div>
                         <!-- Centered Title -->
                         <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;pointer-events:none;z-index:1;max-width:calc(100% - 130px)">
-                            <i data-lucide="${winData.icon}" style="width:13px;height:13px;color:rgba(255,255,255,0.45);flex-shrink:0"></i>
+                            ${window.AetherDesign?.appIcon(winData.id, 19) || ''}
                             <span style="font:500 12px/1 'Inter',sans-serif;letter-spacing:-0.02em;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.4)">${window.escapeAetherHtml(winData.title)}</span>
                         </div>
                         <!-- Right Window Controls: Quick Snap & Always-on-Top Pin -->
@@ -166,6 +171,7 @@ class WindowManager {
                 `;
 
                 this.canvas.appendChild(el);
+                window.AetherWindowSurfaces?.mount(el);
                 this.DOMWindows[winData.id] = el;
                 if (winData.pinned) el.style.zIndex = 5000 + (winData.zIndex || 1);
 
@@ -480,6 +486,7 @@ class WindowManager {
             }
 
             _killWindowProcesses(id) {
+                window.AetherWindowSurfaces?.unmount(id);
                 if (id === 'terminal') {
                     if (os.terminalStreamInterval) { clearInterval(os.terminalStreamInterval); os.terminalStreamInterval = null; }
                 }
@@ -979,7 +986,7 @@ class WindowManager {
                 const finderBtn = document.createElement('div');
                 finderBtn.id = 'dock-finder-trigger';
                 finderBtn.className = 'dock-item dock-finder-btn hover-target cursor-none';
-                finderBtn.innerHTML = '<i data-lucide="layout-grid" class="w-5 h-5" style="color:rgba(130,160,255,0.9)"></i>';
+                finderBtn.innerHTML = window.AetherDesign?.iconMarkup('finder') || '';
                 finderBtn.onclick = (e) => {
                     this._captureDockAnchor('__finder__', e.currentTarget);
                     os.toggleFinder();
@@ -1010,7 +1017,7 @@ class WindowManager {
                     const item = document.createElement('div');
                     item.id = `dock-item-${mod.id}`;
                     item.className = 'dock-item dock-pinned hover-target cursor-none';
-                    item.innerHTML = `<i data-lucide="${mod.icon}" class="w-5 h-5" style="color:var(--theme-text-secondary, rgba(255,255,255,0.72))"></i><span class="pin-dot"></span>`;
+                    item.innerHTML = `${window.AetherDesign?.iconMarkup(mod.id) || ''}<span class="pin-dot"></span>`;
                     item.title = mod.label;
                     item.onclick = (e) => {
                         this._captureDockAnchor(mod.id, e.currentTarget);
@@ -1047,7 +1054,7 @@ class WindowManager {
                                 <div class="thumb-header">
                                     <span class="thumb-dot"></span><span class="thumb-dot"></span><span class="thumb-dot"></span>
                                 </div>
-                                <div class="thumb-title">${win.title || 'Window'}</div>
+                                <div class="thumb-title">${window.AetherDesign?.appIcon(win.id, 16) || ''}${win.title || 'Window'}</div>
                                 <div class="thumb-content"></div>
                                 <div class="thumb-reflection"></div>
                                 <div class="thumb-placeholder">${thumbInfo.placeholder}</div>
@@ -1070,7 +1077,7 @@ class WindowManager {
                         item.id = `dock-item-${win.id}`;
                         item.className = `dock-item hover-target cursor-none active`;
                         const iconColor = 'var(--theme-text-primary, rgba(255,255,255,0.88))';
-                        item.innerHTML = `<i data-lucide="${win.icon}" class="w-5 h-5" style="color:${iconColor}"></i>${isPinned ? '<span class="pin-dot"></span>' : ''}`;
+                        item.innerHTML = `${window.AetherDesign?.iconMarkup(win.id) || ''}${isPinned ? '<span class="pin-dot"></span>' : ''}`;
                         item.onclick = (e) => {
                             this._captureDockAnchor(win.id, e.currentTarget);
                             this.minimizeWindow(win.id);
@@ -1084,6 +1091,7 @@ class WindowManager {
                         this.dock.appendChild(item);
                     }
                 });
+                window.AetherDesign?.decorateDock(this.dock);
                 lucide.createIcons({root: this.dock});
 
                 // Re-init macOS-level magnification with spring physics
@@ -1091,6 +1099,7 @@ class WindowManager {
             }
 
             _attachDockItemBehavior(item, label, winId = null) {
+                item.title = label || '';
                 const tooltip = document.getElementById('dock-tooltip');
                 const preview = document.getElementById('dock-preview');
                 item.addEventListener('mouseenter', () => {
@@ -1134,13 +1143,14 @@ class WindowManager {
                 const dockEl = this.dock;
                 const items = () => Array.from(dockEl.querySelectorAll('.dock-item'));
                 const baseSize = 52; // px
-                const maxScale = 1.65;
+                const maxScale = 1.42;
                 const neighborFalloff = 120; // px distance for neighbour effect
                 
                 // Physics state for spring interpolation (WeakMap avoids leaking detached dock items)
                 if (!dockEl._dockPhysics) dockEl._dockPhysics = new WeakMap();
                 
                 const onMove = (e) => {
+                    if (dockEl.classList.contains('dock-overflow') || e.pointerType === 'touch' || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || SystemState.settings.motion_intensity === 'off') return;
                     const all = items();
                     const dockRect = dockEl.getBoundingClientRect();
                     const mouseX = e.clientX - dockRect.left;
@@ -1235,7 +1245,7 @@ class WindowManager {
                     <div class="dock-preview-header">
                         <div class="dock-preview-lights"><span></span><span></span><span></span></div>
                         <div class="dock-preview-title">
-                            <i data-lucide="${win.icon || 'square'}" style="width:11px;height:11px;color:rgba(255,255,255,0.35)"></i>
+                            ${window.AetherDesign?.appIcon(win.id, 16) || ''}
                             <span>${win.title || 'Window'}</span>
                         </div>
                     </div>
@@ -1255,46 +1265,8 @@ class WindowManager {
                 </div>`;
             }
             _buildDockMinimizedThumb(win) {
-                const contentMap = {
-                    'filemanager': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Files</span>`,
-                    'settings': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Config</span>`,
-                    'youtube': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg><span>Media</span>`,
-                    'browser': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>Web</span>`,
-                    'nasa': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg><span>NASA</span>`,
-                    'anime': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg><span>Anime</span>`,
-                    'rss': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg><span>RSS</span>`,
-                    'media': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Media</span>`,
-                    'memes': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span>Memes</span>`,
-                    'terminal': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>Term</span>`,
-                    'notes': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Notes</span>`,
-                    'sysinfo': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Sys</span>`,
-                    'weather': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6h.5a5 5 0 0 1 9.5-2 5.5 5.5 0 0 1 4 5.5c1.4 0 2.5 1.1 2.5 2.5z"/></svg><span>Weather</span>`,
-                    'games': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg><span>Games</span>`,
-                    'globe': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>Globe</span>`,
-                    'market': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span>Market</span>`,
-                    'taskmanager': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Tasks</span>`,
-                    'iss': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg><span>ISS</span>`,
-                    'radiobrowser': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><span>Radio</span>`,
-                    'surveillance': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>Optics</span>`,
-                    'wplace': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.5 8.6"/><path d="M22 22l-5.5-5.5"/></svg><span>Wplace</span>`,
-                    'floor796': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg><span>Floor</span>`,
-                    'manga': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Manga</span>`,
-                    'storage': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><span>Storage</span>`,
-                    'errorconsole': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Errors</span>`,
-                    'apistatus': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><circle cx="12" cy="12" r="4"/></svg><span>API</span>`,
-                    'packetviz': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>Packets</span>`,
-                    'about': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>About</span>`,
-                    'nosleep': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>NoSleep</span>`,
-                    'presence': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Presence</span>`,
-                    'feed': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg><span>Feed</span>`,
-                    'entityscanner': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span>Scanner</span>`,
-                    'sysmon': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Sysmon</span>`,
-                    'ytchtv': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="15" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg><span>TV</span>`,
-                    'youtubeambient': `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg><span>Ambient</span>`
-                };
-                const placeholder = contentMap[win.content] || `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg><span>App</span>`;
-                const label = window.AETHER_MODULE_REGISTRY?.[win.id]?.label;
-                return { placeholder: label ? placeholder.replace(/<span>.*?<\/span>/, `<span>${os.escapeHtml(label)}</span>`) : placeholder };
+                const label = window.AETHER_MODULE_REGISTRY?.[win.id]?.label || win.title || 'App';
+                return { placeholder: `${window.AetherDesign?.appIcon(win.id, 22) || ''}<span>${os.escapeHtml(label)}</span>` };
             }
             _injectDockThumbContent(win, thumbEl) {
                 if (SystemState.settings.performance_mode === 'eco') return;

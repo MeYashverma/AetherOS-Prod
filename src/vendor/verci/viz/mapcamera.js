@@ -31,5 +31,5 @@ export function mapCamera({ width, height, center, bearing = 0, explore = false,
     return [Math.min(...corners.map(p => p[0])) - 110, Math.min(...corners.map(p => p[1])) - 110,
       Math.max(...corners.map(p => p[0])) + 110, Math.max(...corners.map(p => p[1])) + 110];
   };
-  return { project, unproject, bounds, scaleAt, depth, zoom, pitch, perspective, elevation, ax, ay, width, height };
+  return { project, unproject, bounds, scaleAt, depth, zoom, pitch, perspective, elevation, ax, ay, width, height, contentTop: height * (explore ? .10 : .26), contentBottom: height * .88 };
 }
