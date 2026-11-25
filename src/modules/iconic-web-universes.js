@@ -207,6 +207,9 @@
 
         killShadertoy: () => {
             if (os.stState.raf) { cancelAnimationFrame(os.stState.raf); os.stState.raf = null; }
+            const gl=os.stState.gl;
+            if(gl){if(os.stState.program)gl.deleteProgram(os.stState.program);if(os.stState.buffer)gl.deleteBuffer(os.stState.buffer);}
+            os.stState.program=null;os.stState.buffer=null;
             const f = document.getElementById('st-embed-frame');
             if (f) f.src = 'about:blank';
         },
@@ -240,7 +243,7 @@
             const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
             if (!gl || typeof gl.createShader !== 'function') {
                 // Graceful 2D fallback for headless environments without WebGL
-                if (status) status.textContent = 'Shader source ready (WebGL hardware context inactive in headless mode)';
+                if (status) status.textContent = 'WebGL unavailable. Shader has not been compiled or rendered.';
                 return;
             }
 
@@ -263,26 +266,29 @@ void main(){ mainImage(gl_FragColor, gl_FragCoord.xy); }`;
                 return sh;
             };
 
+            let vs=null,fs=null,prog=null,buf=null,installed=false;
             try {
-                const vs = compile(gl.VERTEX_SHADER, vsSrc);
-                const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
-                const prog = gl.createProgram();
+                vs = compile(gl.VERTEX_SHADER, vsSrc);
+                fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+                prog = gl.createProgram();
                 gl.attachShader(prog, vs);
                 gl.attachShader(prog, fs);
                 gl.linkProgram(prog);
                 if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
 
-                const buf = gl.createBuffer();
+                buf = gl.createBuffer();
                 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
                 const loc = gl.getAttribLocation(prog, 'aPos');
                 gl.enableVertexAttribArray(loc);
                 gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
+                if(os.stState.program)gl.deleteProgram(os.stState.program);
+                if(os.stState.buffer)gl.deleteBuffer(os.stState.buffer);
                 os.stState.gl = gl;
-                os.stState.program = prog;
+                os.stState.program = prog;os.stState.buffer=buf;installed=true;
                 os.stState.startTime = performance.now();
-                if (status) { status.textContent = '✓ Compiled cleanly · Running at 60fps on GPU'; status.className = 'px-3.5 py-1.5 bg-black/75 border-t border-white/[0.08] font-mono text-[10.5px] text-emerald-300'; }
+                if (status) { status.textContent = '✓ Compiled · WebGL rendering active (frame rate varies)'; status.className = 'px-3.5 py-1.5 bg-black/75 border-t border-white/[0.08] font-mono text-[10.5px] text-emerald-300'; }
 
                 if (os.stState.raf) cancelAnimationFrame(os.stState.raf);
                 const loop = () => {
@@ -300,6 +306,9 @@ void main(){ mainImage(gl_FragColor, gl_FragCoord.xy); }`;
                     status.textContent = String(err.message || err).split('\n')[0];
                     status.className = 'px-3.5 py-1.5 bg-rose-950/70 border-t border-rose-500/30 font-mono text-[10.5px] text-rose-300';
                 }
+            } finally {
+                if(vs)gl.deleteShader(vs);if(fs)gl.deleteShader(fs);
+                if(!installed){if(prog)gl.deleteProgram(prog);if(buf)gl.deleteBuffer(buf);}
             }
         },
 

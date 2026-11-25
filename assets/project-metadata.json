@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "revision": "9c158a636d299e3cfc9796742e1daac083d33f84",
+  "commitDate": "2026-11-25T20:11:48+05:30",
+  "repository": "MeYashverma/AetherOS-Prod",
+  "files": [
+    "scripts/generate-dark-icons.py",
+    "scripts/generate-project-metadata.py",
+    "scripts/import-app-icons.py",
+    "scripts/serve.py",
+    "scripts/wallpaper_providers.py",
+    "src/boot/main.js",
+    "src/config/tailwind.config.js",
+    "src/core/primitives.js",
+    "src/core/system-state.js",
+    "src/engines/ambient-engines.js",
+    "src/engines/command-palette.js",
+    "src/engines/cursor-engine.js",
+    "src/engines/wikiboard-engine.js",
+    "src/engines/window-manager.js",
+    "src/engines/window-snap-and-spaces.js",
+    "src/modules/anime-and-tv.js",
+    "src/modules/api-earth-archive-oss.js",
+    "src/modules/dev-workbench.js",
+    "src/modules/diagnostics-and-tasks.js",
+    "src/modules/focus-and-devpad.js",
+    "src/modules/iconic-web-universes.js",
+    "src/modules/lastfm-analytics.js",
+    "src/modules/live-world-and-science-apis.js",
+    "src/modules/media-and-lyrics.js",
+    "src/modules/media-library.js",
+    "src/modules/music-theater.js",
+    "src/modules/native-media-studios.js",
+    "src/modules/opensource-webapps-suite.js",
+    "src/modules/power-tools.js",
+    "src/modules/radar-and-optics.js",
+    "src/modules/radio-and-youtube.js",
+    "src/modules/shell-and-theme.js",
+    "src/modules/space-and-weather.js",
+    "src/modules/voice-and-companion.js",
+    "src/modules/web-and-feeds.js",
+    "src/modules/workspace-apps.js",
+    "src/services/aether-bridge.js",
+    "src/services/aether-link.js",
+    "src/services/ai-assistant.js",
+    "src/services/vfs-and-backup.js",
+    "src/services/workspace-lock.js",
+    "src/ui/about-system.js",
+    "src/ui/app-details.js",
+    "src/ui/desktop-design.js",
+    "src/ui/desktop-shell-extras.js",
+    "src/ui/settings-tabs.js",
+    "src/ui/shell-interactions.js",
+    "src/ui/system-appearance.js",
+    "src/ui/templates/media-space-templates.js",
+    "src/ui/templates/network-workspace-templates.js",
+    "src/ui/templates/system-templates.js",
+    "src/ui/web-wallpapers.js",
+    "src/ui/window-surfaces.js",
+    "src/vendor/lottie/LICENSE.md",
+    "src/vendor/lottie/lottie_light.min.js",
+    "src/vendor/verci/config.js",
+    "src/vendor/verci/lrc.js",
+    "src/vendor/verci/match.js",
+    "src/vendor/verci/playback.js",
+    "src/vendor/verci/providers/audius.js",
+    "src/vendor/verci/providers/automatic-stickers.js",
+    "src/vendor/verci/providers/discord-stickers.js",
+    "src/vendor/verci/providers/itunes.js",
+    "src/vendor/verci/providers/jamendo.js",
+    "src/vendor/verci/providers/musickit.js",
+    "src/vendor/verci/providers/openyt.js",
+    "src/vendor/verci/providers/registry.js",
+    "src/vendor/verci/providers/stickerly.js",
+    "src/vendor/verci/providers/stickersapi.js",
+    "src/vendor/verci/providers/ttml-community.js",
+    "src/vendor/verci/providers/youtube.js",
+    "src/vendor/verci/rank.js",
+    "src/vendor/verci/services.js",
+    "src/vendor/verci/singer-names.js",
+    "src/vendor/verci/track.js",
+    "src/vendor/verci/ttml.js",
+    "src/vendor/verci/viz/art.js",
+    "src/vendor/verci/viz/chat-asides.js",
+    "src/vendor/verci/viz/chat-clock.js",
+    "src/vendor/verci/viz/chat-conversation.js",
+    "src/vendor/verci/viz/chat-interactions.js",
+    "src/vendor/verci/viz/chat-predictions.js",
+    "src/vendor/verci/viz/chat-reactions.js",
+    "src/vendor/verci/viz/core.js",
+    "src/vendor/verci/viz/index.js",
+    "src/vendor/verci/viz/listener-replies.js",
+    "src/vendor/verci/viz/lyric-media.js",
+    "src/vendor/verci/viz/map.js",
+    "src/vendor/verci/viz/mapart.js",
+    "src/vendor/verci/viz/mapcamera.js",
+    "src/vendor/verci/viz/mapworld.js",
+    "src/vendor/verci/viz/native.js",
+    "src/vendor/verci/viz/phone.js",
+    "src/vendor/verci/viz/reaction-dictionary.js",
+    "src/vendor/verci/viz/reaction-intelligence.js",
+    "src/vendor/verci/viz/scenes.js",
+    "src/vendor/verci/viz/stickersapi-picker.js",
+    "src/vendor/verci/viz/type.js",
+    "src/workers/regex-runner.js",
+    "styles/app-studios.css",
+    "styles/books-studio.css",
+    "styles/core.css",
+    "styles/github-workspace.css",
+    "styles/liquid-glass.css",
+    "styles/modules-and-overlays.css",
+    "styles/music-theater.css",
+    "styles/news-studio.css",
+    "styles/project-and-lock.css",
+    "styles/system-appearance.css",
+    "styles/system-glass.css",
+    "styles/task-studio.css",
+    "styles/verci-stage.css",
+    "styles/weather-studio.css"
+  ],
+  "commits": [
+    {
+      "sha": "9c158a636d299e3cfc9796742e1daac083d33f84",
+      "date": "2026-11-25T20:11:48+05:30",
+      "title": "Merge pull request #25 from MeYashverma/arena/91a3255f-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/9c158a636d299e3cfc9796742e1daac083d33f84"
+    },
+    {
+      "sha": "74c4e2ffb1e10ceb4433d2ad7086b82ae0bfc3c1",
+      "date": "2026-11-25T14:41:41+00:00",
+      "title": "Unify system liquid glass, Fluent app icons and multi-provider wallpapers",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/74c4e2ffb1e10ceb4433d2ad7086b82ae0bfc3c1"
+    },
+    {
+      "sha": "8b23b094545d9d091a79eaa1cd4f091b5f92e86f",
+      "date": "2026-11-25T11:55:29+00:00",
+      "title": "Enrich Lyric City architecture and fix Flight Radar basemap",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/8b23b094545d9d091a79eaa1cd4f091b5f92e86f"
+    },
+    {
+      "sha": "deb5f829c7f130a527ce20e04affe941eb3fadd4",
+      "date": "2026-11-24T20:14:07+05:30",
+      "title": "Merge pull request #24 from MeYashverma/arena/82af6291-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/deb5f829c7f130a527ce20e04affe941eb3fadd4"
+    },
+    {
+      "sha": "b55a08c95839d529b43df20df003c06e77a2a592",
+      "date": "2026-11-24T14:43:35+00:00",
+      "title": "Redesign Native Map as procedural Lyric City and refresh Money wallet",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/b55a08c95839d529b43df20df003c06e77a2a592"
+    },
+    {
+      "sha": "2d26d19df1afcdecb190b9a9c113ea828fb032b8",
+      "date": "2026-11-24T02:29:29+05:30",
+      "title": "Merge pull request #23 from MeYashverma/arena/a6448ef6-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/2d26d19df1afcdecb190b9a9c113ea828fb032b8"
+    },
+    {
+      "sha": "81e302d7220a52d6bc2fc28faab75a08164cba50",
+      "date": "2026-11-23T20:57:47+00:00",
+      "title": "Keep automatic lyric reactions sticker-only",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/81e302d7220a52d6bc2fc28faab75a08164cba50"
+    },
+    {
+      "sha": "2288ba3cb2dba23be64ccc5e46442363e123a5b1",
+      "date": "2026-11-23T20:41:09+00:00",
+      "title": "Add StickersAPI lyric toggle, paired emotes and preview preloading",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/2288ba3cb2dba23be64ccc5e46442363e123a5b1"
+    },
+    {
+      "sha": "ae73a1e436284ec0bb1b35e20272731798284ce1",
+      "date": "2026-11-24T01:43:21+05:30",
+      "title": "Merge pull request #22 from MeYashverma/arena/d4b6c596-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/ae73a1e436284ec0bb1b35e20272731798284ce1"
+    },
+    {
+      "sha": "77e23ff993c14c7072cfe448ac2f9c77163eba3c",
+      "date": "2026-11-23T20:10:23+00:00",
+      "title": "Remove captions and legacy credits beneath chat stickers",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/77e23ff993c14c7072cfe448ac2f9c77163eba3c"
+    },
+    {
+      "sha": "2ab62de3a75bf0d6d49d55a5a0a7c7da2d88064b",
+      "date": "2026-11-23T19:59:14+00:00",
+      "title": "Remove sticker credit and prevent redundant full-history chat layout",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/2ab62de3a75bf0d6d49d55a5a0a7c7da2d88064b"
+    },
+    {
+      "sha": "53381eb7a4bd28aefcd09f9519d938312f205a8b",
+      "date": "2026-11-23T19:35:19+00:00",
+      "title": "Make StickersAPI visible in WhatsApp lyric bubbles",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/53381eb7a4bd28aefcd09f9519d938312f205a8b"
+    },
+    {
+      "sha": "eadf3c190ff396663b79a3e967bb8e9c3c87a6d8",
+      "date": "2026-11-24T00:51:56+05:30",
+      "title": "Merge pull request #21 from MeYashverma/arena/33d65084-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/eadf3c190ff396663b79a3e967bb8e9c3c87a6d8"
+    },
+    {
+      "sha": "6dec44494e51d9b8a02d8e8371c16c011565965a",
+      "date": "2026-11-23T19:12:19+00:00",
+      "title": "feat: integrate StickersAPI media library and lyric chat fallbacks",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/6dec44494e51d9b8a02d8e8371c16c011565965a"
+    },
+    {
+      "sha": "739aefd731b1dba6c5c9e175cbf293d8f24e0546",
+      "date": "2026-11-23T18:51:40+00:00",
+      "title": "Keep lyric chat auto-following through content and keyboard changes",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/739aefd731b1dba6c5c9e175cbf293d8f24e0546"
+    },
+    {
+      "sha": "4b20cebe849799d7724b30d4853aa73f11b39789",
+      "date": "2026-11-23T18:42:29+00:00",
+      "title": "Keep full music-chat history and allow scrolling through old messages",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/4b20cebe849799d7724b30d4853aa73f11b39789"
+    },
+    {
+      "sha": "de496d3cd33fd24ff1d19a13b6ec47082ebd3019",
+      "date": "2026-11-23T18:29:49+00:00",
+      "title": "fix: compact chat header and split sung ad-libs into opposite messages",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/de496d3cd33fd24ff1d19a13b6ec47082ebd3019"
+    },
+    {
+      "sha": "ff86c2351b95d4c94f6f1e782cca10f9f65729a4",
+      "date": "2026-11-23T22:22:56+05:30",
+      "title": "Merge pull request #20 from MeYashverma/arena/91d883a2-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/ff86c2351b95d4c94f6f1e782cca10f9f65729a4"
+    },
+    {
+      "sha": "96265cb05cfcd843de56dfc817406fae68d3cf89",
+      "date": "2026-11-23T16:52:03+00:00",
+      "title": "fix: center chat contact and call controls in a single navigation row",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/96265cb05cfcd843de56dfc817406fae68d3cf89"
+    },
+    {
+      "sha": "77aa01efe59bebd83fee408512f4959702184ef8",
+      "date": "2026-11-23T16:43:01+00:00",
+      "title": "fix: align cached chat header and scale message bubbles to device",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/77aa01efe59bebd83fee408512f4959702184ef8"
+    },
+    {
+      "sha": "2ad67dfea8c3eb5b4fcdf14178c175e52e66540e",
+      "date": "2026-11-23T16:31:53+00:00",
+      "title": "fix: match iOS phone template without oval clipping",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/2ad67dfea8c3eb5b4fcdf14178c175e52e66540e"
+    },
+    {
+      "sha": "f9e46d633a9443159077e56acae891d91a19cf4c",
+      "date": "2026-11-23T16:08:03+00:00",
+      "title": "fix: enforce iOS safe-area template (corner/height) with override \u2014 prevent clipping",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/f9e46d633a9443159077e56acae891d91a19cf4c"
+    },
+    {
+      "sha": "3e6262e316012b2986db115cab4d1af4cfe20c62",
+      "date": "2026-11-23T16:03:38+00:00",
+      "title": "fix: align phone chrome to iOS template \u2014 status/nav/tab safe areas & Dynamic Island",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/3e6262e316012b2986db115cab4d1af4cfe20c62"
+    },
+    {
+      "sha": "15ce98109cacd75238d6e78dbc08086a4accdf37",
+      "date": "2026-11-23T15:54:29+00:00",
+      "title": "fix: restore phone height 100% after top-clip regression \u2014 avatar & stage now render",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/15ce98109cacd75238d6e78dbc08086a4accdf37"
+    },
+    {
+      "sha": "43e00808929faa733faeed1dedcd728d82aa9cc5",
+      "date": "2026-11-23T15:51:32+00:00",
+      "title": "fix: prevent phone top clipping \u2014 use max-height & visible wrap overflow",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/43e00808929faa733faeed1dedcd728d82aa9cc5"
+    },
+    {
+      "sha": "6f6ac434c80c5345f2dd01dfb01f0448f04f9158",
+      "date": "2026-11-23T15:45:45+00:00",
+      "title": "fix: stabilize chat UI \u2014 keyboard, predictions, wallpaper & bubble polish",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/6f6ac434c80c5345f2dd01dfb01f0448f04f9158"
+    },
+    {
+      "sha": "aecb8c34f82c3d6f9ce8831856acb32ff578c365",
+      "date": "2026-11-23T21:08:20+05:30",
+      "title": "Merge pull request #19 from MeYashverma/arena/5e75a4ba-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/aecb8c34f82c3d6f9ce8831856acb32ff578c365"
+    },
+    {
+      "sha": "d2ba447898437dbd6584d44ef4b9390557b77612",
+      "date": "2026-11-23T15:34:53+00:00",
+      "title": "fix: include missing chat-clock, chat-predictions modules and stabilize Messages inner init",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/d2ba447898437dbd6584d44ef4b9390557b77612"
+    },
+    {
+      "sha": "eb27d164c4ff83c91180af8b9d73aedee8da9de4",
+      "date": "2026-11-23T15:10:57+00:00",
+      "title": "fix: resolve native.js build() duplication and restore 20/20 tests (iOS chat UI clone, local wall-clock timestamps, animated reactions/GIFs/replies, keyboard auto-predictions)",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/eb27d164c4ff83c91180af8b9d73aedee8da9de4"
+    },
+    {
+      "sha": "a55a4513e99ee4ca400cdc300f82e93fc2b647dd",
+      "date": "2026-11-23T19:56:34+05:30",
+      "title": "Merge pull request #18 from MeYashverma/arena/03bb2312-aetheros-prod",
+      "url": "https://github.com/MeYashverma/AetherOS-Prod/commit/a55a4513e99ee4ca400cdc300f82e93fc2b647dd"
+    }
+  ]
+}

@@ -62,5 +62,15 @@ test('system material is loaded last, precached and has accessible/performance f
   const css=fs.readFileSync(new URL('../../styles/system-glass.css',import.meta.url),'utf8');
   for(const marker of ['prefers-reduced-transparency','prefers-reduced-motion','forced-colors','focus-visible','html.perf-eco','--material-blur','#control-center-panel','#right-utility-panel','.settings-card','.app-switcher-strip','#calendar-popover'])assert.ok(css.includes(marker),marker);
   assert.equal(/(^|\})\s*(button|input|\*)\s*\{/m.test(css),false,'no destructive global control reset');
-  const sw=fs.readFileSync(new URL('../../sw.js',import.meta.url),'utf8');assert.match(sw,/system-glass\.css\?v=desktop-7/);
+  const sw=fs.readFileSync(new URL('../../sw.js',import.meta.url),'utf8');assert.match(sw,/system-glass\.css\?v=desktop-9/);
+});
+
+test('all app root paint and tinted layout panels share glass, including important inline fills',async()=>{
+ const dom=new JSDOM(`<div id="win-colors"><header></header><main><div id="root" style="background:rgb(100,20,150)!important"><aside id="sidebar" style="background:rgb(30,90,170);backdrop-filter:blur(40px)"></aside><form id="form" style="background:rgb(20,20,20)"></form><ul id="list" style="background:black"></ul><div id="badge" style="background:red">Error</div><div data-surface="content" style="background:blue"><section id="artwork" style="background:black"></section></div></div></main></div>`,{runScripts:'outside-only'});
+ const w=dom.window;w.eval(code);w.AetherWindowSurfaces.mount(w.document.getElementById('win-colors'));
+ for(const id of ['root','sidebar','form','list'])assert.ok(w.document.getElementById(id).classList.contains('liquid-app-surface'),id);
+ assert.equal(w.document.getElementById('root').style.background,'transparent');
+ for(const id of ['badge','artwork'])assert.equal(w.document.getElementById(id).classList.contains('liquid-app-surface'),false,id);
+ const late=w.document.createElement('aside');late.style.background='rgb(150,30,180)';w.document.getElementById('root').append(late);
+ await new Promise(r=>setTimeout(r,240));assert.ok(late.classList.contains('liquid-app-surface'));w.close();
 });

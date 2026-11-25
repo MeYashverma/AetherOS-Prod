@@ -35,7 +35,7 @@ const AETHER_MODULE_PACKS = window.AETHER_MODULE_PACKS = [
         id: 'devtools',
         label: 'Shaders, Code & Open-Source',
         icon: 'wrench',
-        description: '60fps WebGL GLSL Shader Studio, GitHub Explorer, and Live HTML/CSS/JS Code Sandbox.'
+        description: 'WebGL GLSL Shader Studio, GitHub Explorer, and Live HTML/CSS/JS Code Sandbox.'
     }
 ];
 
@@ -49,11 +49,11 @@ const AETHER_MODULE_REGISTRY = window.AETHER_MODULE_REGISTRY = {
     browser:        { id: 'browser',        label: 'Web Browser',             pack: 'core',          icon: 'globe',       required: false, defaultEnabled: true,  desc: 'Multi-tab reader & live iframe web browser with Markdown clipper' },
     media:          { id: 'media',          label: 'Music & Podcasts',        pack: 'core',          icon: 'radio',       required: false, defaultEnabled: true,  desc: 'Music search, podcasts, synced lyrics, and Last.fm listening analytics' },
     stickers:       { id: 'stickers',       label: 'Stickers & Profiles',     pack: 'core',          icon: 'smile',       required: false, defaultEnabled: true,  desc: 'Browse StickersAPI stickers, emotes, Telegram sets, profile images and banners' },
-    radiobrowser:   { id: 'radiobrowser',   label: 'World Radio',             pack: 'core',          icon: 'radio-tower', required: false, defaultEnabled: true,  desc: 'Stream 30,000+ live global FM and internet stations with audio visualizer' },
+    radiobrowser:   { id: 'radiobrowser',   label: 'World Radio',             pack: 'core',          icon: 'radio-tower', required: false, defaultEnabled: true,  desc: 'Browse live global FM and internet stations with audio visualizer' },
     weather:        { id: 'weather',        label: 'Weather',                 pack: 'core',          icon: 'cloud-rain',  required: false, defaultEnabled: true,  desc: '7-day forecast, hourly precipitation, UV index, and live Air Quality' },
     feed:           { id: 'feed',           label: 'News & RSS',              pack: 'core',          icon: 'rss',         required: false, defaultEnabled: true,  desc: 'Split-pane Hacker News, Dev.to, GitHub, Reddit, and RSS reader with comments' },
     sysmon:         { id: 'sysmon',         label: 'Activity & Speed',        pack: 'core',          icon: 'cpu',         required: false, defaultEnabled: true,  desc: 'Real-time frame pacing, JS heap usage, and Cloudflare network speed test' },
-    taskmanager:    { id: 'taskmanager',    label: 'Task Manager',            pack: 'core',          icon: 'list-checks', required: false, defaultEnabled: true,  desc: 'Inspect open windows, memory footprint, and close background apps' },
+    taskmanager:    { id: 'taskmanager',    label: 'Task Manager',            pack: 'core',          icon: 'list-checks', required: false, defaultEnabled: true,  desc: 'Inspect open windows and page-wide JS heap, and close background apps' },
     focus:          { id: 'focus',          label: 'Focus & Soundscapes',     pack: 'core',          icon: 'timer',       required: false, defaultEnabled: true,  desc: 'Pomodoro timer, session checklist, and procedural WebAudio soundscapes' },
     devpad:         { id: 'devpad',         label: 'Dev Studio',              pack: 'core',          icon: 'code-2',      required: false, defaultEnabled: true,  desc: 'Multi-tab Markdown editor plus JSON, Base64, JWT, Regex & SHA-256 toolkit' },
     kanban:         { id: 'kanban',         label: 'Kanban Board',            pack: 'core',          icon: 'kanban',      required: false, defaultEnabled: true,  desc: 'Multi-board Kanban planner with drag-and-drop cards, priority, and Markdown export' },
@@ -76,7 +76,7 @@ const AETHER_MODULE_REGISTRY = window.AETHER_MODULE_REGISTRY = {
     wayback:        { id: 'wayback',        label: 'Archive & DOS Vault',     pack: 'entertainment', icon: 'history',     required: false, defaultEnabled: true,  desc: 'Wayback Time Machine, playable MS-DOS classics & Internet Archive media' },
     winamp:         { id: 'winamp',         label: 'Winamp + SomaFM',         pack: 'entertainment', icon: 'disc-3',      required: false, defaultEnabled: true,  desc: 'Classic Winamp 2.9 skinnable desktop deck with 10-band EQ & live SomaFM radio' },
     ossradar:       { id: 'ossradar',       label: 'GitHub Explorer',         pack: 'devtools',      icon: 'git-branch',  required: false, defaultEnabled: true,  desc: 'Breakout GitHub repositories, live repository file-tree & README code viewer' },
-    shadertoy:      { id: 'shadertoy',      label: 'Shader Studio',           pack: 'devtools',      icon: 'flame',       required: false, defaultEnabled: true,  desc: '60fps WebGL Shadertoy-compatible GLSL compiler & live wallpaper capture' },
+    shadertoy:      { id: 'shadertoy',      label: 'Shader Studio',           pack: 'devtools',      icon: 'flame',       required: false, defaultEnabled: true,  desc: 'WebGL Shadertoy-compatible GLSL compiler & live wallpaper capture' },
     codeplay:       { id: 'codeplay',       label: 'Code Sandbox',            pack: 'devtools',      icon: 'play-square', required: false, defaultEnabled: true,  desc: 'Live HTML/CSS/JS playground with CDN library loader & interactive console' },
 
     // Sync & Integrations (Opt-in via Settings -> App Modules)
@@ -182,7 +182,14 @@ const SystemState = window.SystemState = {
         performance_mode: 'eco',
         desktop_sidebar: 'off',
         active_space: 1,
-        lock_pin: '',
+        lock_pin: '', // legacy migration only; new values use PBKDF2 verifier
+        lock_verifier: null,
+        lock_display_name: 'My workspace',
+        lock_idle_minutes: 0,
+        lock_when_hidden: false,
+        icon_appearance: 'dark',
+        system_appearance: 'auto',
+        glass_clarity: 'balanced',
         media_tuner_station: 'lastfm',
         media_tuner_volume: 0.7,
         media_player_mode: 'monitor',
@@ -239,6 +246,7 @@ const SystemState = window.SystemState = {
         });
 
         this.load(defaultWindows);
+        window.AetherAppearance?.apply();
         delete this.settings.about;
 
         // Ensure every registered window exists and synchronize clean titles/icons/minimums

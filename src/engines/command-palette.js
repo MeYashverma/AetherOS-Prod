@@ -130,7 +130,7 @@
     }
 
     const QUICK_ACTIONS = [
-        { cmd: 'open:shadertoy',    icon: 'flame',       label: 'GPU: Launch 60fps WebGL GLSL Shader Studio', tag: 'WebGL' },
+        { cmd: 'open:shadertoy',    icon: 'flame',       label: 'GPU: Launch WebGL GLSL Shader Studio', tag: 'WebGL' },
         { cmd: 'open:stellarium',   icon: 'orbit',       label: 'Space: Fly NASA 3D Solar System & Planetarium', tag: '3D' },
         { cmd: 'open:worldmuseums', icon: 'landmark',    label: 'Art: Browse Met & Chicago IIIF Masterpieces', tag: 'API' },
         { cmd: 'open:georadar',     icon: 'compass',     label: 'World: Open GeoRadar 10km Wikipedia Explorer', tag: 'API' },

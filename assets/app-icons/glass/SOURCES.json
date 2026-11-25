@@ -1,0 +1,209 @@
+{
+  "provider": "Microsoft Fluent UI System Icons \u2014 Filled",
+  "version": "1.1.347",
+  "archive": "https://registry.npmjs.org/@fluentui/svg-icons/-/svg-icons-1.1.347.tgz",
+  "license": "MIT; see ../LICENSE.txt",
+  "modification": "Root fill set to silver-white; original Fluent Filled path geometry unchanged.",
+  "icons": {
+    "finder": {
+      "file": "apps_32_filled.svg",
+      "upstream_sha256": "aaea93ab5350fde6f40dd6ecc2c85364355838e9dba1fe0e07b6119ac6edbc0a"
+    },
+    "settings": {
+      "file": "settings_32_filled.svg",
+      "upstream_sha256": "5a5d0b05a38b53c0bf6d6815497ce412465edaf83eef2e5d0c29bbb004a137ba"
+    },
+    "about": {
+      "file": "question_circle_32_filled.svg",
+      "upstream_sha256": "85e21ae717d141df750cf2b39e7a29e34945a2f1ccda5723dd5efac40f0ecc30"
+    },
+    "terminal": {
+      "file": "code_block_32_filled.svg",
+      "upstream_sha256": "fb8e2c489d7c38dd4c96ae05b435da27f3979b7c7ee0cc66a5d7c091901ddbc4"
+    },
+    "filemanager": {
+      "file": "document_folder_32_filled.svg",
+      "upstream_sha256": "784c0190b0639711d0ad6d18ea344b2a6b36f38f9373b7f258a188cb8b842c56"
+    },
+    "browser": {
+      "file": "globe_32_filled.svg",
+      "upstream_sha256": "88ae12f9eef858ff853f07ec7990890ed3120964064eb7d09d79a0af95e48612"
+    },
+    "media": {
+      "file": "headphones_32_filled.svg",
+      "upstream_sha256": "ef4ca3fc0b7b4e2ce024514e07fdf5f6eb8df57fdfbe02efa5b47e6c7c351eee"
+    },
+    "stickers": {
+      "file": "gift_24_filled.svg",
+      "upstream_sha256": "3271a4bfc5300812adc23297f050948b18620f37587fbee85b1c0e182384bd75"
+    },
+    "radiobrowser": {
+      "file": "mic_32_filled.svg",
+      "upstream_sha256": "607921f3178cfcc6558d3d0a0bb86cc6eb92a66d823a3fed9fc4cab758f64575"
+    },
+    "weather": {
+      "file": "weather_sunny_low_48_filled.svg",
+      "upstream_sha256": "f876f6cb9c2e5dc666a290497434bb9cddd4efbbd855a6044258bbc555c0bef9"
+    },
+    "feed": {
+      "file": "news_24_filled.svg",
+      "upstream_sha256": "77a2fbd412e81484305779ad8bae1a2e92fbe591318b55873ed4314651752943"
+    },
+    "sysmon": {
+      "file": "gauge_32_filled.svg",
+      "upstream_sha256": "044886688ca02910fd24041c99b2bae0419c929b03a4387307c97ece5d5592ab"
+    },
+    "taskmanager": {
+      "file": "clipboard_task_24_filled.svg",
+      "upstream_sha256": "caa89cc33179731d442581f6e1d61c9bb61ff72558045aa3abbbda379b45605a"
+    },
+    "focus": {
+      "file": "clock_alarm_32_filled.svg",
+      "upstream_sha256": "f781fab24f78e20d196ec7aecb670bbcc85a0ede198c0dbfc86c6e703f431852"
+    },
+    "devpad": {
+      "file": "code_24_filled.svg",
+      "upstream_sha256": "99df95507dba8f1c4de8e32c96795c7020cdab2e5cdedd763ba6f70d6e1df82b"
+    },
+    "kanban": {
+      "file": "board_32_filled.svg",
+      "upstream_sha256": "9053128d12d33fc4ebb0d8a365564f7f3b64c98470c23b0a08462545a465719c"
+    },
+    "photobooth": {
+      "file": "camera_24_filled.svg",
+      "upstream_sha256": "6d97f72e3d8dae7af7a238bfcae30d7f9ce9026cb8e31ea1a7cce71f1702278e"
+    },
+    "synthstudio": {
+      "file": "headset_32_filled.svg",
+      "upstream_sha256": "89d3bd84a7f86a00374e1f581170886ffc4d915404f3bde4a211813e4988f73f"
+    },
+    "photopea": {
+      "file": "image_32_filled.svg",
+      "upstream_sha256": "fcc3786a5c0c3190e38c3d13570962f37c2fb64f14f068ab51b676be24620772"
+    },
+    "whiteboard": {
+      "file": "paint_brush_32_filled.svg",
+      "upstream_sha256": "b7a1b0aeeecd5fb0027e1d85a0a2d3a05c922f75693c10447d7be21cee77fec2"
+    },
+    "chiptune": {
+      "file": "puzzle_piece_32_filled.svg",
+      "upstream_sha256": "7379ba1a21ee9bfa83716073609d037cc2b694d7253135ac44b5712c2b99e6c7"
+    },
+    "worldmuseums": {
+      "file": "building_government_32_filled.svg",
+      "upstream_sha256": "6030f0e7f50fca509a80422f330a51b5c659478efd549da116099124a67677fd"
+    },
+    "gutendex": {
+      "file": "book_open_32_filled.svg",
+      "upstream_sha256": "e8f1d471e70ab50f969786a03aee7bf2bff3011b8f84816c82a121aaa3a7e66f"
+    },
+    "earthpulse": {
+      "file": "location_ripple_24_filled.svg",
+      "upstream_sha256": "c90d15c78eeb2b816462d2b89f9eee0bc5db477a266abe9ae55468cda3c663b0"
+    },
+    "spacexhub": {
+      "file": "send_32_filled.svg",
+      "upstream_sha256": "3ff35356b2e47480093094f9e061ff4b8eb4f23a57337b9943f18b26b27643f1"
+    },
+    "stellarium": {
+      "file": "planet_32_filled.svg",
+      "upstream_sha256": "924a62e836aec147011cf36ba4afa12a4aed0f100630bb65a1f749f95201eac8"
+    },
+    "georadar": {
+      "file": "globe_shield_48_filled.svg",
+      "upstream_sha256": "0f7f6ae28a5e698236145afba4304c23a2156558f6c1a632e8f37a3a6d742bfe"
+    },
+    "worldfactbook": {
+      "file": "flag_32_filled.svg",
+      "upstream_sha256": "bf8783bdb82046417d7c3929b27a69101a5042a9adb529d9b5b0163146bc27bb"
+    },
+    "wayback": {
+      "file": "history_32_filled.svg",
+      "upstream_sha256": "de7a10e377120f62cd6ce1aac98d7a67f0a8308c0b9f9d5dd1910b7d4c6f0eda"
+    },
+    "winamp": {
+      "file": "headphones_32_filled.svg",
+      "upstream_sha256": "ef4ca3fc0b7b4e2ce024514e07fdf5f6eb8df57fdfbe02efa5b47e6c7c351eee"
+    },
+    "ossradar": {
+      "file": "code_block_32_filled.svg",
+      "upstream_sha256": "fb8e2c489d7c38dd4c96ae05b435da27f3979b7c7ee0cc66a5d7c091901ddbc4"
+    },
+    "shadertoy": {
+      "file": "design_ideas_32_filled.svg",
+      "upstream_sha256": "11370404f44c6f6b62844219b9fe5724d348ee05a674c118d24c19b2dd4654b0"
+    },
+    "codeplay": {
+      "file": "code_24_filled.svg",
+      "upstream_sha256": "99df95507dba8f1c4de8e32c96795c7020cdab2e5cdedd763ba6f70d6e1df82b"
+    },
+    "aetherbridge": {
+      "file": "phone_laptop_32_filled.svg",
+      "upstream_sha256": "4c2b818344073fad5c8782d84b6a76fcd0da42c50f0839caa09081a924a1f844"
+    },
+    "aetherlink": {
+      "file": "link_multiple_24_filled.svg",
+      "upstream_sha256": "a570d6faf3677083282b7639d1775a7611d178be69d2dace67348f70494d1eba"
+    },
+    "presence": {
+      "file": "people_chat_32_filled.svg",
+      "upstream_sha256": "5a9714ddf8919afe1785efa951ee9204bc4162f7c6d16417e31b1a147b6d7b8e"
+    },
+    "iss": {
+      "file": "planet_32_filled.svg",
+      "upstream_sha256": "924a62e836aec147011cf36ba4afa12a4aed0f100630bb65a1f749f95201eac8"
+    },
+    "nasa": {
+      "file": "molecule_32_filled.svg",
+      "upstream_sha256": "7593ae5475334506d662d9b0c7656d355de094a21e46d8e441d9a7454a6bb3e6"
+    },
+    "globe": {
+      "file": "send_32_filled.svg",
+      "upstream_sha256": "3ff35356b2e47480093094f9e061ff4b8eb4f23a57337b9943f18b26b27643f1"
+    },
+    "market": {
+      "file": "coin_multiple_32_filled.svg",
+      "upstream_sha256": "0346ca08d4310a2eb78dc67e62ecfa5c331a735f1252fe938a7afe85fb18752d"
+    },
+    "games": {
+      "file": "puzzle_piece_32_filled.svg",
+      "upstream_sha256": "7379ba1a21ee9bfa83716073609d037cc2b694d7253135ac44b5712c2b99e6c7"
+    },
+    "ytchtv": {
+      "file": "video_32_filled.svg",
+      "upstream_sha256": "2f0ee09f4db74668dbc5b135a4ff61ab4e16614d19c5af74da47ce930c64bc2d"
+    },
+    "memes": {
+      "file": "image_32_filled.svg",
+      "upstream_sha256": "fcc3786a5c0c3190e38c3d13570962f37c2fb64f14f068ab51b676be24620772"
+    },
+    "anime": {
+      "file": "star_32_filled.svg",
+      "upstream_sha256": "47232f09b3eec2e68447cf76154fc287172d4bb8f901179021cec0fee2c71d33"
+    },
+    "manga": {
+      "file": "book_32_filled.svg",
+      "upstream_sha256": "c699ac31b0fed4bbbe13ad22ffcaac2c72023c170a566648df227d25d8de3ae8"
+    },
+    "entityscanner": {
+      "file": "scan_person_48_filled.svg",
+      "upstream_sha256": "d7805f9e0cf6a530870573d45ff52fbc90082d1831c77cb17cfe8d6629b617b1"
+    },
+    "floor796": {
+      "file": "building_32_filled.svg",
+      "upstream_sha256": "01e4ee19cbfc7f6d1a2c603091e5888d75a80cddca1d18da15104725944476eb"
+    },
+    "wplace": {
+      "file": "paint_brush_32_filled.svg",
+      "upstream_sha256": "b7a1b0aeeecd5fb0027e1d85a0a2d3a05c922f75693c10447d7be21cee77fec2"
+    },
+    "notes": {
+      "file": "notebook_32_filled.svg",
+      "upstream_sha256": "7cc8adf2414438871fc23a253a36d4ea98e7a5fde912fc1fde49e93fc64ebb64"
+    },
+    "wikiboard": {
+      "file": "organization_24_filled.svg",
+      "upstream_sha256": "7c4ff6509353a610227b0a7f601fbaa30e25f8f9402f53612e3d1e30999e2c98"
+    }
+  }
+}

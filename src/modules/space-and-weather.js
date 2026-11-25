@@ -1,277 +1,138 @@
 // AetherOS — Weather Station, NASA Explorer, ISS 3D Orbital Tracker & Game Vault
 window.extendOS({
-    searchWeather: async (cityName) => {
-        const query = String(cityName || '').trim();
-        if (!query) return;
-
-        os.logTerminal && os.logTerminal(`Weather: Searching coordinates for "${query}"...`);
-        try {
-            const ctrl = new AbortController();
-            const t = setTimeout(() => ctrl.abort(), 6000);
-            const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`, { signal: ctrl.signal });
-            clearTimeout(t);
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            const data = await r.json();
-            const result = data.results && data.results[0];
-            if (result && result.latitude != null && result.longitude != null) {
-                os._weatherManualOverride = {
-                    lat: result.latitude,
-                    lon: result.longitude,
-                    city: result.name,
-                    country: result.country || ''
-                };
-                os._weatherCache = null;
-                os.initWeatherStation(true);
-            } else if (window.Notifications) {
-                Notifications.push('Weather', `Location "${query}" not found.`);
-            }
-        } catch (e) {
-            if (window.Notifications) Notifications.push('Weather', `Location lookup failed: ${e.message}`);
-        }
+    _weatherUnit: 'C',
+    _weatherRequestID: 0,
+    _weatherLocationID: 0,
+    _weatherControllers: {},
+    weatherEscape: (value) => String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),
+    weatherNumber: (value) => typeof value==='number'&&Number.isFinite(value),
+    weatherStatus: (message) => {const el=document.getElementById('weather-status');if(el)el.textContent=message;},
+    weatherFetch: async (url,channel) => {
+        os._weatherControllers[channel]?.abort();const controller=new AbortController();os._weatherControllers[channel]=controller;
+        const timer=setTimeout(()=>controller.abort(),10000);
+        try{const response=await fetch(url,{signal:controller.signal,credentials:'omit'});if(!response.ok)throw Error('Weather provider HTTP '+response.status);return await response.json();}
+        finally{clearTimeout(timer);if(os._weatherControllers[channel]===controller)delete os._weatherControllers[channel];}
     },
-
+    weatherDispose: () => {
+        os._weatherRequestID++;os._weatherLocationID++;Object.values(os._weatherControllers).forEach(c=>c.abort());os._weatherControllers={};
+    },
+    searchWeather: async (query) => {
+        query=String(query||'').trim();if(!query)return;
+        const id=++os._weatherLocationID,host=document.getElementById('weather-locations');os.weatherStatus('Finding matching cities…');if(host)host.replaceChildren();
+        try{
+            const data=await os.weatherFetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(query)+'&count=6&language=en&format=json','search');
+            if(id!==os._weatherLocationID)return;
+            const matches=(Array.isArray(data.results)?data.results:[]).filter(item=>os.weatherNumber(item.latitude)&&os.weatherNumber(item.longitude));
+            if(host)for(const item of matches){const button=document.createElement('button');button.type='button';button.className='weather-location-result';button.textContent=[item.name,item.admin1,item.country].filter(Boolean).join(', ');button.addEventListener('click',()=>os.weatherChooseLocation({lat:item.latitude,lon:item.longitude,city:item.name,country:item.country||'',source:'City search'}));host.append(button);}
+            os.weatherStatus(matches.length?'Choose the matching city below':'No matching cities · try another spelling');
+        }catch(error){if(id===os._weatherLocationID)os.weatherStatus('City search unavailable · '+(error.name==='AbortError'?'request cancelled or timed out':error.message));}
+    },
+    weatherChooseLocation: async (location) => {
+        if(!location||!os.weatherNumber(location.lat)||!os.weatherNumber(location.lon)||Math.abs(location.lat)>90||Math.abs(location.lon)>180)return;
+        os._weatherLocationID++;os._weatherManualOverride=location;
+        document.getElementById('weather-locations')?.replaceChildren();
+        try{localStorage.setItem('aether_weather_location_v2',JSON.stringify(location));}catch(_){os._weatherStorageWarning=true;}
+        return os.initWeatherStation(true);
+    },
     resetWeatherLocation: () => {
-        os._weatherManualOverride = null;
-        os._weatherCache = null;
-        os.initWeatherStation(true);
+        const id=++os._weatherLocationID;
+        if(!navigator.geolocation){os.weatherStatus('Device location unavailable · search for a city instead');return;}
+        os.weatherStatus('Waiting for device location permission…');
+        navigator.geolocation.getCurrentPosition(position=>{
+            if(id!==os._weatherLocationID)return;
+            os.weatherChooseLocation({lat:position.coords.latitude,lon:position.coords.longitude,city:'Device location',country:'',source:'Device coordinates'});
+        },error=>{if(id===os._weatherLocationID)os.weatherStatus('Device location unavailable or denied · search for a city instead');},{timeout:10000,maximumAge:300000,enableHighAccuracy:false});
     },
-
     toggleWeatherUnit: () => {
-        os._weatherUnit = (os._weatherUnit || localStorage.getItem('aether_weather_unit') || 'C') === 'C' ? 'F' : 'C';
-        try { localStorage.setItem('aether_weather_unit', os._weatherUnit); } catch (e) {}
-        if (os._weatherCache && os._weatherCache.wd) {
-            const cached = os._weatherCache;
-            const content = document.getElementById('weather-content');
-            const bgGif = document.getElementById('weather-bg-gif');
-            if (content) os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
-        }
+        os._weatherUnit=os._weatherUnit==='C'?'F':'C';try{localStorage.setItem('aether_weather_unit',os._weatherUnit);}catch(_){os._weatherStorageWarning=true;}
+        const button=document.getElementById('weather-unit');if(button)button.textContent='°'+os._weatherUnit;
+        const location=os._weatherManualOverride;
+        if(location&&os._weatherCache?.key===location.lat+','+location.lon)os.weatherRender(os._weatherCache);
     },
-
-    _weatherData: null,
-    _weatherUnit: (typeof localStorage !== 'undefined' && localStorage.getItem('aether_weather_unit')) || 'C',
-
-    initWeatherStation: async (force = false) => {
-        const content = document.getElementById('weather-content');
-        const bgGif = document.getElementById('weather-bg-gif');
-        if (!content) return;
-
-        const now = Date.now();
-        if (!force && os._weatherCache && os._weatherCache.timestamp && (now - os._weatherCache.timestamp) < 600000) {
-            const cached = os._weatherCache;
-            os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
-            return;
+    initWeatherStation: async (force=false) => {
+        const content=document.getElementById('weather-content');if(!content)return;
+        if(!os._weatherPrefsLoaded){
+            os._weatherPrefsLoaded=true;
+            try{os._weatherUnit=localStorage.getItem('aether_weather_unit')==='F'?'F':'C';const location=JSON.parse(localStorage.getItem('aether_weather_location_v2')||'null');if(location&&os.weatherNumber(location.lat)&&os.weatherNumber(location.lon)&&Math.abs(location.lat)<=90&&Math.abs(location.lon)<=180)os._weatherManualOverride=location;}catch(_){os._weatherStorageWarning=true;}
         }
-        content.innerHTML = '<div class="text-gray-400 text-xs text-center mt-20">Loading local forecast &amp; air quality...</div>';
-
-        const tryFetch = async (url, timeoutMs, retries = 2) => {
-            for (let attempt = 0; attempt <= retries; attempt++) {
-                const ctrl = new AbortController();
-                const t = setTimeout(() => ctrl.abort(), timeoutMs);
-                try {
-                    const res = await fetch(url, { signal: ctrl.signal });
-                    clearTimeout(t);
-                    if (res.status === 429 && attempt < retries) {
-                        await new Promise((r) => setTimeout(r, (attempt + 1) * 1500));
-                        continue;
-                    }
-                    return res;
-                } catch (e) {
-                    clearTimeout(t);
-                    if (attempt < retries) {
-                        await new Promise((r) => setTimeout(r, (attempt + 1) * 1000));
-                        continue;
-                    }
-                    throw e;
-                }
-            }
-            return null;
-        };
-
-        try {
-            let lat = 28.6139, lon = 77.2090, city = 'New Delhi', country = 'India';
-            if (os._weatherManualOverride) {
-                lat = os._weatherManualOverride.lat;
-                lon = os._weatherManualOverride.lon;
-                city = os._weatherManualOverride.city;
-                country = os._weatherManualOverride.country;
-            } else {
-                try {
-                    const g = await tryFetch('https://ipwho.is/', 4000, 1);
-                    const gd = await g.json();
-                    if (gd && gd.success !== false && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country || country; }
-                } catch {
-                    try {
-                        const g = await tryFetch('https://ipapi.co/json/', 4000, 1);
-                        const gd = await g.json();
-                        if (gd && gd.latitude && gd.longitude) { lat = gd.latitude; lon = gd.longitude; city = gd.city || city; country = gd.country_name || country; }
-                    } catch (_) {}
-                }
-            }
-
-            const [wr, aqiRes] = await Promise.all([
-                tryFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,weather_code,relative_humidity_2m,apparent_temperature,precipitation,surface_pressure&hourly=temperature_2m,precipitation_probability,wind_speed_10m,uv_index,visibility&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_sum&forecast_days=7&timezone=auto`, 10000, 2),
-                tryFetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10`, 6000, 1).catch(() => null)
+        const button=document.getElementById('weather-unit');if(button)button.textContent='°'+os._weatherUnit;
+        const location=os._weatherManualOverride;
+        if(!location){content.innerHTML='<div class="weather-empty"><h3>Your forecast starts with a place.</h3><p>Search for a city above, or choose Use device location. Nothing is located automatically, and no default city is presented as yours.</p></div>';os.weatherStatus('Choose a location · powered by Open-Meteo');return;}
+        const key=location.lat+','+location.lon,id=++os._weatherRequestID;
+        if(!force&&os._weatherCache?.key===key&&Date.now()-os._weatherCache.fetched<600000){os.weatherRender(os._weatherCache);return;}
+        os.weatherStatus('Updating forecast…');
+        if(os._weatherCache?.key!==key)content.innerHTML='<div class="weather-empty">Loading forecast for '+os.weatherEscape(location.city)+'…</div>';
+        try{
+            const query='latitude='+encodeURIComponent(location.lat)+'&longitude='+encodeURIComponent(location.lon);
+            const [data,air]=await Promise.all([
+                os.weatherFetch('https://api.open-meteo.com/v1/forecast?'+query+'&current=is_day,temperature_2m,wind_speed_10m,weather_code,relative_humidity_2m,apparent_temperature,precipitation,surface_pressure&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset,precipitation_sum&forecast_days=7&timezone=auto&timeformat=unixtime','forecast'),
+                os.weatherFetch('https://air-quality-api.open-meteo.com/v1/air-quality?'+query+'&current=us_aqi,pm2_5&timeformat=unixtime','air').catch(()=>null)
             ]);
-            if (!wr || !wr.ok) throw new Error('Open-Meteo HTTP ' + (wr ? wr.status : 'unreachable'));
-            const wd = await wr.json();
-            let aqi = null;
-            try { if (aqiRes && aqiRes.ok) aqi = (await aqiRes.json())?.current || null; } catch (e) {}
-
-            os._weatherCache = { wd, lat, lon, city, country, aqi, timestamp: Date.now() };
-            os._renderWeatherData(wd, lat, lon, city, country, content, bgGif, aqi);
-        } catch (err) {
-            if (os._weatherCache && os._weatherCache.wd) {
-                const cached = os._weatherCache;
-                os._renderWeatherData(cached.wd, cached.lat, cached.lon, cached.city, cached.country, content, bgGif, cached.aqi);
-                return;
-            }
-            if (content) content.innerHTML = `<div class="text-center mt-20"><div class="text-rose-300 font-semibold text-xs">Weather service unavailable</div><div class="text-gray-500 text-[11px] mt-1.5">${os._html(err.message)}</div><button type="button" onclick="os.initWeatherStation(true)" class="mt-4 os-btn mx-auto cursor-none hover-target">Retry</button></div>`;
+            if(id!==os._weatherRequestID)return;
+            if(!data.current||!os.weatherNumber(data.current.time))throw Error('Provider returned no valid current forecast');
+            os._weatherCache={key,location,data,air:air?.current||null,fetched:Date.now(),stale:false};os.weatherRender(os._weatherCache);
+        }catch(error){
+            if(id!==os._weatherRequestID)return;
+            if(os._weatherCache?.key===key){os._weatherCache.stale=true;os.weatherRender(os._weatherCache);}
+            else{content.innerHTML='<div class="weather-empty"><h3>Forecast unavailable</h3><p>'+os.weatherEscape(error.name==='AbortError'?'Request cancelled or timed out':error.message)+'</p><button type="button" class="os-btn" onclick="os.initWeatherStation(true)">Retry forecast</button></div>';os.weatherStatus('No forecast loaded · try Refresh or another location');}
         }
     },
-
-    _renderWeatherData: (wd, lat, lon, city, country, content, bgGif, aqi = null) => {
-        const c = wd.current || {};
-        const unit = os._weatherUnit || 'C';
-        const fmtT = (val) => {
-            const n = Number(val);
-            if (!Number.isFinite(n)) return '--';
-            return unit === 'F' ? Math.round(n * 9 / 5 + 32) : Math.round(n);
-        };
-        const code = c.weather_code ?? c.weathercode ?? 0;
-        os._weatherData = { lat, lon, city, country, ...wd };
-        const wmoLucide = {0:'sun',1:'cloud-sun',2:'cloud-sun',3:'cloud',45:'cloud-fog',48:'cloud-fog',51:'cloud-drizzle',53:'cloud-drizzle',55:'cloud-rain',61:'cloud-rain',63:'cloud-rain',65:'cloud-rain',71:'snowflake',73:'snowflake',75:'snowflake',77:'snowflake',80:'cloud-drizzle',81:'cloud-rain',82:'cloud-lightning',85:'snowflake',86:'snowflake',95:'cloud-lightning',96:'cloud-lightning',99:'cloud-lightning'};
-        const wmoLabel = {0:'Clear Sky',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Icy Fog',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Showers',81:'Heavy Showers',82:'Violent Showers',85:'Light Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Hail Storm',99:'Heavy Hail Storm'};
-        const iconName = wmoLucide[code] || 'thermometer';
-        const label = wmoLabel[code] || 'Clear';
-
-        const tbIcon = document.getElementById('topbar-weather-icon');
-        const tbTemp = document.getElementById('topbar-weather-temp');
-        const tbDesc = document.getElementById('topbar-weather-desc');
-        const tbWrap = document.getElementById('top-weather-wrap');
-        if (tbIcon) tbIcon.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 text-sky-300"></i>`;
-        if (tbTemp) tbTemp.textContent = fmtT(c.temperature_2m) + '°' + unit;
-        if (tbDesc) tbDesc.textContent = label;
-        if (tbWrap && window.lucide) lucide.createIcons({ root: tbWrap });
-
-        const moodQuery = os._weatherGifQuery(code);
-        os._loadWeatherGif(bgGif, moodQuery);
-
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const dailyHtml = (wd.daily?.time || []).map((date, i) => {
-            const d = new Date(date);
-            const dCode = (wd.daily.weather_code || wd.daily.weathercode || [])[i];
-            const di = wmoLucide[dCode] || 'cloud-sun';
-            return `<div class="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] flex-1 min-w-0">
-                <div class="text-[10.5px] text-gray-400 font-medium">${i === 0 ? 'Today' : days[d.getDay()]}</div>
-                <i data-lucide="${di}" class="w-4 h-4 text-sky-300 my-0.5"></i>
-                <div class="text-xs text-white font-semibold tabular-nums">${fmtT(wd.daily.temperature_2m_max?.[i])}°</div>
-                <div class="text-[11px] text-sky-300/80 tabular-nums">${fmtT(wd.daily.temperature_2m_min?.[i])}°</div>
-                <div class="text-[10px] text-gray-500 font-mono">${Math.round(wd.daily.precipitation_sum?.[i] ?? 0)}mm</div>
-            </div>`;
-        }).join('');
-
-        const hourlyTemps = (wd.hourly?.temperature_2m || []).slice(0, 24);
-        const hourlyPrec = (wd.hourly?.precipitation_probability || []).slice(0, 24);
-        const tMin = Math.min(...hourlyTemps), tMax = Math.max(...hourlyTemps) || tMin + 1;
-        const hourlyBars = hourlyTemps.map((t, i) => {
-            const h = Math.max(8, Math.round(((t - tMin) / Math.max(1, tMax - tMin)) * 46 + 8));
-            const pp = hourlyPrec[i] || 0;
-            const col = pp > 60 ? 'rgba(56,189,248,0.8)' : pp > 25 ? 'rgba(52,211,153,0.65)' : 'rgba(255,255,255,0.38)';
-            return `<div style="height:${h}px;flex:1;background:${col};border-radius:3px 3px 0 0;min-width:3px;" title="${String(i).padStart(2, '0')}:00 — ${fmtT(t)}°${unit} · Rain ${pp}%"></div>`;
-        }).join('');
-
-        const sunrise = wd.daily?.sunrise?.[0]?.split('T')[1] || '--';
-        const sunset = wd.daily?.sunset?.[0]?.split('T')[1] || '--';
-        const usAqi = aqi?.us_aqi != null ? Math.round(aqi.us_aqi) : null;
-        const aqiBadge = usAqi == null
-            ? '<span class="text-gray-500">N/A</span>'
-            : usAqi <= 50 ? `<span class="text-emerald-400 font-semibold">${usAqi} Good</span>`
-            : usAqi <= 100 ? `<span class="text-amber-300 font-semibold">${usAqi} Moderate</span>`
-            : `<span class="text-rose-400 font-semibold">${usAqi} Unhealthy</span>`;
-
-        const quickCities = ['Tokyo', 'London', 'New York', 'Paris', 'Mumbai', 'Sydney'];
-
-        content.innerHTML = `
-            <div class="flex items-center justify-between gap-2 mb-2.5 pb-2.5 border-b border-white/[0.08] relative z-20 flex-wrap">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <button type="button" onclick="os.resetWeatherLocation()" class="os-btn px-2 py-1 text-[11px] hover-target cursor-none" title="Detect local city"><i data-lucide="locate-fixed" class="w-3 h-3 text-sky-400"></i> Local</button>
-                    ${quickCities.map((q) => `<button type="button" onclick="os.searchWeather('${q}')" class="px-2 py-1 rounded-lg text-[11px] border ${city === q ? 'bg-white/15 border-white/25 text-white font-medium' : 'bg-white/[0.03] border-white/[0.07] text-gray-400 hover:text-white'} transition cursor-none hover-target">${q}</button>`).join('')}
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <input type="text" id="weather-search-city" placeholder="Search city..." class="os-input px-2.5 py-1 text-xs w-32 cursor-text" onkeydown="if(event.key==='Enter') os.searchWeather(this.value)">
-                    <button type="button" onclick="os.searchWeather(document.getElementById('weather-search-city').value)" class="os-btn px-2 py-1 hover-target cursor-none" aria-label="Search city"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
-                    <button type="button" onclick="os.toggleWeatherUnit()" class="os-btn px-2.5 py-1 font-mono font-semibold text-sky-300 hover-target cursor-none" title="Switch °C / °F">°${unit}</button>
-                </div>
-            </div>
-
-            <div class="flex items-start justify-between mb-4 gap-4">
-                <div>
-                    <div class="text-xs text-gray-300 font-medium mb-1 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-sky-400"></i> ${os._html(city)}${country ? ', ' + os._html(country) : ''}</div>
-                    <div class="text-5xl font-display font-bold text-white leading-none tabular-nums">${fmtT(c.temperature_2m)}°<span class="text-2xl text-gray-400 font-medium">${unit}</span></div>
-                    <div class="text-sm text-gray-200 mt-1.5 font-medium flex items-center gap-2"><i data-lucide="${iconName}" class="w-4 h-4 text-sky-300"></i> ${label}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">Feels like ${fmtT(c.apparent_temperature)}°${unit}</div>
-                </div>
-                <div class="os-card p-3 text-right text-xs space-y-1 min-w-[165px]">
-                    <div class="flex justify-between gap-3"><span class="text-gray-400">Air Quality</span>${aqiBadge}</div>
-                    <div class="flex justify-between gap-3"><span class="text-gray-400">Humidity</span><span class="text-sky-300 font-mono font-semibold">${c.relative_humidity_2m ?? '--'}%</span></div>
-                    <div class="flex justify-between gap-3"><span class="text-gray-400">Wind</span><span class="text-white font-mono">${c.wind_speed_10m ?? '--'} km/h</span></div>
-                    <div class="flex justify-between gap-3"><span class="text-gray-400">UV Index</span><span class="text-white font-mono">${wd.hourly?.uv_index?.[new Date().getHours()] ?? wd.hourly?.uv_index?.[0] ?? '--'}</span></div>
-                    <div class="flex justify-between gap-3"><span class="text-gray-400">Pressure</span><span class="text-gray-300 font-mono">${c.surface_pressure ? Math.round(c.surface_pressure) : '--'} hPa</span></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2.5 mb-4 text-xs">
-                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="sunrise" class="w-4 h-4 text-amber-300 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">Sunrise</div><div class="text-white font-mono font-semibold">${os._html(sunrise)}</div></div></div>
-                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="sunset" class="w-4 h-4 text-orange-400 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">Sunset</div><div class="text-white font-mono font-semibold">${os._html(sunset)}</div></div></div>
-                <div class="os-card p-2.5 flex items-center gap-2.5"><i data-lucide="wind" class="w-4 h-4 text-emerald-300 shrink-0"></i><div><div class="text-[10.5px] text-gray-400">PM2.5</div><div class="text-white font-mono font-semibold">${aqi?.pm2_5 != null ? aqi.pm2_5 + ' µg/m³' : '--'}</div></div></div>
-            </div>
-
-            <div class="mb-4">
-                <div class="text-[11px] text-gray-400 font-semibold mb-1.5">24-Hour Temperature &amp; Rain Chance</div>
-                <div class="flex items-end gap-0.5 h-14 w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-2">${hourlyBars}</div>
-                <div class="flex justify-between text-[10px] text-gray-500 font-mono mt-1"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
-            </div>
-
-            <div>
-                <div class="text-[11px] text-gray-400 font-semibold mb-1.5">7-Day Forecast</div>
-                <div class="flex gap-1.5">${dailyHtml}</div>
-            </div>
-        `;
-        if (window.lucide) lucide.createIcons({ root: content });
+    weatherVisual: (code,day=true) => {
+        if(code===0||code===1)return {mood:day?'sunny':'night',icon:day?'sun':'moon-star'};
+        if(code===2)return {mood:'partly',icon:day?'cloud-sun':'cloud-moon'};
+        if(code===3)return {mood:'cloudy',icon:'cloud'};
+        if([45,48].includes(code))return {mood:'fog',icon:'cloud-fog'};
+        if([71,73,75,77,85,86].includes(code))return {mood:'snow',icon:'snowflake'};
+        if([95,96,99].includes(code))return {mood:'storm',icon:'cloud-lightning'};
+        if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code))return {mood:'rain',icon:'cloud-rain'};
+        return {mood:'unknown',icon:'thermometer'};
     },
-
-    _weatherGifQuery: (code) => {
-                // Return a NEKOS.BEST GIF category (docs: https://docs.nekos.best/)
-                if (code === 0 || code === 1) return 'happy';       // sunny / clear
-                if (code === 2 || code === 3) return 'blush';        // cloudy
-                if (code >= 45 && code <= 48) return 'sleep';        // fog / low visibility
-                if (code >= 51 && code <= 67) return 'cry';          // drizzle / rain
-                if (code >= 71 && code <= 77) return 'dance';        // snow mood
-                if (code >= 80 && code <= 82) return 'wave';         // showers
-                if (code >= 95) return 'stare';                      // thunderstorm
-                return 'smile';
-            },
-
-    _loadWeatherGif: async (el, category) => {
-                if (!el) return;
-                const fallbackCats = [category, 'smile', 'happy', 'wave'];
-                for (const cat of fallbackCats) {
-                    try {
-                        const res = await fetch(`https://nekos.best/api/v2/${encodeURIComponent(cat)}?amount=1`, { signal: AbortSignal.timeout(7000) });
-                        if (!res.ok) throw new Error('Nekos.best HTTP ' + res.status);
-                        const data = await res.json();
-                        const gif = data?.results?.[0];
-                        if (gif?.url) {
-                            el.style.backgroundImage = `url('${gif.url}')`;
-                            el.style.opacity = '0.24';
-                            el.title = `Anime weather GIF via nekos.best/${cat}${gif.anime_name ? ' · ' + gif.anime_name : ''}`;
-                            return;
-                        }
-                    } catch(e) { /* try fallback category */ }
-                }
-                el.style.backgroundImage = 'radial-gradient(circle at 30% 20%, rgba(96,165,250,.25), transparent 45%), radial-gradient(circle at 80% 10%, rgba(236,72,153,.18), transparent 42%)';
-                el.style.opacity = '0.18';
-            },
+    weatherChart: (cache,hours,temp,time) => {
+        const data=cache.data,esc=os.weatherEscape,num=os.weatherNumber;
+        const entries=hours.map(({epoch,index})=>({epoch,t:data.hourly.temperature_2m?.[index],rain:data.hourly.precipitation_probability?.[index]}));
+        os._weatherChartEntries=entries;
+        if(!entries.length)return '<section class="weather-chart-card"><h3>Hourly trends</h3><p>Hourly chart unavailable for this forecast.</p></section>';
+        const valid=entries.map(e=>e.t).filter(num),low=valid.length?Math.min(...valid):0,high=valid.length?Math.max(...valid):1,span=Math.max(4,high-low),floor=low-(span-(high-low))/2;
+        const x=i=>50+i*660/Math.max(1,entries.length-1),y=t=>142-(t-floor)/span*98;
+        const grids=valid.length?[0,.5,1].map(f=>{const yy=142-f*98;return '<line x1="45" y1="'+yy+'" x2="722" y2="'+yy+'" class="weather-chart-grid"/><text x="3" y="'+(yy+4)+'">'+esc(temp(floor+span*f))+'</text>';}).join(''):'<text x="50" y="90">Temperature readings unavailable</text>';
+        let path='';let connected=false;
+        const points=entries.map((e,i)=>{if(!num(e.t)){connected=false;return '';}path+=(connected?' L':' M')+x(i).toFixed(2)+','+y(e.t).toFixed(2);connected=true;return '<circle class="weather-chart-point" cx="'+x(i)+'" cy="'+y(e.t)+'" r="3"><title>'+esc(time(e.epoch)+' · '+temp(e.t))+'</title></circle>';}).join('');
+        const bars=entries.map((e,i)=>num(e.rain)?'<rect class="weather-rain-bar" x="'+(x(i)-5)+'" y="'+(190-Math.max(0,Math.min(100,e.rain))*.3)+'" width="10" height="'+(Math.max(0,Math.min(100,e.rain))*.3)+'" rx="3"><title>'+esc(time(e.epoch)+' · '+e.rain+'% rain probability')+'</title></rect>':'').join('');
+        const ticks=entries.map((e,i)=>i%6===0||i===entries.length-1?'<text x="'+x(i)+'" y="214" text-anchor="middle">'+esc(time(e.epoch))+'</text>':'').join('');
+        return '<section class="weather-chart-card"><div class="weather-chart-heading"><div><span class="weather-eyebrow">THE DAY AHEAD</span><h3>Temperature &amp; rain</h3></div><div class="weather-chart-legend"><span>━ Temperature</span><span>▮ Rain chance · 0–100%</span></div></div><svg data-preserve-surface class="weather-chart" viewBox="0 0 750 225" role="img" aria-label="Next '+entries.length+' hours: temperature line and rain probability bars; use the hour slider or cards for exact readings"><title>Hourly temperature and rain probability. Gaps indicate unavailable values.</title>'+grids+bars+'<path class="weather-temp-line" d="'+path+'"/>'+points+ticks+'</svg><div class="weather-chart-inspector"><span id="weather-hour-detail" aria-live="polite">Move the slider to inspect an hour</span><label>Forecast hour <input id="weather-hour-slider" type="range" min="0" max="'+(entries.length-1)+'" value="0" oninput="os.weatherChartSelect(Number(this.value))" aria-label="Inspect forecast hour"></label></div></section>';
+    },
+    weatherChartSelect: (index) => {
+        const entry=os._weatherChartEntries?.[index],cache=os._weatherCache;if(!entry||!cache)return;
+        const num=os.weatherNumber,temperature=num(entry.t)?Math.round(os._weatherUnit==='F'?entry.t*9/5+32:entry.t)+'°'+os._weatherUnit:'temperature unavailable';
+        let time;try{time=new Intl.DateTimeFormat('en-GB',{timeZone:cache.data.timezone||'UTC',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(entry.epoch*1000));}catch(_){time=new Date(entry.epoch*1000).toISOString();}
+        const detail=document.getElementById('weather-hour-detail');if(detail)detail.textContent=time+' · '+temperature+' · '+(num(entry.rain)?entry.rain+'% rain chance':'rain chance unavailable');
+        document.querySelectorAll('.weather-hour').forEach((el,i)=>el.classList.toggle('weather-hour-selected',i===index));
+        const slider=document.getElementById('weather-hour-slider');if(slider)slider.setAttribute('aria-valuetext',detail?.textContent||time);
+    },
+    weatherAQILabel: (value) => !os.weatherNumber(value)?'Unavailable':value<=50?'Good':value<=100?'Moderate':value<=150?'Unhealthy for sensitive groups':value<=200?'Unhealthy':value<=300?'Very unhealthy':'Hazardous',
+    weatherRender: (cache) => {
+        const host=document.getElementById('weather-content');if(!host)return;
+        const {data,location,air}=cache,c=data.current||{},unit=os._weatherUnit,esc=os.weatherEscape,num=os.weatherNumber;
+        const temp=value=>num(value)?Math.round(unit==='F'?value*9/5+32:value)+'°'+unit:'—';
+        const value=(v,suffix='')=>num(v)?Math.round(v)+suffix:'—';
+        let zone=data.timezone||'UTC';try{new Intl.DateTimeFormat('en',{timeZone:zone});}catch(_){zone='UTC';}
+        const time=(epoch,opts={hour:'2-digit',minute:'2-digit'})=>num(epoch)?new Intl.DateTimeFormat('en-GB',{timeZone:zone,...opts}).format(new Date(epoch*1000)):'—';
+        const visual=os.weatherVisual(c.weather_code,c.is_day!==0);host.dataset.weatherMood=visual.mood;
+        const labels={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',56:'Freezing drizzle',57:'Dense freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Heavy freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Rain showers',81:'Rain showers',82:'Violent showers',85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',96:'Thunderstorm with hail',99:'Thunderstorm with heavy hail'};
+        const condition=code=>labels[code]||'Condition unavailable';
+        const hours=(data.hourly?.time||[]).map((epoch,index)=>({epoch,index})).filter(({epoch})=>num(epoch)&&epoch>=c.time).slice(0,24);
+        const hourly=hours.map(({epoch,index})=>'<div class="weather-hour"><time>'+esc(time(epoch))+'</time><strong>'+temp(data.hourly.temperature_2m?.[index])+'</strong><span>'+value(data.hourly.precipitation_probability?.[index],'%')+' rain</span></div>').join('');
+        const rangeValues=[...(data.daily?.temperature_2m_min||[]),...(data.daily?.temperature_2m_max||[])].filter(num),rangeLow=rangeValues.length?Math.min(...rangeValues):0,rangeSpan=rangeValues.length?Math.max(1,Math.max(...rangeValues)-rangeLow):1;
+        const daily=(data.daily?.time||[]).slice(0,7).map((epoch,index)=>'<div class="weather-day"><time>'+esc(time(epoch,{weekday:'short',day:'numeric'}))+'</time><span class="weather-day-condition"><i data-lucide="'+os.weatherVisual(data.daily.weather_code?.[index]).icon+'" aria-hidden="true"></i>'+esc(condition(data.daily.weather_code?.[index]))+'</span><strong>'+temp(data.daily.temperature_2m_max?.[index])+' / '+temp(data.daily.temperature_2m_min?.[index])+'</strong><div class="weather-day-range" aria-hidden="true">'+(num(data.daily.temperature_2m_min?.[index])&&num(data.daily.temperature_2m_max?.[index])?'<b style="left:'+Math.max(0,(data.daily.temperature_2m_min[index]-rangeLow)/rangeSpan*100)+'%;width:'+Math.max(2,(data.daily.temperature_2m_max[index]-data.daily.temperature_2m_min[index])/rangeSpan*100)+'%"></b>':'')+'</div><span>'+value(data.daily.precipitation_sum?.[index],' mm')+'</span></div>').join('');
+        const metric=(label,reading)=>'<div class="weather-metric"><span>'+label+'</span><strong>'+esc(reading)+'</strong></div>';
+        host.innerHTML='<section class="weather-now"><div><span class="weather-eyebrow">'+esc(location.source||'Selected location')+'</span><h3>'+esc(location.city)+(location.country?', '+esc(location.country):'')+'</h3><div class="weather-temperature">'+temp(c.temperature_2m)+'</div><p>'+esc(condition(c.weather_code))+' · Feels like '+temp(c.apparent_temperature)+'</p></div><div class="weather-scene weather-scene-'+visual.mood+'" data-preserve-surface aria-hidden="true"><div class="weather-orb"></div><div class="weather-cloud weather-cloud-back"></div><div class="weather-cloud"></div><div class="weather-particles">'+Array.from({length:9},()=>'<b></b>').join('')+'</div><i data-lucide="'+visual.icon+'" class="weather-scene-icon"></i></div><div class="weather-observed"><strong>Forecast model · not a local sensor</strong><span>Valid '+esc(time(c.time,{weekday:'short',hour:'2-digit',minute:'2-digit'}))+'</span><span>'+esc(zone)+'</span><span>'+location.lat.toFixed(2)+'°, '+location.lon.toFixed(2)+'°</span></div></section>'+
+            os.weatherChart(cache,hours,temp,time)+'<section class="weather-metrics">'+metric('Humidity',value(c.relative_humidity_2m,'%'))+metric('Wind',value(c.wind_speed_10m,' km/h'))+metric('Precipitation',value(c.precipitation,' mm'))+metric('Pressure',value(c.surface_pressure,' hPa'))+metric('US AQI',value(air?.us_aqi)+' · '+os.weatherAQILabel(air?.us_aqi))+metric('PM2.5',value(air?.pm2_5,' µg/m³'))+metric('Sunrise',time(data.daily?.sunrise?.[0]))+metric('Sunset',time(data.daily?.sunset?.[0]))+'</section>'+
+            '<section class="weather-section"><h3>Next '+hours.length+' forecast hours</h3><p>Local time at the selected location · precipitation probability</p><div class="weather-hours" tabindex="0" role="region" aria-label="Hourly forecast, scroll horizontally">'+(hourly||'<p>Hourly forecast unavailable</p>')+'</div></section>'+
+            '<section class="weather-section"><h3>Seven-day outlook</h3><div class="weather-days">'+(daily||'<p>Daily forecast unavailable</p>')+'</div></section><footer class="weather-attribution">Weather and air quality: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · model estimates, not a severe-weather alert service. AQI uses the US scale; unavailable readings remain blank. Selected location is saved in this browser; coordinates are sent to Open-Meteo when requesting a forecast.</footer>';
+        if(window.lucide)lucide.createIcons({root:host});
+        os.weatherChartSelect(0);
+        os.weatherStatus((cache.stale?'Refresh failed · showing cached forecast from ':'Fetched ')+new Date(cache.fetched).toLocaleTimeString()+(os._weatherStorageWarning?' · preferences may not persist':''));
+    },
 
     nasaFetchJSON: async (url, timeout=12000) => {
                 const r = await fetch(url, { signal: AbortSignal.timeout(timeout), cache:'no-store' });
@@ -426,7 +287,7 @@ window.extendOS({
         const esc = (v = '') => String(v).replace(/[&<>'"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m]));
         const games = [
             { id: '2048', name: '2048', icon: '🔢', tag: 'Puzzle', desc: 'Classic sliding tile number puzzle', url: 'https://play2048.co/', color: '#eab308', source: 'play2048.co', note: 'Keyboard arrows' },
-            { id: 'hexgl', name: 'HexGL', icon: '🚀', tag: '3D Wipeout', desc: 'Futuristic HTML5/WebGL anti-gravity racer', url: 'https://hexgl.bkcore.com/play/', color: '#38bdf8', source: 'BKcore OSS', note: 'WebGL 60fps' },
+            { id: 'hexgl', name: 'HexGL', icon: '🚀', tag: '3D Wipeout', desc: 'Futuristic HTML5/WebGL anti-gravity racer', url: 'https://hexgl.bkcore.com/play/', color: '#38bdf8', source: 'BKcore OSS', note: 'WebGL required' },
             { id: 'slowroads', name: 'Slow Roads', icon: '🏎️', tag: '3D Driving', desc: 'Endless procedural zen driving simulator', url: 'https://slowroads.io/', color: '#22d3ee', source: 'slowroads.io', note: 'WebGL driving' },
             { id: 'tetris', name: 'Tetris', icon: '🟦', tag: 'Arcade', desc: 'Official Tetris browser game', url: 'https://play.tetris.com', color: '#3b82f6', source: 'Tetris.com', note: 'Official web build' },
             { id: 'pacman', name: 'PAC-MAN', icon: '👾', tag: 'Retro', desc: 'Classic arcade maze chase', url: 'https://freepacman.org/', color: '#f59e0b', source: 'Free Pacman', note: 'Arrow keys' },
@@ -500,9 +361,16 @@ window.extendOS({
     _html: (v='') => String(v ?? '').replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])),
 
     _fetchJson: async (url, timeout=9000) => {
-                const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
-                if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
-                return res.json();
+                const controller=new AbortController();
+                const timer=setTimeout(()=>controller.abort(),Math.max(1000,Math.min(30000,Number(timeout)||9000)));
+                try{
+                    const res=await fetch(url,{signal:controller.signal,credentials:'omit'});
+                    if(!res.ok)throw new Error(res.status===429?'Provider rate limit reached. Wait before retrying.':`Provider returned HTTP ${res.status}`);
+                    const text=await res.text();
+                    if(text.length>8*1024*1024)throw new Error('Provider response is too large');
+                    try{return JSON.parse(text);}catch(_){throw new Error('Provider returned invalid JSON');}
+                }catch(error){if(error.name==='AbortError')throw new Error('Provider request timed out. Please retry.');throw error;}
+                finally{clearTimeout(timer);}
             },
 
     _issSunPos: function() {

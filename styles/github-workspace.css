@@ -1,0 +1,55 @@
+/* Explicit native app materials: does not depend on runtime color detection. */
+#win-ossradar{background:linear-gradient(128deg,#d2efff25,transparent 42%,#77d9ff0a),rgba(var(--adaptive-rgb,12,22,37),.22)!important;backdrop-filter:blur(18px) saturate(145%)!important;-webkit-backdrop-filter:blur(18px) saturate(145%)!important;border:1px solid #dcf3ff55!important;box-shadow:inset 0 1px 0 #ffffff80,inset 1px 0 0 #ffffff18,0 24px 70px #020b1750!important}
+#win-ossradar>.window-header{background:#d2eeff06!important}
+#win-ossradar>div:nth-child(2),#oss-root,#oss-root>.oss-workspace,#oss-root .oss-workspace>div,#oss-root .oss-source-workspace,#oss-root #oss-repo-header,#oss-root #oss-file-tree,#oss-root #oss-repo-list,#oss-root .oss-source-pane,#oss-root #oss-code-viewer{background:transparent!important;background-image:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#oss-root{--oss-edge:var(--material-line-soft,#d6edff25);color:var(--material-ink,#eef6ff);container-type:inline-size}
+#oss-root .studio-app-heading{position:relative;min-height:110px;padding:22px 24px;background:linear-gradient(115deg,#bdeaff0e,transparent)!important;flex-shrink:0;border-bottom:1px solid var(--oss-edge)}
+#oss-root .studio-app-heading h2{font-size:29px;letter-spacing:-1.2px;font-weight:650;line-height:1.2;margin:7px 0}
+#oss-root .studio-eyebrow{font-size:9px;letter-spacing:.2em;color:var(--material-muted)}
+#oss-root .studio-app-heading p{color:var(--material-muted);font-size:11px}
+#oss-root .oss-build-label{position:absolute;right:24px;top:22px;font:8px ui-monospace,monospace;letter-spacing:.14em;color:var(--material-muted)}
+#oss-root #oss-status{max-width:220px;padding-top:15px;line-height:1.6}
+#oss-root>.oss-workspace{padding:12px;gap:12px;grid-template-columns:minmax(215px,.78fr) minmax(0,1.55fr)}
+#oss-root .oss-workspace>div{border:1px solid var(--oss-edge);border-radius:16px;overflow:hidden;box-shadow:inset 0 1px 0 #ffffff15}
+#oss-root #oss-repo-list{overflow-y:auto!important;background:#c3e9ff04!important}
+#oss-root .oss-repo-card{padding:16px 14px;position:relative;transition:background .15s}
+#oss-root .oss-repo-card strong{font-size:12px;color:var(--material-ink);font-weight:650}
+#oss-root .oss-repo-card p{font-size:11px;line-height:1.55;margin:7px 0;color:var(--material-muted)}
+#oss-root .oss-repo-card[aria-pressed=true]{background:#76cfff16;box-shadow:inset 3px 0 #8cdaef}
+#oss-root .oss-repo-card span{font-size:9px;opacity:.9}
+#oss-root .oss-reading-tools{gap:8px;padding:10px 18px;background:#e0f1ff04}
+#oss-root #oss-repo-header{padding:13px 15px;gap:9px;flex-shrink:0}
+#oss-root #oss-repo-header strong{flex-basis:100%;font-size:13px;letter-spacing:-.3px;overflow-wrap:anywhere}
+#oss-root #oss-repo-header a{margin-left:auto;font-size:10px}
+#oss-root .oss-source-workspace{grid-template-columns:minmax(120px,.44fr) minmax(0,1fr);min-height:0}
+#oss-root #oss-file-tree{padding:8px;border-right:1px solid var(--oss-edge);overflow:auto}
+#oss-root .oss-tree-item{padding:7px 5px;line-height:1.4;font-size:10px}
+#oss-root .oss-source-pane{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
+#oss-root .oss-source-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:8px;border-bottom:1px solid var(--oss-edge);flex-shrink:0}
+#oss-root .oss-source-toolbar input{width:105px;flex:1;min-width:65px;border:1px solid var(--oss-edge);border-radius:8px;background:#d4edff08;color:inherit;padding:5px 7px;font-size:10px}
+#oss-root .oss-source-toolbar button{font-size:9px;padding:4px 6px}
+#oss-root #oss-find-count{font-size:9px;color:var(--material-muted)}
+#oss-root #oss-code-viewer{flex:1;overflow:auto;padding:15px;font-size:11px;line-height:1.85;white-space:pre;color:var(--material-ink)!important}
+#oss-root #oss-code-viewer.oss-wrap{white-space:pre-wrap;overflow-wrap:anywhere}
+#oss-root #oss-code-viewer mark{background:#ffe18080;color:inherit;border-radius:2px}
+#oss-root.oss-source-focus>.oss-workspace{grid-template-columns:minmax(0,1fr)}
+#oss-root.oss-source-focus #oss-repo-list,#oss-root.oss-source-focus #oss-file-tree{display:none}
+#oss-root.oss-source-focus .oss-source-workspace{grid-template-columns:minmax(0,1fr)}
+html[data-system-mode=day] #win-ossradar{background:linear-gradient(130deg,#ffffff35,transparent 65%),rgba(229,242,252,.38)!important}
+html[data-glass-clarity=clear] #win-ossradar{background:linear-gradient(128deg,#d2efff20,transparent 60%),rgba(var(--adaptive-rgb,12,22,37),.16)!important;backdrop-filter:blur(12px) saturate(140%)!important;-webkit-backdrop-filter:blur(12px) saturate(140%)!important}
+html[data-glass-clarity=solid] #win-ossradar{background:var(--material-solid,#142334)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@container(max-width:700px){#oss-root>.oss-workspace{grid-template-columns:1fr;grid-template-rows:160px minmax(320px,1fr)}#oss-root .studio-app-heading{padding:17px;min-height:100px}#oss-root .studio-app-heading h2{font-size:24px}#oss-root .oss-build-label{display:none}#oss-root #oss-status{max-width:140px}#oss-root.oss-source-focus>.oss-workspace{grid-template-rows:minmax(320px,1fr)}}
+@media(prefers-reduced-transparency:reduce){#win-ossradar{background:var(--material-solid,#142334)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+@media(forced-colors:active){#win-ossradar{background:Canvas!important;color:CanvasText!important;box-shadow:none!important;backdrop-filter:none!important}#oss-root #oss-code-viewer{color:CanvasText!important}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#win-ossradar{background:var(--material-solid,#142334)!important}}
+
+/* Constrain every grid/flex ancestor so source scrolls inside its pane instead
+   of growing a content-sized grid track underneath the clipped window. */
+#oss-root{min-height:0}
+#oss-root>.oss-workspace{min-height:0;grid-template-rows:minmax(0,1fr);overflow:hidden}
+#oss-root .oss-workspace>div{min-height:0;min-width:0}
+#oss-root .oss-source-workspace{flex:1 1 0;min-height:0;min-width:0;grid-template-rows:minmax(0,1fr);overflow:hidden}
+#oss-root .oss-source-pane{min-height:0;min-width:0;height:100%}
+#oss-root #oss-code-viewer{flex:1 1 0;min-height:0;min-width:0;max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;scrollbar-gutter:stable;cursor:text}
+#oss-root #oss-file-tree{min-height:0;overscroll-behavior:contain;touch-action:pan-y}
+@container(max-width:700px){#oss-root>.oss-workspace{grid-template-rows:160px minmax(320px,1fr);overflow:auto}#oss-root.oss-source-focus>.oss-workspace{grid-template-rows:minmax(320px,1fr)}}

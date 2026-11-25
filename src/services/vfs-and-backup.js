@@ -6,7 +6,15 @@
 
     const memFiles = new Map();
     const memMeta = new Map();
-    let dbPromise = null;
+    let dbPromise = null, persistenceWarned = false;
+    function reportPersistence(durable, reason='') {
+        if(window.AetherVFS)window.AetherVFS.storageStatus={mode:durable?'indexeddb':'session-only',reason};
+        if(!durable && !persistenceWarned){
+            persistenceWarned=true;
+            window.Notifications?.push('SESSION-ONLY STORAGE','Files are available in this tab, but could not be persisted. Export a backup before closing or reloading.');
+            window.dispatchEvent(new CustomEvent('aether:storage-warning',{detail:{mode:'session-only',reason}}));
+        }
+    }
 
     function openDB() {
         if (dbPromise) return dbPromise;
@@ -62,6 +70,7 @@
     }
 
     const AetherVFS = window.AetherVFS = {
+        storageStatus: {mode:'not-yet-written',reason:''},
         async putFile(entry) {
             const record = {
                 id: entry.id || ('vfs-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)),
@@ -82,16 +91,16 @@
             };
             memFiles.set(record.id, record);
             const db = await openDB();
-            if (db) {
-                await new Promise((resolve) => {
-                    try {
-                        const tx = db.transaction(STORE_FILES, 'readwrite');
-                        tx.objectStore(STORE_FILES).put(record);
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => resolve();
-                    } catch (_) { resolve(); }
-                });
-            }
+            let reason='IndexedDB unavailable or blocked';
+            const durable=db ? await new Promise(resolve=>{
+                try{
+                    const tx=db.transaction(STORE_FILES,'readwrite');tx.objectStore(STORE_FILES).put(record);
+                    tx.oncomplete=()=>resolve(true);
+                    tx.onerror=tx.onabort=()=>{reason=tx.error?.message||'Storage transaction failed';resolve(false);};
+                }catch(error){reason=error.message;resolve(false);}
+            }):false;
+            record.persistence=durable?'indexeddb':'session-only';
+            reportPersistence(durable,durable?'':reason);
             this.syncToFileManager();
             return record;
         },
@@ -107,7 +116,7 @@
                         req.onerror = () => resolve([]);
                     } catch (_) { resolve([]); }
                 });
-                list.forEach((f) => memFiles.set(f.id, f));
+                list.forEach((f) => {if(memFiles.get(f.id)?.persistence!=='session-only')memFiles.set(f.id, f);});
             }
             return Array.from(memFiles.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         },
@@ -118,33 +127,24 @@
 
         async deleteFile(id) {
             memFiles.delete(id);
-            const db = await openDB();
-            if (db) {
-                await new Promise((resolve) => {
-                    try {
-                        const tx = db.transaction(STORE_FILES, 'readwrite');
-                        tx.objectStore(STORE_FILES).delete(id);
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => resolve();
-                    } catch (_) { resolve(); }
-                });
-            }
+            const db=await openDB();
+            const durable=db ? await new Promise(resolve=>{
+                try{const tx=db.transaction(STORE_FILES,'readwrite');tx.objectStore(STORE_FILES).delete(id);tx.oncomplete=()=>resolve(true);tx.onerror=tx.onabort=()=>resolve(false);}
+                catch(_){resolve(false);}
+            }):false;
+            reportPersistence(durable,durable?'':'Deletion could not be persisted; the file may return after reload');
             this.syncToFileManager();
         },
 
         async setMeta(key, value) {
             memMeta.set(key, value);
-            const db = await openDB();
-            if (db) {
-                await new Promise((resolve) => {
-                    try {
-                        const tx = db.transaction(STORE_META, 'readwrite');
-                        tx.objectStore(STORE_META).put({ key, value });
-                        tx.oncomplete = () => resolve();
-                        tx.onerror = () => resolve();
-                    } catch (_) { resolve(); }
-                });
-            }
+            const db=await openDB();
+            const durable=db ? await new Promise(resolve=>{
+                try{const tx=db.transaction(STORE_META,'readwrite');tx.objectStore(STORE_META).put({key,value});tx.oncomplete=()=>resolve(true);tx.onerror=tx.onabort=()=>resolve(false);}
+                catch(_){resolve(false);}
+            }):false;
+            reportPersistence(durable,durable?'':'Metadata could not be persisted');
+            return {persistence:durable?'indexeddb':'session-only'};
         },
 
         async getMeta(key) {
@@ -236,47 +236,35 @@
                 tags
             });
             if (window.Notifications) {
-                window.Notifications.push('SAVED TO FILES', `"${rec.name}" saved to /Archive/Saved Clipper`);
+                window.Notifications.push(rec.persistence==='session-only'?'SESSION-ONLY COPY':'SAVED TO FILES',rec.persistence==='session-only'?'Export this clip before closing or reloading.':`"${rec.name}" saved to /Archive/Saved Clipper`);
             }
             return rec;
         },
 
         syncToFileManager() {
             if (!window.os || !os.filemanager || !os.filemanager.data) return;
-            const rootChildren = os.filemanager.data.children || [];
-            const all = Array.from(memFiles.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-            const ensureMount = (id, folderName, signal) => {
-                let fld = rootChildren.find((c) => c.id === id);
-                const items = all.filter((f) => (f.folder || 'User Uploads') === folderName).map((f) => ({
-                    id: f.id,
-                    name: f.name,
-                    kind: f.kind || 'note',
-                    path: `/Archive/${folderName}/${f.name}`,
-                    signal: 'IDB',
-                    size: f.size || formatBytes(f.sizeBytes || 0),
-                    modified: f.modified,
-                    icon: f.icon || 'file',
-                    tags: f.tags || ['local-vfs'],
-                    related: [],
-                    refs: [],
-                    content: f.content || '',
-                    imageUrl: f.imageUrl || '',
-                    dataUrl: f.dataUrl || '',
-                    mime: f.mime || '',
-                    sourceUrl: f.sourceUrl || '',
-                    isVfs: true
-                }));
-                if (!fld) {
-                    fld = { id, name: folderName, kind: 'folder', path: `/Archive/${folderName}`, signal, children: items };
-                    rootChildren.unshift(fld);
-                } else {
-                    fld.children = items;
+            const root=os.filemanager.data;root.children ||= [];
+            const all=Array.from(memFiles.values()).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+            const ids=new Set(all.map(f=>f.id));
+            const clean=node=>{if(node.children){node.children=node.children.filter(child=>!child.isVfs&&!ids.has(child.id));node.children.forEach(clean);}};
+            clean(root);
+            const ensureFolder=relative=>{
+                const parts=String(relative||'User Uploads').replace(/^\/Archive\/?/,'').split('/').filter(Boolean);
+                if(parts.some(p=>p==='.'||p==='..'||p.includes('\\')))return ensureFolder('User Uploads');
+                let parent=root;
+                for(const name of parts){
+                    let folder=parent.children.find(n=>n.kind==='folder'&&n.name===name);
+                    if(!folder){const path=`${parent.path}/${name}`;let hash=0;for(const char of path)hash=(Math.imul(hash,31)+char.charCodeAt(0))|0;folder={id:'vfs-dir-'+(hash>>>0).toString(16),name,path,kind:'folder',signal:'Local',children:[]};parent.children.unshift(folder);}
+                    folder.children ||= [];parent=folder;
                 }
+                return parent;
             };
-
-            ensureMount('fld-saved-clipper', 'Saved Clipper', 'CLIP');
-            ensureMount('fld-user-uploads', 'User Uploads', 'IDB');
+            ensureFolder('Saved Clipper');ensureFolder('User Uploads');
+            const custom=memMeta.get('archive-folders-v1');if(Array.isArray(custom))for(const path of custom)if(typeof path==='string'&&path.length<500)ensureFolder(path).localFolder=true;
+            for(const file of all){
+                const folder=ensureFolder(file.folder);
+                folder.children.push({...file,path:`${folder.path}/${file.name}`,signal:file.persistence==='session-only'?'Session':'Browser',related:[],refs:[],isVfs:true});
+            }
 
             if (document.getElementById('filemanager-root') && os.fmRender) {
                 os.fmRender();
