@@ -1,0 +1,211 @@
+{
+  "provider": "Microsoft Fluent UI System Icons \u2014 Color",
+  "package": "@fluentui/svg-icons",
+  "version": "1.1.347",
+  "license": "MIT",
+  "upstream": "https://github.com/microsoft/fluentui-system-icons",
+  "archive": "https://registry.npmjs.org/@fluentui/svg-icons/-/svg-icons-1.1.347.tgz",
+  "archive_sha256": "2d29b1bf80a52b904db720b28590429dd46b05ed3abff019744293d4d7782e4c",
+  "icons": {
+    "finder": {
+      "file": "apps_48_color.svg",
+      "sha256": "505ec48d39467e8d6082d8c8d52cde51ac728f75886078656e7311174fe67e87"
+    },
+    "settings": {
+      "file": "settings_48_color.svg",
+      "sha256": "ffbb4f3fc5a2f22b76dcc60dc2723c68f9b57d0f2506ad0593d4df0c5a66bb8b"
+    },
+    "about": {
+      "file": "question_circle_48_color.svg",
+      "sha256": "6ac49633d04598dba9776ce0f7b98a33d70e7912e476f4884ebf1780374e8f2b"
+    },
+    "terminal": {
+      "file": "code_block_48_color.svg",
+      "sha256": "e1252e1b24eaa1fdd02840eba72898851b780c4d03b0436b7a4bc9e7ed06cf41"
+    },
+    "filemanager": {
+      "file": "document_folder_24_color.svg",
+      "sha256": "c2c8af9f867de76d83057b63acf6d7e18c1361456c75f87e14bdfa324b983c0c"
+    },
+    "wikiboard": {
+      "file": "org_48_color.svg",
+      "sha256": "c467a2dfb5fe6f6af921742ee743da76267aec28a90cec84b51007eeb1621eec"
+    },
+    "browser": {
+      "file": "globe_24_color.svg",
+      "sha256": "cd82faf00572b673d98c61e4aef88901b09a56b46f3b7c5da512df409972edc6"
+    },
+    "media": {
+      "file": "headphones_48_color.svg",
+      "sha256": "097c85b072ca3d2eefe75ea25b78bcee05d8b533c2da75d9a7751786e3f7d7c6"
+    },
+    "stickers": {
+      "file": "gift_24_color.svg",
+      "sha256": "812ea94f2d2b96bfd212f420cced247131f21bba95a643e85a4d6d1646f0636f"
+    },
+    "radiobrowser": {
+      "file": "mic_48_color.svg",
+      "sha256": "0f416b85cdf01ef2921cd48919328903133283410bb1ed9c1b0eeaddead16120"
+    },
+    "weather": {
+      "file": "weather_sunny_low_48_color.svg",
+      "sha256": "8ed6d218b02ef379ecd2b3bd73f5860211092f955d703f43bed3a9b1f0304648"
+    },
+    "feed": {
+      "file": "news_28_color.svg",
+      "sha256": "cd6d6e6bb8dcf8999885ca93675e15d6e29355a44702cd5ebf6f19987716db50"
+    },
+    "sysmon": {
+      "file": "gauge_32_color.svg",
+      "sha256": "e13d2d1b1b6fcee0fb9fa9b042b9d5a41fef91365bea65056f2da9bd5132d33f"
+    },
+    "taskmanager": {
+      "file": "clipboard_task_24_color.svg",
+      "sha256": "4255eafc655c98c993ef8abff3005a14bd2fc1295bfa131496a7b81a2954d03b"
+    },
+    "focus": {
+      "file": "clock_alarm_48_color.svg",
+      "sha256": "0e45e4fceafba563672e05fac5e6b2f9c0c4946fda9fbe285e69b500994fd26a"
+    },
+    "devpad": {
+      "file": "code_24_color.svg",
+      "sha256": "b3b2f8ab097efd98de249f1a3878fb71d4b76b5fc8005823c62733d8ac80c7e1"
+    },
+    "kanban": {
+      "file": "board_28_color.svg",
+      "sha256": "434265820abd9d954992802cacc940860f1b9aa50eb4d96682b7a527077992e3"
+    },
+    "photobooth": {
+      "file": "camera_24_color.svg",
+      "sha256": "4e5730f8639e9bf9c37e66ba780a87a67ac09c78b26bd7807fa587495bccf5cd"
+    },
+    "synthstudio": {
+      "file": "headset_48_color.svg",
+      "sha256": "53a08d54379e5436aff47c7c55c6f57c3e3226d64aaa2ecdfcd75c04eb4891b9"
+    },
+    "photopea": {
+      "file": "image_48_color.svg",
+      "sha256": "094d17f2c293ab9fdc104f57d258c4500366659012c1fa977dfb69be9779ef0e"
+    },
+    "whiteboard": {
+      "file": "paint_brush_32_color.svg",
+      "sha256": "0cd2e5f2d308a5013b69873a0bb2023023dda1f3789d3dfeedcc65da0bb04d02"
+    },
+    "chiptune": {
+      "file": "puzzle_piece_48_color.svg",
+      "sha256": "8dac69f7fe29248d15b550844a8a07fe35ee120d61223bce541d75c485cccae0"
+    },
+    "worldmuseums": {
+      "file": "building_government_32_color.svg",
+      "sha256": "3dd0a454a231ea7b4130f94be777acede97b56d10c45d8619ab2f026d7db8840"
+    },
+    "gutendex": {
+      "file": "book_open_48_color.svg",
+      "sha256": "9a561640f4f64254d190fe63f5ea0aa56b734b9a7813f5b0c7a810e582f592f4"
+    },
+    "earthpulse": {
+      "file": "location_ripple_24_color.svg",
+      "sha256": "3ec7a94d20730db5b9b5272b4be6b7c411ec3f0b157523ccb112639b187bbc2a"
+    },
+    "spacexhub": {
+      "file": "send_48_color.svg",
+      "sha256": "7ce590e936463c4644410664bb6d4ff138c4e0bf70052a7a124fa2fa933031af"
+    },
+    "stellarium": {
+      "file": "planet_32_color.svg",
+      "sha256": "44cbc68a9fca42e27fafa7bd66766aa7dd392df6b378549da0badd1d8646d6b8"
+    },
+    "georadar": {
+      "file": "globe_shield_48_color.svg",
+      "sha256": "47ab004663da972581f7b8240b210293fec227e451ed2967e077e65b38b75874"
+    },
+    "worldfactbook": {
+      "file": "flag_48_color.svg",
+      "sha256": "8aa8f0487a6ae6277f85c12a38c60df045f27ee5e1e688b66a962ed8f8492bca"
+    },
+    "wayback": {
+      "file": "history_48_color.svg",
+      "sha256": "f9d2a1eb4960173eb1296a2ce09a3e76f58a4f49f753cfad48da5136f48b7aa3"
+    },
+    "winamp": {
+      "file": "headphones_48_color.svg",
+      "sha256": "097c85b072ca3d2eefe75ea25b78bcee05d8b533c2da75d9a7751786e3f7d7c6"
+    },
+    "ossradar": {
+      "file": "code_block_48_color.svg",
+      "sha256": "e1252e1b24eaa1fdd02840eba72898851b780c4d03b0436b7a4bc9e7ed06cf41"
+    },
+    "shadertoy": {
+      "file": "design_ideas_48_color.svg",
+      "sha256": "d6040de2b97a8ddb92ff5fcba37fb0ccddc4076b50d85144468580067ddcfe04"
+    },
+    "codeplay": {
+      "file": "code_24_color.svg",
+      "sha256": "b3b2f8ab097efd98de249f1a3878fb71d4b76b5fc8005823c62733d8ac80c7e1"
+    },
+    "aetherbridge": {
+      "file": "phone_laptop_32_color.svg",
+      "sha256": "bf43512329cf24cdcc62139fd654e5020be75eaac94fad197c34914f9b00aebb"
+    },
+    "aetherlink": {
+      "file": "link_multiple_24_color.svg",
+      "sha256": "dcdef7c8d3c91af18ad22d66035e9599fad9f912e439e4621cf9c5e2f9cbf213"
+    },
+    "presence": {
+      "file": "people_chat_48_color.svg",
+      "sha256": "4c6a74fde74ffc6000b6bf44b86efc8d61fcd41dc1420c2f2594b1ace0a93289"
+    },
+    "iss": {
+      "file": "planet_32_color.svg",
+      "sha256": "44cbc68a9fca42e27fafa7bd66766aa7dd392df6b378549da0badd1d8646d6b8"
+    },
+    "nasa": {
+      "file": "molecule_48_color.svg",
+      "sha256": "64d416172d5c86e2e35291e6749cf292dc0031919f36d5fded6324c61aa121a8"
+    },
+    "globe": {
+      "file": "send_48_color.svg",
+      "sha256": "7ce590e936463c4644410664bb6d4ff138c4e0bf70052a7a124fa2fa933031af"
+    },
+    "market": {
+      "file": "coin_multiple_48_color.svg",
+      "sha256": "a80e9416ce29655cce115c2237ddd3d1fb3a06473c0de846ea1de81b67d3d62f"
+    },
+    "games": {
+      "file": "puzzle_piece_48_color.svg",
+      "sha256": "8dac69f7fe29248d15b550844a8a07fe35ee120d61223bce541d75c485cccae0"
+    },
+    "ytchtv": {
+      "file": "video_48_color.svg",
+      "sha256": "bb04990432790ab4281e5e423ddf2f69df3b7a752a50459fc1291e5664e81f90"
+    },
+    "memes": {
+      "file": "image_48_color.svg",
+      "sha256": "094d17f2c293ab9fdc104f57d258c4500366659012c1fa977dfb69be9779ef0e"
+    },
+    "anime": {
+      "file": "star_48_color.svg",
+      "sha256": "56ff316d3bf314a0011be40c139b1cc5d7eb6034980fb42a733a53df44f2807d"
+    },
+    "manga": {
+      "file": "book_48_color.svg",
+      "sha256": "15f7f6f1dd79f0ea43c2e221f46da1da132001771627909c39d78290e00678cd"
+    },
+    "entityscanner": {
+      "file": "scan_person_48_color.svg",
+      "sha256": "6597474ca1aad28d5c14b93a03a34892cffd4094ca29d4fdf4f5582b8503325f"
+    },
+    "floor796": {
+      "file": "building_48_color.svg",
+      "sha256": "7a7b55bdf74b65a1754ee131b9f3418cf8dd5155755aad6973e72f83feff25a2"
+    },
+    "wplace": {
+      "file": "paint_brush_32_color.svg",
+      "sha256": "0cd2e5f2d308a5013b69873a0bb2023023dda1f3789d3dfeedcc65da0bb04d02"
+    },
+    "notes": {
+      "file": "notebook_32_color.svg",
+      "sha256": "47eda694031a348f77f546d5ccdad13843de421f6350623cfa0e6a2b8ba247a5"
+    }
+  }
+}

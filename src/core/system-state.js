@@ -197,7 +197,14 @@ const SystemState = window.SystemState = {
         radio_tonearm_y: 0,
         radio_tonearm_rot: 0,
         radio_tonearm_edit: 'off',
-        wallpaper_mode: 'default',
+        wallpaper_mode: 'gallery',
+        wallpaper_collection: 'aurora',
+        wallpaper_rotation: 'daily',
+        wallpaper_online_provider: 'auto',
+        wallpaper_online_search: '',
+        wallpaper_online_quality: 'hd',
+        wallpaper_online_topic: 'abstract',
+        wallpaper_online_next: 0,
         wallpaper_custom_url: '',
         wallpaper_dim: 25,
         wallpaper_blur: 0,
@@ -322,6 +329,15 @@ const SystemState = window.SystemState = {
                                 : {})
                         }
                     };
+                }
+                // Migrate the former server-only default once, without touching
+                // custom wallpaper URLs, the bundled collection or other modes.
+                if (!parsed.settings?.wallpaper_delivery_v2) {
+                    if (!parsed.settings?.wallpaper_online_provider || parsed.settings.wallpaper_online_provider === 'wallhaven') {
+                        this.settings.wallpaper_online_provider = 'github';
+                        this.settings.wallpaper_online_quality = 'hd';
+                    }
+                    this.settings.wallpaper_delivery_v2 = true;
                 }
                 delete this.settings.about;
                 if (this.settings.quote_gif_api_key === '1Oz2uD6DabK9pVK7zaqkXxLiEwuKje1vQSSrj8mTIiM6tV5qnuSn8b7lEqSPyvGw') {

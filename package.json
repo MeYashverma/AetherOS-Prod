@@ -1,6 +1,12 @@
 {
   "name": "aetheros-desktop",
   "private": true,
-  "scripts": { "test": "node --test tests/verci/*.test.mjs" },
-  "devDependencies": { "jsdom": "26.1.0" }
+  "scripts": {
+    "test": "node --test tests/verci/*.test.mjs",
+    "dev": "python3 scripts/serve.py --host 0.0.0.0 --port 4174",
+    "test:server": "python3 -m unittest discover -s tests -p test_wallpaper_server.py"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
 }

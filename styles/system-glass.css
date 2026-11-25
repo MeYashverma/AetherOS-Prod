@@ -1,0 +1,262 @@
+/* AetherOS · system-wide liquid material. Loaded last on purpose.
+   Only shell/application chrome is restyled; media, artwork and canvases are not.
+   Floating surfaces own blur. Nested cards own only a light tint, never blur. */
+:root {
+  --material-fill: linear-gradient(140deg,rgba(194,216,246,.16),rgba(15,25,43,.58) 72%);
+  --material-solid: #172235;
+  --material-line: rgba(223,237,255,.22);
+  --material-line-soft: rgba(223,237,255,.11);
+  --material-highlight: rgba(245,250,255,.48);
+  --material-inset: rgba(225,237,255,.055);
+  --material-hover: rgba(222,238,255,.12);
+  --material-ink: #f2f6fc;
+  --material-muted: #b7c5d8;
+  --material-accent: var(--os-accent-custom,#a8d4ff);
+  --material-radius: 22px;
+  --material-blur: 28px;
+  --material-shadow: inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04),0 18px 52px rgba(1,7,20,.36);
+}
+html.perf-eco { --material-blur: 14px; }
+html.perf-eco .os-window.liquid-app-window { backdrop-filter: blur(var(--material-blur)) saturate(135%) !important; -webkit-backdrop-filter: blur(var(--material-blur)) saturate(135%) !important; }
+
+/* One cohesive floating material, including dynamically created popovers. */
+.liquid-shell-panel,
+:is(#finder-overlay,#aether-menu-dropdown,#control-center-panel,#notification-center,
+#dock-context-menu,#desktop-context-menu,#calendar-popover,#dock-preview,.api-panel,
+.app-switcher-strip,.mc-panel,#cmd-palette > div,#aether-toast-stack > div) {
+  background: var(--material-fill) !important;
+  background-color: rgba(7,16,30,.26) !important;
+  border: 1px solid var(--material-line) !important;
+  border-top-color: var(--material-highlight) !important;
+  border-radius: var(--material-radius) !important;
+  box-shadow: var(--material-shadow) !important;
+  backdrop-filter: blur(var(--material-blur)) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(155%) !important;
+  color: var(--material-ink);
+  background-clip: padding-box !important;
+}
+/* Avoid compounded opaque panels inside an already-frosted sheet. */
+.liquid-shell-panel .liquid-app-surface {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+.liquid-shell-panel :is(.liquid-shell-panel,.notification-item) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: inset 0 1px 0 #ffffff10 !important;
+  background: var(--material-inset) !important;
+}
+
+/* Desktop chrome — a restrained glass rail and a floating optical Dock. */
+#os-layer > header {
+  background: linear-gradient(180deg,rgba(40,55,78,.42),rgba(21,33,52,.26)) !important;
+  border-bottom: 1px solid var(--material-line-soft) !important;
+  box-shadow: 0 2px 20px #02061718,inset 0 1px 0 #ffffff15 !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  color: var(--material-ink);
+}
+.topbar-item { border-radius: 8px; transition: background .16s ease,box-shadow .16s ease; }
+.topbar-item:hover { background: var(--material-hover) !important; box-shadow: inset 0 1px 0 #ffffff14; }
+.topbar-sep { background: var(--material-line) !important; }
+.dock-container {
+  background: linear-gradient(145deg,rgba(210,228,251,.2),rgba(20,32,53,.46)) !important;
+  border: 1px solid var(--material-line) !important;
+  border-top-color: var(--material-highlight) !important;
+  box-shadow: var(--material-shadow),0 3px 8px #0002 !important;
+  backdrop-filter: blur(var(--material-blur)) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(160%) !important;
+}
+#right-utility-panel.liquid-shell-panel {
+  border-radius: 24px !important;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff30 transparent;
+}
+#right-utility-panel > :is(section,article,div):not(:first-child) { margin-top: 8px; }
+#right-utility-panel :is(#net-io-card,#sidebar-discord-card,#companion-chat-block),
+.aether-chat-stat,.aether-chat-media,.aether-chat-inline-status {
+  background: var(--material-inset) !important;
+  border: 1px solid var(--material-line-soft) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 #ffffff0c !important;
+}
+#right-utility-panel .aether-chat-log { background: transparent !important; }
+#desktop-quote-widget { border-radius: 20px; }
+
+/* App frames and internal navigation now speak the same visual language. */
+.os-window.liquid-app-window {
+  background: var(--material-fill) !important;
+  background-color: rgba(7,16,30,.26) !important;
+  border: 1px solid var(--material-line) !important;
+  border-top-color: var(--material-highlight) !important;
+  border-radius: var(--material-radius) !important;
+  box-shadow: var(--material-shadow),0 32px 88px #02061730 !important;
+  backdrop-filter: blur(var(--material-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(150%) !important;
+}
+.os-window.liquid-app-window > .window-header {
+  background: linear-gradient(180deg,#ffffff10,#ffffff03) !important;
+  border-bottom: 1px solid var(--material-line-soft) !important;
+}
+.os-window.liquid-app-window > .window-header::before { opacity: .65; }
+.os-window.liquid-app-window :is(aside,nav).liquid-app-surface {
+  background: linear-gradient(180deg,#b4d6ff08,#08162612) !important;
+  border-color: var(--material-line-soft) !important;
+}
+.os-window .aether-window-body { color: var(--material-ink); }
+.settings-shell,.settings-sidebar,#settings-panel-content { background: transparent !important; }
+.settings-sidebar { border-right: 1px solid var(--material-line-soft) !important; padding: 16px 12px; }
+.settings-section-label,.settings-nav-section { color: var(--material-muted) !important; letter-spacing: .12em; font-size: 10px; }
+.settings-card {
+  border: 1px solid var(--material-line-soft) !important;
+  border-radius: 17px !important;
+  background: var(--material-inset) !important;
+  box-shadow: inset 0 1px 0 #ffffff0e;
+}
+.settings-row { padding: 14px 16px; border-color: var(--material-line-soft) !important; }
+.settings-row-title { color: var(--material-ink) !important; }
+.settings-row-desc { color: var(--material-muted) !important; line-height: 1.6; }
+.settings-row-icon { border-radius: 10px !important; background: #d9ecff0d !important; border-color: var(--material-line-soft) !important; }
+.settings-nav-btn { border: 1px solid transparent; border-radius: 11px !important; margin-bottom: 3px; transition: background .16s,border-color .16s; }
+.settings-nav-btn:hover { background: var(--material-hover) !important; }
+.settings-nav-btn.active {
+  background: linear-gradient(120deg,#d6eaff26,#d6eaff0b) !important;
+  border-color: var(--material-line) !important;
+  box-shadow: inset 0 1px 0 #ffffff20,0 3px 9px #02061714;
+  color: #fff !important;
+}
+
+/* Menus, launcher and command search: quieter hierarchy, clear selection. */
+:is(#aether-menu-dropdown,#dock-context-menu,#desktop-context-menu) { padding: 7px !important; }
+.dock-ctx-item { border-radius: 9px !important; transition: background .14s ease; }
+.dock-ctx-item:hover { background: var(--material-hover) !important; color: #fff !important; }
+#finder-overlay { padding: 28px 26px 24px !important; }
+.finder-app-item { border: 1px solid transparent; border-radius: 18px !important; transition: background .18s,border-color .18s; }
+.finder-app-item:hover { background: #e2f0ff0d !important; border-color: var(--material-line-soft); }
+.finder-app-label { color: var(--material-ink) !important; text-shadow: 0 1px 4px #02061770; }
+.finder-section-label { color: var(--material-muted) !important; letter-spacing: .13em; }
+#cmd-palette > div { overflow: hidden; }
+#cmd-palette input { background: transparent !important; }
+.cmd-item { border: 1px solid transparent; border-radius: 11px !important; margin: 3px 6px; }
+.cmd-item:hover,.cmd-item.cmd-selected { background: var(--material-hover) !important; border-color: var(--material-line) !important; }
+.notification-item {
+  border: 1px solid var(--material-line-soft) !important;
+  border-radius: 15px !important;
+  background: var(--material-inset) !important;
+  box-shadow: inset 0 1px 0 #ffffff12;
+}
+.notification-item:hover { background: var(--material-hover) !important; }
+#window-snap-preview { background: #afd9ff1c !important; border: 1px solid #c2e4ff80 !important; border-radius: 20px !important; box-shadow: inset 0 1px 0 #ffffff40,0 0 36px #8dbdf21c !important; }
+#mission-control-overlay { background: rgba(4,12,26,.4) !important; backdrop-filter: blur(18px) saturate(120%); -webkit-backdrop-filter: blur(18px) saturate(120%); }
+#lock-screen-overlay { background: linear-gradient(150deg,#14243888,#071222bb) !important; backdrop-filter: blur(40px) saturate(130%) !important; -webkit-backdrop-filter: blur(40px) saturate(130%) !important; }
+#lock-screen-overlay > div { border: 1px solid var(--material-line-soft); border-radius: 30px; padding: 30px 26px; background: #daeaff08; box-shadow: inset 0 1px 0 #ffffff20,0 24px 64px #02061730; }
+
+/* Shared controls. Scope excludes traffic lights, arbitrary app graphics,
+   drawing tools, piano keys and color swatches. No global button reset. */
+:is(.os-window,.liquid-shell-panel) :is(.os-btn,.os-seg-btn,.aether-chat-icon-btn,.aether-chat-chip,.aether-chat-pill) {
+  border: 1px solid var(--material-line) !important;
+  background: linear-gradient(160deg,#e5f1ff13,#e5f1ff05) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 1px 0 #ffffff14,0 2px 5px #02061712;
+  color: var(--material-ink);
+  transition: background .16s,border-color .16s,box-shadow .16s;
+}
+:is(.os-window,.liquid-shell-panel) :is(.os-btn,.os-seg-btn,.aether-chat-icon-btn,.aether-chat-chip):hover { background: var(--material-hover) !important; border-color: #e0efff55 !important; }
+.os-segmented { padding: 4px !important; gap: 3px; border: 1px solid var(--material-line-soft) !important; background: #06132426 !important; border-radius: 13px !important; }
+.os-seg-btn.active { background: #d2e8ff29 !important; border-color: #e5f3ff55 !important; box-shadow: inset 0 1px 0 #ffffff38,0 3px 8px #02061720 !important; }
+:is(.os-window,.liquid-shell-panel) :is(.os-input,.wallpaper-cadence select,#finder-search-bar,#companion-chat-input,#settings-search-input,#lock-pin-input) {
+  background: #06132438 !important;
+  color: var(--material-ink) !important;
+  border: 1px solid var(--material-line) !important;
+  border-radius: 11px !important;
+  box-shadow: inset 0 1px 3px #00000016;
+}
+:is(.os-window,.liquid-shell-panel) select option { background: var(--material-solid); color: #f2f6fc; }
+:is(.os-window,.liquid-shell-panel) input::placeholder { color: #c5d3e39e !important; }
+:is(.os-window,.liquid-shell-panel,#os-layer > header,.dock-container) :is(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline: 2px solid #b8ddff !important; outline-offset: 3px !important;
+}
+:is(.os-window,.liquid-shell-panel) :is(button,input,select):disabled { cursor: not-allowed; filter: saturate(.3); }
+:is(.os-window,.liquid-shell-panel) { scrollbar-color: #d6e8ff40 transparent; scrollbar-width: thin; }
+
+/* Material must remain readable on weak GPUs and with accessibility settings. */
+@media(max-width:640px) {
+  :root { --material-radius: 17px; --material-blur: 18px; }
+  #finder-overlay { padding: 20px 12px !important; }
+  .settings-row { padding: 12px; gap: 10px; }
+  #right-utility-panel.liquid-shell-panel { border-radius: 20px !important; }
+  .wallpaper-cadence { flex-wrap: wrap; }
+  .wallpaper-cadence :is(input,select) { max-width: 100%; min-width: 0; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .topbar-item,.settings-nav-btn,.finder-app-item,.dock-ctx-item,.cmd-item,
+  :is(.os-window,.liquid-shell-panel) :is(.os-btn,.os-seg-btn,.aether-chat-chip) { transition: none !important; }
+}
+@media(prefers-reduced-transparency:reduce) {
+  :root { --material-fill: #172235; --material-inset: #ffffff0e; }
+  .liquid-shell-panel,.os-window.liquid-app-window,html.perf-eco .os-window.liquid-app-window,.dock-container,#os-layer > header,
+  #finder-overlay,#cmd-palette > div,.app-switcher-strip,.mc-panel,#aether-toast-stack > div,
+  #lock-screen-overlay,#mission-control-overlay {
+    background: var(--material-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  :root { --material-fill: #172235; }
+  .liquid-shell-panel,.os-window.liquid-app-window,#os-layer > header,.dock-container,#finder-overlay,#cmd-palette > div,.app-switcher-strip,.mc-panel,#aether-toast-stack > div,#lock-screen-overlay,#mission-control-overlay { background: var(--material-solid) !important; }
+}
+@media(forced-colors:active) {
+  .liquid-shell-panel,.os-window.liquid-app-window,.settings-card,.dock-container { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; box-shadow: none !important; }
+  .settings-row-title,.settings-row-desc,.finder-app-label { color: CanvasText !important; }
+}
+
+/* Small system components share the inset material, never another blur pass. */
+#control-center-panel [id^="cc-btn-"],.mc-card,.app-switcher-item {
+  background: var(--material-inset) !important;
+  border: 1px solid var(--material-line-soft) !important;
+  border-radius: 15px !important;
+  box-shadow: inset 0 1px 0 #ffffff10;
+}
+#control-center-panel [id^="cc-btn-"]:hover,.app-switcher-item:hover,.mc-card:hover { background: var(--material-hover) !important; border-color: var(--material-line) !important; }
+#control-center-panel [id^="cc-btn-"].active,.app-switcher-item.selected { background: #9acbff25 !important; border-color: #cbe6ff66 !important; box-shadow: inset 0 1px 0 #ffffff30,0 3px 14px #07122220; }
+.app-switcher-icon { background: #ebf5ff0c !important; border-color: var(--material-line-soft) !important; border-radius: 16px !important; }
+#calendar-popover { padding: 18px !important; }
+#calendar-popover input { border: 1px solid var(--material-line); border-radius: 9px; background: #06132440; color: var(--material-ink); }
+#calendar-popover button:hover { background-color: var(--material-hover); }
+.ctx-danger { color: #ffa5af !important; }
+.ctx-danger:hover { background: #e3486029 !important; }
+
+/* The utility rail had an ID-level transparent theme override. */
+#right-utility-panel.liquid-shell-panel { background: var(--material-fill) !important; background-color: rgba(7,16,30,.26) !important; }
+/* Outrank legacy ID-level Eco blur rules, and disable tint transitions when
+   transparency is reduced so the preference applies immediately. */
+@media(prefers-reduced-transparency:reduce) {
+  html:root :is(.liquid-shell-panel,.os-window.liquid-app-window,.dock-container,
+  #right-utility-panel,#finder-overlay,#control-center-panel,#notification-center,
+  #aether-menu-dropdown,#desktop-context-menu,#dock-context-menu,#calendar-popover,
+  #dock-preview,#cmd-palette > div,#lock-screen-overlay,#mission-control-overlay) {
+    background: #172235 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: none !important;
+  }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  html:root :is(.liquid-shell-panel,.os-window.liquid-app-window,#right-utility-panel) { background: #172235 !important; }
+}
+
+@media(max-width:1023px) {
+  /* Legacy layout containment trapped the fixed drawer below its backdrop
+     and offset it by the workspace header. Let the drawer use viewport space. */
+  #workspace { contain: none !important; overflow: visible !important; }
+  #right-utility-panel.mobile-open {
+    top: 46px !important; right: 8px !important; bottom: 92px !important;
+    width: min(22rem,calc(100vw - 16px)) !important;
+    max-height: calc(100dvh - 138px);
+    z-index: 190 !important;
+  }
+}
+@media(max-width:600px) {
+  #active-app-name { max-width: 86px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #window-count { display: none !important; }
+}

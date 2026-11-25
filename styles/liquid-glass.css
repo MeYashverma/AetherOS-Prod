@@ -862,3 +862,50 @@ textarea:focus, select:focus {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 }
+
+/* Aether desktop refresh — original styles inspired by React Bits' Dock.
+   Keep the existing physics engine; no second animation runtime. */
+.dock-container{box-sizing:border-box!important;padding:12px 14px!important;gap:10px!important;border-radius:26px!important;background:linear-gradient(155deg,rgba(44,50,69,.65),rgba(19,24,40,.72))!important;box-shadow:inset 0 1px 0 #ffffff35,0 16px 48px #02061766!important;max-width:calc(100vw - 28px);}
+.dock-item.app-icon-tile,.finder-app-icon.app-icon-tile{background:linear-gradient(145deg,hsl(var(--app-hue,220) 78% 66%),hsl(var(--app-hue,220) 68% 42%) 65%,hsl(var(--app-hue,220) 65% 30%))!important;color:white!important;border:1px solid #ffffff40!important;box-shadow:inset 0 1px 1px #ffffff70,inset 0 -2px 4px #0002,0 5px 10px #0003!important;isolation:isolate;}
+.dock-item.app-icon-tile{overflow:visible!important;border-radius:16px!important;display:flex;align-items:center;justify-content:center;}
+.dock-item.app-icon-tile::before{border-radius:15px!important;background:linear-gradient(145deg,#ffffff30,transparent 52%)!important;}
+.app-icon-tile>svg{width:26px!important;height:26px!important;stroke:#fff!important;stroke-width:1.8;filter:drop-shadow(0 1px 2px #0003);}
+.finder-app-icon.app-icon-tile{border-radius:15px;display:grid;place-items:center;}
+.dock-item.active::after{animation:none!important;bottom:-8px!important;width:5px!important;height:5px!important;background:#f4f8ff!important;box-shadow:0 0 6px #ffffff55!important;}
+.dock-item:focus-visible{outline:2px solid #b6dcff!important;outline-offset:5px!important;}
+.wallpaper-collection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;margin-top:12px;}
+.wallpaper-collection-grid button{position:relative;aspect-ratio:16/9;background-size:cover;background-position:center;border:1px solid #ffffff26;border-radius:12px;overflow:hidden;cursor:pointer;text-align:left;}
+.wallpaper-collection-grid button span{position:absolute;bottom:0;left:0;right:0;padding:18px 10px 8px;background:linear-gradient(transparent,#020617bb);color:#fff;font-size:11px;font-weight:600;}
+.wallpaper-collection-grid button[aria-pressed=true]{outline:2px solid #aed6ff;outline-offset:2px;}
+.wallpaper-cadence{display:flex;width:100%;align-items:center;justify-content:space-between;font-size:12px;padding:12px 0;gap:12px;}
+.wallpaper-cadence select{background:#172033;color:#fff;border:1px solid #ffffff30;padding:7px 10px;border-radius:8px;}
+@media(max-width:600px){.dock-container{gap:6px!important;padding:10px!important;}.dock-item.app-icon-tile{width:42px!important;height:42px!important;border-radius:13px!important;}.dock-item.app-icon-tile>svg{width:22px!important;height:22px!important;}}
+@media(prefers-reduced-motion:reduce){.dock-item.app-icon-tile{transform:none!important;transition:none!important;}}
+.dock-container.dock-overflow{overflow-x:auto!important;overflow-y:hidden!important;padding-bottom:20px!important;scrollbar-width:thin;scrollbar-color:#ffffff40 transparent;}
+.dock-container.dock-overflow .dock-item{transform:none!important;}
+/* Locally vendored Microsoft Fluent Color artwork (MIT), not Apple system resources. */
+.app-icon-tile>.native-app-art{display:block;width:100%;height:100%;object-fit:contain;border-radius:inherit;pointer-events:none;position:relative;z-index:2;}
+.wallpaper-online-panel{width:100%;padding:12px 0;font-size:11px;line-height:1.6;color:#b7c5d8;}
+#wallpaper-photo-credit{position:fixed;right:18px;bottom:112px;z-index:4;max-width:min(360px,calc(100vw - 36px));padding:6px 10px;border:1px solid #ffffff25;border-radius:8px;background:#07101b99;color:#e1eaf7;font:10px/1.4 system-ui;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;backdrop-filter:blur(12px);}
+#wallpaper-photo-credit:focus-visible{outline:2px solid #aed6ff;outline-offset:3px;}
+
+/* Let detailed multicolor artwork breathe on a neutral, dimensional backplate. */
+.dock-item.app-icon-tile:has(>.native-app-art),.finder-app-icon.app-icon-tile:has(>.native-app-art){background:linear-gradient(155deg,#f8fbff,#dce6f0)!important;border-color:#ffffff90!important;}
+.app-icon-tile>.native-app-art{width:84%;height:84%;margin:auto;border-radius:0;filter:drop-shadow(0 2px 2px #15243b22);}
+.finder-app-icon.app-icon-tile:has(>.native-app-art){display:flex;align-items:center;justify-content:center;}
+
+/* Application identity icons: title bars, Dock, switcher, Mission Control,
+   command palette, app-module settings, task lists and preview headers. */
+.app-identity-icon{display:inline-flex;align-items:center;justify-content:center;width:var(--app-icon-size,18px);height:var(--app-icon-size,18px);flex:none;vertical-align:middle;line-height:0;}
+.app-identity-icon>.native-app-art{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1px #0003);}
+#active-app-icon{display:inline-flex;align-items:center;margin-right:6px;}
+.thumb-title{display:flex;align-items:center;gap:4px;}
+
+/* Translucent window structure; never reduce the opacity of text or media. */
+.os-window.liquid-app-window{background:linear-gradient(135deg,rgba(205,228,255,.14),rgba(12,23,42,.28))!important;backdrop-filter:blur(36px) saturate(155%)!important;-webkit-backdrop-filter:blur(36px) saturate(155%)!important;border:1px solid rgba(230,242,255,.27)!important;box-shadow:inset 0 1px 0 #ffffff35,0 24px 70px #02061766!important;}
+.os-window.liquid-app-window>.window-header{background:rgba(14,25,44,.18)!important;border-bottom:1px solid #ffffff20!important;}
+.os-window.liquid-app-window>.aether-window-body{background:transparent!important;}
+.os-window.liquid-app-window .liquid-app-surface{background-color:transparent!important;background-image:none!important;}
+html.perf-eco .os-window.liquid-app-window{backdrop-filter:blur(18px) saturate(135%)!important;-webkit-backdrop-filter:blur(18px) saturate(135%)!important;}
+@media(prefers-reduced-transparency:reduce){.os-window.liquid-app-window{background:rgba(12,20,34,.96)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.os-window.liquid-app-window{background:rgba(12,20,34,.92)!important;}}

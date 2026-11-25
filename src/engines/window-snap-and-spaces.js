@@ -268,11 +268,11 @@
             const esc = window.escapeAetherHtml || ((s) => String(s));
 
             const cards = spaceWins.length ? spaceWins.map((w) => `
-                <div class="rounded-2xl border border-white/12 bg-white/[0.05] hover:bg-white/[0.08] p-4 flex flex-col justify-between gap-4 transition shadow-xl">
+                <div class="mc-card rounded-2xl border border-white/12 bg-white/[0.05] hover:bg-white/[0.08] p-4 flex flex-col justify-between gap-4 transition shadow-xl">
                     <div class="flex items-start justify-between gap-3">
                         <button type="button" onclick="os.toggleMissionControl(false);os.openWindow('${w.id}')" class="flex items-center gap-2.5 text-left hover-target cursor-none min-w-0">
                             <span class="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
-                                <i data-lucide="${esc(w.icon || 'app-window')}" class="w-4 h-4 text-white"></i>
+                                ${window.AetherDesign?.appIcon(w.id, 25) || ''}
                             </span>
                             <span class="min-w-0">
                                 <span class="block text-sm font-semibold text-white truncate">${esc(w.title)}</span>
@@ -307,7 +307,7 @@
             `;
 
             overlay.innerHTML = `
-                <div class="w-full max-w-5xl mx-auto px-6 py-8 flex flex-col gap-6 max-h-full overflow-y-auto" onclick="event.stopPropagation()">
+                <div class="mc-panel w-full max-w-5xl mx-auto px-6 py-8 flex flex-col gap-6 max-h-full overflow-y-auto" onclick="event.stopPropagation()">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div>
                             <div class="text-lg font-semibold text-white tracking-tight">Mission Control</div>
@@ -470,7 +470,7 @@
                 <button type="button" onclick="os._switcherIdx=${idx};os.closeAppSwitcher(true)"
                     class="app-switcher-item hover-target cursor-none ${idx === os._switcherIdx ? 'selected' : ''}">
                     <span class="app-switcher-icon">
-                        <i data-lucide="${esc(w.icon || 'app-window')}" class="w-5 h-5 text-white"></i>
+                        ${window.AetherDesign?.appIcon(w.id, 38) || ''}
                     </span>
                     <span class="app-switcher-lbl">${esc(w.title)}</span>
                     <span class="text-[9px] font-mono text-gray-400">Space ${w.space || 1}${w.pinned ? ' · 📌' : ''}</span>
