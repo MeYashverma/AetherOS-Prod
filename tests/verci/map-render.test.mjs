@@ -23,7 +23,7 @@ const ctx = new Proxy({
 dom.window.HTMLCanvasElement.prototype.getContext = () => ctx;
 dom.window.HTMLElement.prototype.getBoundingClientRect = () => ({ width: 352, height: 764, left: 0, top: 0 });
 const { MapStyle } = await import('../../src/vendor/verci/viz/map.js');
-const { ProcWorld, songSeed } = await import('../../src/vendor/verci/viz/mapworld.js?v=native-map-6');
+const { ProcWorld, songSeed } = await import('../../src/vendor/verci/viz/mapworld.js?v=native-map-7');
 const { parseLRC } = await import('../../src/vendor/verci/lrc.js');
 const { frameState } = await import('../../src/vendor/verci/viz/core.js');
 const lyrics = parseLRC('[00:00.00]Take me home tonight\n[00:05.00]Find the streets\n[00:10.00]Hear the city sing');
@@ -132,17 +132,24 @@ test('2D/3D and landmark controls switch scenes without interrupting the lyric c
   assert.equal(viz.mapTools.hidden, true);
   assert.equal(viz.landmarkSheet.hidden, false);
   assert.match(viz.landmarkTitle.textContent, /Wheel$/);
-  assert.match(viz.landmarkPosition.textContent, /1 \/ 2/);
+  assert.match(viz.landmarkPosition.textContent, /1 \/ 5/);
   assert.match(viz.ph.textContent, /FICTIONAL · GENERATED LANDMARK/);
   assert.ok(viz.lastPaint.landmarks.includes('wheel'));
   assert.ok(calls.some(c => c.method === 'fillText' && c.text === viz.landmarkTitle.textContent),
     'wheel has a matching landmark label on the generated canvas');
   viz.ph.querySelector('.next-landmark').click(); frame(viz, 8);
   assert.match(viz.landmarkTitle.textContent, /Citadel$/);
-  assert.match(viz.landmarkPosition.textContent, /2 \/ 2/);
+  assert.match(viz.landmarkPosition.textContent, /2 \/ 5/);
   assert.ok(viz.lastPaint.landmarks.includes('citadel'));
   viz.ph.querySelector('.previous-landmark').click(); frame(viz, 8);
   assert.match(viz.landmarkTitle.textContent, /Wheel$/);
+  for (const type of ['citadel', 'conservatory', 'museum', 'observatory']) {
+    viz.ph.querySelector('.next-landmark').click(); frame(viz, 8);
+    assert.ok(viz.lastPaint.landmarks.includes(type), `${type} geometry is rendered`);
+    assert.ok(calls.some(c => c.method === 'fillText' && c.text === viz.landmarkTitle.textContent));
+  }
+  viz.ph.querySelector('.next-landmark').click(); frame(viz, 8);
+  assert.match(viz.landmarkTitle.textContent, /Wheel$/, 'exploration wraps to the first attraction');
   viz.ph.querySelector('.back-route').click(); frame(viz, 3);
   assert.equal(viz.mode, 'navigate');
   assert.equal(viz.navHead.hidden, false);

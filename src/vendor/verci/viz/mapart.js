@@ -19,7 +19,8 @@ const ROAD = ['#fafbf8', '#fffdf7', '#f8f7f1', '#f5f1e6'];
 const POI = {
   park: ['#469457', '✿'], school: ['#9b7952', 'S'], hospital: ['#c86b64', '+'],
   station: ['#4b79b7', 'T'], market: ['#ae784f', 'M'],
-  wheel: ['#7066dc', '✦'], citadel: ['#7066dc', '◆']
+  wheel: ['#7066dc', '✦'], citadel: ['#7066dc', '◆'],
+  conservatory: ['#438c7f', '❋'], museum: ['#b47855', 'M'], observatory: ['#667dc4', '★']
 };
 const midpoint = points => points.reduce(([x, y], p) => [x + p[0] / points.length, y + p[1] / points.length], [0, 0]);
 function path(g, points, close = false) {
@@ -54,8 +55,15 @@ function scaledRect(x, y, w, h) {
   return [[x - w / 2, y - h / 2], [x + w / 2, y - h / 2],
     [x + w / 2, y + h / 2], [x - w / 2, y + h / 2]];
 }
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 function building(g, b, cam, flat) {
-  const P = cam.project, ground = b.pts.map(p => P(p)), [top, dark, pale] = BUILDING[b.kind] || BUILDING.office;
+  const P = cam.project, ground = b.pts.map(p => P(p, b.base || 0));
+  const palette = b.kind === 'tower' ? [BUILDING.tower, ['#e4f0f1', '#9ebdc6', '#c1d5da'],
+    ['#f1eade', '#c9bba7', '#e0d5c4']][Math.abs(b.id || 0) % 3] : BUILDING[b.kind] || BUILDING.office;
+  const [top, dark, pale] = palette;
+  const visible = flat ? ground : ground.concat(b.pts.map(p => P(p, b.ht)));
+  if (visible.every(p => p[0] < -20) || visible.every(p => p[0] > cam.width + 20) ||
+    visible.every(p => p[1] < (cam.contentTop ?? 0) - 20) || visible.every(p => p[1] > (cam.contentBottom ?? cam.height) + 20)) return;
   if (flat) { polygon(g, ground, top, '#ced5d1', 1); return; }
   const roof = b.pts.map(p => P(p, b.ht));
   const depth = cam.depth(midpoint(b.pts)), s = cam.scaleAt(depth);
@@ -63,16 +71,22 @@ function building(g, b, cam, flat) {
     'rgba(93,114,118,.16)');
   for (let i = 0; i < ground.length; i++) {
     const j = (i + 1) % ground.length, a = ground[i], c = ground[j];
+    if (c[0] >= a[0]) continue; // Back faces cannot be seen with a vertically extruded camera.
     const face = [a, c, roof[j], roof[i]];
     const tone = c[0] - a[0] > 0 ? dark : pale;
     polygon(g, face, tone, 'rgba(185,194,190,.42)', Math.max(0.5, s * 0.65));
-    // Minimal window ribbons are visible only in near, taller buildings.
-    if (b.ht > 17 && s > 0.73 && Math.hypot(c[0] - a[0], c[1] - a[1]) > 15) {
-      const low = [a[0] * 0.6 + roof[i][0] * 0.4, a[1] * 0.6 + roof[i][1] * 0.4];
-      const high = [c[0] * 0.6 + roof[j][0] * 0.4, c[1] * 0.6 + roof[j][1] * 0.4];
-      stroke(g, [[low[0] * .76 + high[0] * .24, low[1] * .76 + high[1] * .24],
-        [low[0] * .28 + high[0] * .72, low[1] * .28 + high[1] * .72]],
-      'rgba(145,169,174,.44)', Math.max(.65, 1.2 * s));
+    // Screen-space LOD: detailed near facades, quiet distant skyline.
+    const span = Math.hypot(c[0] - a[0], c[1] - a[1]);
+    if (s > .9 && span > 20 && b.ht > 12) {
+      const floors = Math.min(9, Math.floor((b.ht - (b.base || 0)) / 5));
+      const columns = Math.min(7, Math.max(2, Math.floor(span / 7)));
+      for (let floor = 1; floor <= floors; floor++) {
+        const t = floor / (floors + 1), l = mix(a, roof[i], t), r = mix(c, roof[j], t);
+        for (let col = 0; col < columns; col++) {
+          stroke(g, [mix(l, r, (col + .22) / columns), mix(l, r, (col + .72) / columns)],
+            b.kind === 'tower' ? '#91b3bd' : '#a0b1b0', Math.max(.65, Math.min(2.1, s * 1.3)));
+        }
+      }
     }
   }
   polygon(g, roof, top, 'rgba(177,189,185,.72)', Math.max(0.6, s * 0.85));
@@ -81,6 +95,30 @@ function building(g, b, cam, flat) {
     stroke(g, roof.map(([x, y]) => [c[0] + (x - c[0]) * 0.76, c[1] + (y - c[1]) * 0.76]).concat([
       [c[0] + (roof[0][0] - c[0]) * 0.76, c[1] + (roof[0][1] - c[1]) * 0.76]]),
     'rgba(183,192,189,.6)', Math.max(.6, s * .75));
+  }
+  if (s > .85 && roof.length === 4) {
+    const c = midpoint(roof), variant = Math.abs(b.id || 0) % 5;
+    if (b.kind === 'house') {
+      const ridgeA = mix(roof[0], roof[3], .5), ridgeB = mix(roof[1], roof[2], .5);
+      ridgeA[1] -= 3 * s; ridgeB[1] -= 3 * s;
+      polygon(g, [roof[0], roof[1], ridgeB, ridgeA], ['#c2b3a0','#a8b8b4','#c5b6b1'][variant % 3]);
+      polygon(g, [ridgeA, ridgeB, roof[2], roof[3]], '#ded5c5');
+    } else {
+      const inset = roof.map(p => mix(c, p, .54));
+      if (variant === 0 || b.kind === 'warehouse') {
+        polygon(g, inset, '#7899a4', '#c3d7dc', .7);
+        for (let k = 1; k < 4; k++) stroke(g, [mix(inset[0], inset[1], k / 4), mix(inset[3], inset[2], k / 4)], '#c1d1d4', .65);
+      } else if (variant === 1) {
+        polygon(g, inset, '#b4cf9d');
+        disk(g, c[0], c[1], Math.max(1, 2 * s), '#7ea16e');
+      } else {
+        polygon(g, inset.slice(0, 3).map(p => mix(c, p, .7)), '#c2cdca', '#a2b2b1', .7);
+      }
+      if (b.kind === 'tower' && variant === 2) {
+        stroke(g, [c, [c[0], c[1] - 11 * s]], '#8c9fa2', Math.max(.7, s));
+        disk(g, c[0], c[1] - 11 * s, 1.2, '#d89d78');
+      }
+    }
   }
 }
 function tree(g, item, cam) {
@@ -162,6 +200,55 @@ function citadel(g, feature, cam, flat) {
     }
   }
 }
+// Original destination architecture, all contained in compact reserved grounds.
+function attraction(g, feature, cam, flat) {
+  const { x, y, type } = feature, P = cam.project;
+  const s = cam.scaleAt(cam.depth([x, y]));
+  const model = (dx, dy, w, d, ht, kind = 'civic') => building(g,
+    { pts: scaledRect(x + dx, y + dy, w, d), ht, kind, id: 3 }, cam, flat);
+  const ring = (rx, ry, z = 0) => Array.from({ length: 33 }, (_, i) => {
+    const t = i * Math.PI / 16;
+    return P([x + Math.cos(t) * rx, y + Math.sin(t) * ry], z);
+  });
+  polygon(g, ring(49, 38), '#e6e1d2', '#f9faf1', 2);
+  if (type === 'conservatory') {
+    model(-30, 0, 22, 40, 13); model(30, 0, 22, 40, 13);
+    model(0, 0, 40, 55, 10);
+    if (!flat) {
+      const arch = (dy, offset = 0) => Array.from({ length: 17 }, (_, i) => {
+        const t = i * Math.PI / 16;
+        return P([x + Math.cos(t) * 21, y + dy], 10 + Math.sin(t) * 27 + offset);
+      });
+      polygon(g, [...arch(-27), ...arch(27).reverse()], '#a4cfd0', '#7aaba9', 1);
+      for (let dy = -27; dy <= 27; dy += 9) stroke(g, arch(dy), '#e1f1e6', Math.max(.7, s));
+      for (let i = 0; i <= 8; i++) {
+        const t = i * Math.PI / 8, dx = Math.cos(t) * 21, z = 10 + Math.sin(t) * 27;
+        stroke(g, [P([x + dx, y - 27], z), P([x + dx, y + 27], z)], '#d3e8dd', Math.max(.7, s * .8));
+      }
+    }
+  } else if (type === 'museum') {
+    model(-25, -5, 27, 56, 22); model(19, -15, 47, 27, 31);
+    model(8, 23, 61, 17, 12);
+    for (let dx = -16; dx <= 16; dx += 8) {
+      stroke(g, [P([x + dx, y + 3]), P([x + dx, y + 3], flat ? 0 : 19)], '#b29279', Math.max(1, 2 * s));
+    }
+    const sculpture = [[x - 8, y + 3], [x, y + 10], [x + 8, y + 3], [x, y - 4]];
+    polygon(g, sculpture.map((p, j) => P(p, flat ? 0 : j % 2 ? 15 : 26)), '#cf976f', '#ad7859', 1);
+  } else {
+    model(0, -7, 55, 44, 19); model(-32, 10, 13, 32, 11);
+    if (!flat) {
+      // Layered projected latitude rings make a true domed silhouette.
+      for (let j = 0; j <= 14; j++) {
+        const t = j / 14 * Math.PI / 2, r = Math.cos(t) * 23;
+        polygon(g, ring(r, r, 19 + Math.sin(t) * 25), j % 3 ? '#b7cbd7' : '#dce6eb', '#9bafb9', .55);
+      }
+      stroke(g, [P([x, y - 20], 30), P([x, y], 44), P([x, y + 20], 30)], '#718d9f', Math.max(1, 2 * s));
+    }
+    polygon(g, scaledRect(x + 9, y + 28, 44, 9).map(p => P(p)), '#9acfd4', '#f9faf0', 2);
+  }
+  // Approach steps and planted forecourt.
+  for (let k = 0; k < 3; k++) stroke(g, [P([x - 17, y + 35 + k * 2]), P([x + 17, y + 35 + k * 2])], '#c7c4b7', Math.max(.6, s));
+}
 function roads(g, list, cam, bridge) {
   for (let cls = 0; cls < 4; cls++) for (const road of list) {
     if (road.c !== cls || Boolean(road.bridge) !== bridge) continue;
@@ -199,6 +286,10 @@ function labels(g, Q, cam, { explore, route, selected }) {
     const pts = road.pts.map(p => cam.project(p)), i = pts.length >> 1;
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
     const x = (a[0] + b[0]) / 2, y = (a[1] + b[1]) / 2;
+    if (Q.landmarks.some(f => {
+      const p = cam.project([f.x, f.y]);
+      return Math.abs(x - p[0]) < 58 * cam.zoom && y > p[1] - 100 * cam.zoom && y < p[1] + 38 * cam.zoom;
+    })) continue;
     let angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
     const size = road.c >= 2 ? 11 : 9.5;
     g.font = `600 ${size}px system-ui`;
@@ -216,13 +307,13 @@ function labels(g, Q, cam, { explore, route, selected }) {
       const x = poi.type === 'wheel' ? Math.min(w - 32, px + 79) : px, y = py - 10;
       disk(g, x + 1, y + 3, 20, 'rgba(88,73,156,.16)');
       disk(g, x, y, 18, '#7066dc', '#fff', 2);
-      text(poi.type === 'wheel' ? '✦' : '◆', x, y, '700 16px system-ui', '#fff', '#7066dc');
+      text(POI[poi.type][1], x, y, '700 16px system-ui', '#fff', '#7066dc');
       text(poi.name, x, y + 28, '650 10px system-ui', '#333942');
       continue;
     }
     const pos = cam.project([poi.x, poi.y], poi.type === 'wheel' ? 25 : 0);
     const [x, y] = pos, [color, symbol] = POI[poi.type];
-    const special = poi.type === 'wheel' || poi.type === 'citadel';
+    const special = Q.landmarks.some(f => f.type === poi.type);
     g.font = `600 ${special ? 10 : 9}px system-ui`;
     const labelWidth = Math.min(77, g.measureText(poi.name).width / 2 + 8);
     if (!reserve(x, y + 15, labelWidth, 18) || nearRoute(pos) && !special) continue;
@@ -295,10 +386,17 @@ export function paintMap(g, world, cam, { mode = 'navigate', pathData = null, se
     ...Q.trees.map(item => ({ item, type: 'tree', v: cam.depth(item.pts[0]) }))
   ].sort((a, b) => a.v - b.v);
   for (const f of features) {
-    if (f.type === 'building') building(g, f.item, cam, flat);
+    if (f.type === 'building') {
+      building(g, f.item, cam, flat);
+      if (!flat && f.item.kind === 'tower' && Math.abs(f.item.id) % 4 === 0) {
+        const c = midpoint(f.item.pts);
+        building(g, { ...f.item, pts: f.item.pts.map(p => mix(c, p, .62)), base: f.item.ht, ht: f.item.ht + 13 }, cam, flat);
+      }
+    }
     else if (f.type === 'tree') tree(g, f.item, cam);
     else if (f.type === 'wheel') wheel(g, f.item, cam, time, reduced);
     else if (f.type === 'citadel') citadel(g, f.item, cam, flat);
+    else attraction(g, f.item, cam, flat);
   }
   let projected = null;
   if (mode === 'navigate' && pathData) projected = route(g, cam, pathData, reduced);
