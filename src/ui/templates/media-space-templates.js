@@ -367,12 +367,14 @@ Object.assign(WindowContents, {
     `,
 
     weather: `
-        <div class="flex flex-col h-full relative overflow-hidden bg-[#07090f]" id="weather-root">
-            <div id="weather-bg-gif" class="absolute inset-0 z-0 bg-cover bg-center opacity-20 transition-all duration-1000"></div>
-            <div class="absolute inset-0 z-0 bg-gradient-to-b from-black/65 via-[#07090f]/75 to-[#07090f]/95"></div>
-            <div class="relative z-10 flex flex-col h-full p-4 text-xs overflow-y-auto" id="weather-content">
-                <div class="text-gray-400 text-xs text-center mt-20">Loading local forecast &amp; air quality...</div>
-            </div>
+        <div id="weather-root" class="weather-studio">
+          <header class="studio-app-heading"><div><span class="studio-eyebrow">OUTSIDE / AT A GLANCE</span><h2>A clearer forecast.</h2><p>Weather, rain chances and air quality for a place you choose.</p></div></header>
+          <form class="weather-tools" onsubmit="event.preventDefault();os.searchWeather(document.getElementById('weather-search-city').value)">
+            <input id="weather-search-city" aria-label="Search city" placeholder="Find a city…" maxlength="120" required><button class="os-btn" type="submit">Find city</button><button type="button" class="os-btn" onclick="os.resetWeatherLocation()">Use device location</button><button type="button" class="os-btn" onclick="os.initWeatherStation(true)">Refresh</button><button id="weather-unit" type="button" class="os-btn" aria-label="Toggle Celsius and Fahrenheit" onclick="os.toggleWeatherUnit()">°C</button>
+          </form>
+          <p id="weather-status" class="weather-status" role="status">Choose a location · powered by Open-Meteo</p>
+          <div id="weather-locations" aria-label="Matching cities"></div>
+          <main id="weather-content" tabindex="0" aria-label="Weather forecast" class="weather-content"></main>
         </div>
     `,
 

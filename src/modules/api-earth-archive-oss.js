@@ -161,10 +161,11 @@
     //  3. OPEN-SOURCE RADAR & GITHUB REPO EXPLORER (ossradar)
     // ═══════════════════════════════════════════════════════════════════════
     window.WindowContents.ossradar = `
-        <div class="h-full flex flex-col bg-[#07090f] text-white text-xs select-none overflow-hidden" id="oss-root">
-            <div class="p-3 bg-black/55 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
+        <div class="h-full flex flex-col  text-white text-xs select-none overflow-hidden" id="oss-root" data-design-version="glass-workspace-2">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">DISCOVER / READ / EXPLORE</span><h2>Explore the source.</h2><p>Live repositories. Real source. Your own reading space.</p></div><span class="oss-build-label">GLASS WORKSPACE / 02</span><span id="oss-status" role="status">Unauthenticated API limits apply</span></header>
+            <div class="p-3  border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-1.5">
-                    <select id="oss-lang" onchange="os.ossFetchTrending()" class="px-2.5 py-1.5 rounded-xl bg-white/[0.07] border border-white/15 text-xs text-emerald-300 outline-none">
+                    <select id="oss-lang" aria-label="Repository language" onchange="os.ossFetchTrending()" class="px-2.5 py-1.5 rounded-xl bg-white/[0.07] border border-white/15 text-xs text-emerald-300 outline-none">
                         <option value="">All Languages</option>
                         <option value="typescript">TypeScript</option>
                         <option value="javascript">JavaScript</option>
@@ -173,46 +174,38 @@
                         <option value="go">Go</option>
                         <option value="c++">C++</option>
                     </select>
-                    <select id="oss-window" onchange="os.ossFetchTrending()" class="px-2.5 py-1.5 rounded-xl bg-white/[0.07] border border-white/15 text-xs text-sky-300 outline-none">
-                        <option value="month">Breakout (Last 30d)</option>
-                        <option value="year">Top This Year</option>
-                        <option value="legends">All-Time Open-Source Titans</option>
+                    <select id="oss-window" aria-label="Repository creation period" onchange="os.ossFetchTrending()" class="px-2.5 py-1.5 rounded-xl bg-white/[0.07] border border-white/15 text-xs text-sky-300 outline-none">
+                        <option value="month">Created in last 30 days</option>
+                        <option value="year">Created in last 365 days</option>
+                        <option value="legends">All time · 25k+ stars</option>
                     </select>
                 </div>
 
                 <form onsubmit="event.preventDefault();os.ossSearchOrInspect()" class="flex items-center gap-1.5 flex-1 max-w-sm">
-                    <input id="oss-query" type="text" placeholder="Search repos or owner/repo (e.g. mrdoob/three.js)"
-                        class="flex-1 px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 font-mono text-[11px] text-white outline-none">
+                    <input id="oss-query" aria-label="Search GitHub or enter owner/repository" type="text" maxlength="256" placeholder="Search repos or owner/repo (e.g. mrdoob/three.js)"
+                        class="flex-1 px-3 py-1.5 rounded-xl  border border-white/15 font-mono text-[11px] text-white outline-none">
                     <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-400 text-black font-semibold text-xs hover-target cursor-none">Go</button>
                 </form>
             </div>
 
-            <div class="flex-1 grid grid-cols-1 md:grid-cols-12 min-h-0">
+            <div class="oss-reading-tools"><label>Branch / tag / commit <input id="oss-ref" aria-label="Git ref" placeholder="Default branch" maxlength="200"></label><button type="button" class="os-btn" onclick="os.ossChangeRef()">Load ref</button><button type="button" class="os-btn" onclick="os.ossRefresh()">Refresh</button><button type="button" class="os-btn" onclick="os.ossCopySource()">Copy source</button><span id="oss-file-label" role="status">No file selected</span></div>
+            <div class="oss-workspace flex-1 grid grid-cols-1 md:grid-cols-12 min-h-0">
                 <!-- Left: Trending / Search Repo List -->
-                <div id="oss-repo-list" class="md:col-span-5 overflow-y-auto divide-y divide-white/[0.06] border-b md:border-b-0 md:border-r border-white/[0.08] bg-[#090c14]"></div>
+                <div id="oss-repo-list" class="md:col-span-5 overflow-y-auto divide-y divide-white/[0.06] border-b md:border-b-0 md:border-r border-white/[0.08] "></div>
 
                 <!-- Right: Live Repo File-Tree & Source / README Viewer -->
-                <div class="md:col-span-7 flex flex-col min-h-0 bg-[#05070c]">
-                    <div id="oss-repo-header" class="p-3.5 border-b border-white/[0.08] bg-black/40 flex flex-wrap items-center justify-between gap-2">
+                <div class="md:col-span-7 flex flex-col min-h-0 ">
+                    <div id="oss-repo-header" class="p-3.5 border-b border-white/[0.08]  flex flex-wrap items-center justify-between gap-2">
                         <span class="text-gray-400 font-mono text-[11px]">Select any open-source project to browse its live code tree &amp; README</span>
                     </div>
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-12 min-h-0">
+                    <div class="oss-source-workspace flex-1 grid grid-cols-1 sm:grid-cols-12 min-h-0">
                         <div id="oss-file-tree" class="sm:col-span-4 border-b sm:border-b-0 sm:border-r border-white/[0.07] overflow-y-auto p-2 space-y-0.5 font-mono text-[11px]"></div>
-                        <pre id="oss-code-viewer" class="sm:col-span-8 p-3.5 overflow-auto font-mono text-[11px] text-gray-200 whitespace-pre-wrap select-text leading-relaxed"></pre>
+                        <section class="oss-source-pane"><div class="oss-source-toolbar"><input id="oss-source-find" aria-label="Find in source" placeholder="Find in source…" oninput="os.ossFindSource(this.value)"><span id="oss-find-count" role="status"></span><button type="button" class="os-btn" aria-pressed="false" onclick="os.ossToggleWrap(this)">Wrap</button><button type="button" class="os-btn" aria-pressed="false" onclick="os.ossFocusSource(this)">Focus</button><button type="button" class="os-btn" onclick="os.ossDownloadSource()">Download</button></div><pre id="oss-code-viewer" tabindex="0" role="region" aria-label="Selected file source, scrollable" class="sm:col-span-8 p-3.5 overflow-auto font-mono text-[11px] text-gray-200 whitespace-pre-wrap select-text leading-relaxed"></pre></section>
                     </div>
                 </div>
             </div>
         </div>
     `;
-
-    // Curated fallback repos if GitHub unauthenticated rate limit (60/hr) is reached
-    const OSS_FALLBACK_REPOS = [
-        { full_name: 'MeYashverma/AetherOS-Prod', stargazers_count: 128, forks_count: 24, language: 'JavaScript', description: 'Zero-build modular Liquid Glass web operating system in the browser.' },
-        { full_name: 'excalidraw/excalidraw', stargazers_count: 94200, forks_count: 9100, language: 'TypeScript', description: 'Virtual whiteboard for sketching hand-drawn like diagrams.' },
-        { full_name: 'captbaritone/webamp', stargazers_count: 11800, forks_count: 740, language: 'TypeScript', description: 'Winamp 2 reimplemented for the browser in HTML5 and JavaScript.' },
-        { full_name: 'mrdoob/three.js', stargazers_count: 105000, forks_count: 35600, language: 'JavaScript', description: 'JavaScript 3D WebGL & WebGPU Library.' },
-        { full_name: 'immich-app/immich', stargazers_count: 62000, forks_count: 3400, language: 'TypeScript', description: 'High performance self-hosted photo and video management solution.' }
-    ];
 
     // Simplified coastline polylines [lon, lat] so the tactical Earth map looks crisp & unmistakable offline or online!
     const CONTINENT_OUTLINES = [
@@ -627,160 +620,152 @@
             if (f) f.src = `https://archive.org/embed/${encodeURIComponent(identifier)}`;
         },
 
-        // ── Open-Source Radar & GitHub Repo Explorer Methods ──
-        ossState: {
-            repos: [],
-            activeRepo: 'MeYashverma/AetherOS-Prod',
-            tree: []
+        // ── GitHub Explorer: real search data, bounded API source reads ──
+        ossState: {repos:[],activeRepo:'MeYashverma/AetherOS-Prod',tree:[],ref:'',path:'',source:'',searchID:0,readID:0,controllers:{}},
+        ossStatus: (message) => {const el=document.getElementById('oss-status');if(el)el.textContent=message;},
+        ossValidRepo: (name) => typeof name==='string' && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(name) && !name.split('/').some(part=>part==='.'||part==='..'),
+        ossDispose: () => {
+            os.ossState.searchID++;os.ossState.readID++;
+            Object.values(os.ossState.controllers).forEach(controller=>controller.abort());
+            os.ossState.controllers={};
         },
-
-        initOssRadar: () => {
-            os.ossFetchTrending();
-            os.ossInspectRepo(os.ossState.activeRepo);
-        },
-
-        ossFetchTrending: async () => {
-            const lang = document.getElementById('oss-lang')?.value || '';
-            const winMode = document.getElementById('oss-window')?.value || 'month';
-            const list = document.getElementById('oss-repo-list');
-            if (list) list.innerHTML = `<div class="p-4 font-mono text-gray-400">Fetching live GitHub repositories...</div>`;
-
-            const d = new Date();
-            d.setDate(d.getDate() - (winMode === 'month' ? 30 : 365));
-            const since = d.toISOString().slice(0, 10);
-            const qParts = [winMode === 'legends' ? 'stars:>25000' : `created:>${since}`];
-            if (lang) qParts.push(`language:${lang}`);
-
-            try {
-                const res = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(qParts.join(' '))}&sort=stars&order=desc&per_page=18`);
-                if (!res.ok) throw new Error('rate-limit');
-                const data = await res.json();
-                os.ossState.repos = Array.isArray(data?.items) && data.items.length ? data.items : OSS_FALLBACK_REPOS;
-            } catch (_) {
-                os.ossState.repos = OSS_FALLBACK_REPOS;
-            }
-            os.ossRenderRepoList();
-        },
-
-        ossSearchOrInspect: async () => {
-            const q = (document.getElementById('oss-query')?.value || '').trim();
-            if (!q) return os.ossFetchTrending();
-            if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(q)) {
-                return os.ossInspectRepo(q);
-            }
-            const list = document.getElementById('oss-repo-list');
-            if (list) list.innerHTML = `<div class="p-4 font-mono text-gray-400">Searching GitHub for "${esc(q)}"...</div>`;
-            try {
-                const res = await fetch(`https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=18`);
-                const data = await res.json();
-                if (Array.isArray(data?.items)) os.ossState.repos = data.items;
-            } catch (_) {}
-            os.ossRenderRepoList();
-        },
-
-        ossRenderRepoList: () => {
-            const list = document.getElementById('oss-repo-list');
-            if (!list) return;
-            list.innerHTML = os.ossState.repos.map((r) => `
-                <button type="button" onclick="os.ossInspectRepo('${esc(r.full_name)}')"
-                    class="w-full text-left p-3.5 transition hover-target cursor-none ${os.ossState.activeRepo === r.full_name ? 'bg-white/10' : 'hover:bg-white/[0.04]'}">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="font-semibold text-sky-300 truncate">${esc(r.full_name)}</span>
-                        <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-mono text-[10px] shrink-0">★ ${Number(r.stargazers_count || 0).toLocaleString()}</span>
-                    </div>
-                    <p class="text-[11px] text-gray-300 line-clamp-2 mt-1">${esc(r.description || 'No description')}</p>
-                    <div class="flex items-center gap-3 text-[10px] font-mono text-gray-500 mt-1.5">
-                        <span>${esc(r.language || 'Code')}</span>
-                        <span>⑂ ${Number(r.forks_count || 0).toLocaleString()}</span>
-                    </div>
-                </button>
-            `).join('');
-        },
-
-        ossInspectRepo: async (fullName) => {
-            os.ossState.activeRepo = fullName;
-            os.ossRenderRepoList();
-            const hdr = document.getElementById('oss-repo-header');
-            const treeEl = document.getElementById('oss-file-tree');
-            const codeEl = document.getElementById('oss-code-viewer');
-
-            if (hdr) {
-                hdr.innerHTML = `
-                    <div>
-                        <div class="font-semibold text-sm text-white">${esc(fullName)}</div>
-                        <div class="text-[10.5px] font-mono text-gray-400">Live GitHub Contents API · Click any file to read source</div>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="navigator.clipboard&&navigator.clipboard.writeText('git clone https://github.com/${esc(fullName)}.git');window.Notifications&&Notifications.push('GIT CLONE','Copied clone command')"
-                            class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 font-mono text-[10.5px] text-gray-200 hover-target cursor-none">Copy git clone</button>
-                        <a href="https://github1s.com/${esc(fullName)}" target="_blank" rel="noopener"
-                            class="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/35 text-emerald-200 font-medium text-[11px] hover-target cursor-none">VS Code Web ↗</a>
-                        <a href="https://github.com/${esc(fullName)}" target="_blank" rel="noopener"
-                            class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/16 text-white text-[11px] hover-target cursor-none">GitHub ↗</a>
-                    </div>
-                `;
-            }
-            if (treeEl) treeEl.innerHTML = `<div class="text-gray-500 p-2">Loading tree...</div>`;
-            if (codeEl) codeEl.textContent = `Fetching README for ${fullName}...`;
-
-            try {
-                const res = await fetch(`https://api.github.com/repos/${fullName}/contents`);
-                const items = await res.json();
-                if (Array.isArray(items)) {
-                    items.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
-                    os.ossState.tree = items;
-                    if (treeEl) {
-                        treeEl.innerHTML = items.map((it) => `
-                            <button type="button" onclick="os.ossOpenPath('${esc(fullName)}','${esc(it.path)}','${esc(it.type)}','${esc(it.download_url || '')}')"
-                                class="w-full text-left px-2 py-1 rounded hover:bg-white/10 flex items-center gap-1.5 truncate text-gray-300 hover-target cursor-none">
-                                <span class="text-[10px]">${it.type === 'dir' ? '📁' : '📄'}</span>
-                                <span class="truncate">${esc(it.name)}</span>
-                            </button>
-                        `).join('');
-                    }
-                    const readme = items.find((i) => /^readme/i.test(i.name) && i.download_url);
-                    if (readme) os.ossOpenPath(fullName, readme.path, 'file', readme.download_url);
-                    else if (codeEl) codeEl.textContent = 'Select a file from the repository tree on the left.';
-                } else if (codeEl) {
-                    codeEl.textContent = 'GitHub API rate limit reached or repository private — click "VS Code Web ↗" above to browse directly.';
+        ossRequest: async (path, channel) => {
+            os.ossState.controllers[channel]?.abort();
+            const controller=new AbortController();os.ossState.controllers[channel]=controller;
+            const timer=setTimeout(()=>controller.abort(),12000);
+            try{
+                const response=await fetch('https://api.github.com/'+path,{signal:controller.signal,credentials:'omit',headers:{Accept:'application/vnd.github+json'}});
+                if(!response.ok){
+                    const remaining=response.headers?.get('x-ratelimit-remaining'),reset=Number(response.headers?.get('x-ratelimit-reset'));
+                    if(response.status===429||response.status===403&&remaining==='0')throw Error('GitHub rate limit reached'+(reset?' · retry after '+new Date(reset*1000).toLocaleTimeString():' · try again later'));
+                    if(response.status===404)throw Error('Repository, ref or path not found (or not public)');
+                    throw Error('GitHub request failed · HTTP '+response.status);
                 }
-            } catch (_) {
-                if (codeEl) codeEl.textContent = 'Unable to load repository contents offline.';
+                return await response.json();
+            }catch(error){if(error.name==='AbortError')throw Error('Request cancelled or timed out');throw error;}
+            finally{clearTimeout(timer);if(os.ossState.controllers[channel]===controller)delete os.ossState.controllers[channel];}
+        },
+        initOssRadar: () => {os.ossFetchTrending();os.ossInspectRepo(os.ossState.activeRepo);},
+        ossFetchTrending: () => {
+            const lang=document.getElementById('oss-lang')?.value||'',period=document.getElementById('oss-window')?.value||'month';
+            const date=new Date();date.setUTCDate(date.getUTCDate()-(period==='month'?30:365));
+            const query=[period==='legends'?'stars:>25000':'created:>'+date.toISOString().slice(0,10),lang?'language:'+lang:''].filter(Boolean).join(' ');
+            return os.ossSearch(query);
+        },
+        ossSearchOrInspect: () => {
+            const query=(document.getElementById('oss-query')?.value||'').trim();
+            if(!query)return os.ossFetchTrending();
+            return os.ossValidRepo(query)?os.ossInspectRepo(query):os.ossSearch(query);
+        },
+        ossSearch: async (query) => {
+            const id=++os.ossState.searchID,list=document.getElementById('oss-repo-list');
+            if(list)list.textContent='Searching public GitHub repositories…';
+            try{
+                const data=await os.ossRequest('search/repositories?q='+encodeURIComponent(query)+'&sort=stars&order=desc&per_page=24','search');
+                if(id!==os.ossState.searchID)return;
+                if(!Array.isArray(data.items))throw Error('Unexpected GitHub response');
+                os.ossState.repos=data.items.filter(repo=>os.ossValidRepo(repo.full_name));
+                os.ossRenderRepoList();os.ossStatus(os.ossState.repos.length+' results shown · sorted by stars'+(data.incomplete_results?' · GitHub reports incomplete results':''));
+            }catch(error){if(id!==os.ossState.searchID)return;os.ossState.repos=[];if(list)list.textContent=error.message+' · use Refresh or change your search. No sample results are substituted.';os.ossStatus('Search unavailable');}
+        },
+        ossRenderRepoList: () => {
+            const host=document.getElementById('oss-repo-list');if(!host)return;host.replaceChildren();
+            if(!os.ossState.repos.length){host.textContent='No repositories match this search. Try a broader query or another creation period.';return;}
+            for(const repo of os.ossState.repos){
+                const button=document.createElement('button');button.type='button';button.className='oss-repo-card';button.setAttribute('aria-pressed',String(repo.full_name===os.ossState.activeRepo));
+                const title=document.createElement('strong'),description=document.createElement('p'),meta=document.createElement('span');
+                title.textContent=repo.full_name;description.textContent=repo.description||'No description provided';
+                const count=value=>Number.isFinite(value)?value.toLocaleString():'—';
+                meta.textContent=`★ ${count(repo.stargazers_count)} · forks ${count(repo.forks_count)} · ${repo.language||'Unspecified language'}`;
+                button.append(title,description,meta);button.addEventListener('click',()=>os.ossInspectRepo(repo.full_name));host.append(button);
             }
         },
-
-        ossOpenPath: async (fullName, pathStr, type, dlUrl) => {
-            const treeEl = document.getElementById('oss-file-tree');
-            const codeEl = document.getElementById('oss-code-viewer');
-            if (type === 'dir') {
-                try {
-                    const res = await fetch(`https://api.github.com/repos/${fullName}/contents/${pathStr}`);
-                    const items = await res.json();
-                    if (Array.isArray(items) && treeEl) {
-                        const parentPath = pathStr.includes('/') ? pathStr.slice(0, pathStr.lastIndexOf('/')) : '';
-                        treeEl.innerHTML = `
-                            <button type="button" onclick="${parentPath ? `os.ossOpenPath('${esc(fullName)}','${esc(parentPath)}','dir','')` : `os.ossInspectRepo('${esc(fullName)}')`}"
-                                class="w-full text-left px-2 py-1 rounded bg-white/[0.06] text-sky-300 mb-1 hover-target cursor-none">← .. (${esc(pathStr)})</button>
-                        ` + items.map((it) => `
-                            <button type="button" onclick="os.ossOpenPath('${esc(fullName)}','${esc(it.path)}','${esc(it.type)}','${esc(it.download_url || '')}')"
-                                class="w-full text-left px-2 py-1 rounded hover:bg-white/10 flex items-center gap-1.5 truncate text-gray-300 hover-target cursor-none">
-                                <span>${it.type === 'dir' ? '📁' : '📄'}</span>
-                                <span class="truncate">${esc(it.name)}</span>
-                            </button>
-                        `).join('');
+        ossInspectRepo: async (name) => {
+            if(!os.ossValidRepo(name)){os.ossStatus('Enter a valid owner/repository');return;}
+            os.ossState.activeRepo=name;os.ossState.ref='';os.ossState.source='';
+            const ref=document.getElementById('oss-ref');if(ref)ref.value='';
+            os.ossRenderRepoList();
+            const header=document.getElementById('oss-repo-header');
+            if(header){
+                header.replaceChildren();const title=document.createElement('strong');title.textContent=name;header.append(title);
+                const copy=document.createElement('button');copy.className='os-btn';copy.type='button';copy.textContent='Copy git clone';copy.addEventListener('click',()=>os.ossCopy('git clone https://github.com/'+name+'.git','Clone command'));header.append(copy);
+                const link=document.createElement('a');link.href='https://github.com/'+name;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open on GitHub ↗';header.append(link);
+            }
+            return os.ossOpenPath(name,'','dir');
+        },
+        ossChangeRef: () => {
+            os.ossState.ref=(document.getElementById('oss-ref')?.value||'').trim();
+            return os.ossOpenPath(os.ossState.activeRepo,'','dir');
+        },
+        ossRefresh: () => {
+            const query=(document.getElementById('oss-query')?.value||'').trim();
+            if(query&&!os.ossValidRepo(query))os.ossSearch(query);else os.ossFetchTrending();
+            return os.ossOpenPath(os.ossState.activeRepo,os.ossState.path||'','dir');
+        },
+        ossCopy: async (text,label) => {
+            try{if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');await navigator.clipboard.writeText(text);os.ossStatus(label+' copied');}
+            catch(_){os.ossStatus('Copy unavailable or denied · select the source text manually');}
+        },
+        ossCopySource: () => os.ossState.source?os.ossCopy(os.ossState.source,'Source'):os.ossStatus('Open a text file first'),
+        ossToggleWrap: (button) => {
+            const code=document.getElementById('oss-code-viewer');if(!code)return;
+            const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));code.classList.toggle('oss-wrap',enabled);
+        },
+        ossFocusSource: (button) => {
+            const root=document.getElementById('oss-root');if(!root)return;
+            const enabled=root.classList.toggle('oss-source-focus');button.setAttribute('aria-pressed',String(enabled));button.textContent=enabled?'Exit focus':'Focus';
+        },
+        ossFindSource: (query) => {
+            const code=document.getElementById('oss-code-viewer'),counter=document.getElementById('oss-find-count'),source=os.ossState.source;
+            if(!code)return;if(!source){if(counter)counter.textContent='Open a file first';return;}
+            code.replaceChildren();if(!query){code.textContent=source;if(counter)counter.textContent='';return;}
+            const lower=source.toLowerCase(),needle=query.toLowerCase();let offset=0,count=0,index;
+            while(count<1000&&(index=lower.indexOf(needle,offset))!==-1){
+                code.append(document.createTextNode(source.slice(offset,index)));const mark=document.createElement('mark');mark.textContent=source.slice(index,index+query.length);code.append(mark);offset=index+query.length;count++;
+            }
+            code.append(document.createTextNode(source.slice(offset)));if(counter)counter.textContent=count+(count===1000?'+':'')+' matches';
+        },
+        ossDownloadSource: () => {
+            if(!os.ossState.source){os.ossStatus('Open a nonempty text file first');return;}
+            const url=URL.createObjectURL(new Blob([os.ossState.source],{type:'text/plain;charset=utf-8'})),link=document.createElement('a');
+            link.href=url;link.download=os.ossState.fileName||'source.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+            os.ossStatus('Source download requested');
+        },
+        ossOpenPath: async (repo,path,type) => {
+            if(!os.ossValidRepo(repo)||repo!==os.ossState.activeRepo||typeof path!=='string'||path.split('/').some(part=>part==='.'||part==='..'))return;
+            const id=++os.ossState.readID,ref=os.ossState.ref,tree=document.getElementById('oss-file-tree'),code=document.getElementById('oss-code-viewer'),label=document.getElementById('oss-file-label');
+            os.ossState.source='';if(label)label.textContent=path||'/';
+            if(code)code.textContent=type==='dir'?'Loading directory…':'Loading source…';
+            if(type==='dir'&&tree)tree.textContent='Loading directory…';
+            try{
+                const url='repos/'+repo.split('/').map(encodeURIComponent).join('/')+'/contents/'+path.split('/').map(encodeURIComponent).join('/')+(ref?'?ref='+encodeURIComponent(ref):'');
+                const data=await os.ossRequest(url,'contents');if(id!==os.ossState.readID)return;
+                if(type==='dir'){
+                    if(!Array.isArray(data))throw Error('Expected a directory listing');
+                    os.ossState.path=path;os.ossState.tree=data;
+                    if(tree){
+                        tree.replaceChildren();
+                        const add=(text,target,kind)=>{const button=document.createElement('button');button.type='button';button.className='oss-tree-item';button.textContent=text;button.addEventListener('click',()=>os.ossOpenPath(repo,target,kind));tree.append(button);};
+                        if(path)add('← Parent directory',path.includes('/')?path.slice(0,path.lastIndexOf('/')):'','dir');
+                        const items=[...data].sort((a,b)=>Number(b.type==='dir')-Number(a.type==='dir')||String(a.name).localeCompare(String(b.name)));
+                        for(const item of items)if(['dir','file'].includes(item.type)&&typeof item.path==='string')add((item.type==='dir'?'▸ ':'')+item.name,item.path,item.type);
+                        if(!data.length)tree.textContent='This directory is empty.';
                     }
-                } catch (_) {}
-                return;
-            }
-            if (!dlUrl || !codeEl) return;
-            codeEl.textContent = `Loading ${pathStr}...`;
-            try {
-                const res = await fetch(dlUrl);
-                const txt = await res.text();
-                codeEl.textContent = txt.slice(0, 80000);
-            } catch (_) {
-                codeEl.textContent = 'Failed to fetch raw file.';
-            }
+                    if(code)code.textContent='Select a file to read its source. Files are displayed as text, never executed. GitHub limits directory listings to 1,000 entries.';
+                    os.ossStatus((path||'/')+' · '+data.length+' entries · '+(ref||'default branch'));
+                }else{
+                    if(!data||data.type!=='file')throw Error('This item is not a regular file');
+                    if(data.size>262144)throw Error('File exceeds the 256 KiB preview limit · open on GitHub');
+                    if(data.encoding!=='base64'||typeof data.content!=='string')throw Error('Source unavailable in Contents API · open on GitHub');
+                    const bytes=Uint8Array.from(atob(data.content.replace(/\s/g,'')),char=>char.charCodeAt(0));
+                    if(bytes.length>262144||bytes.includes(0))throw Error('Binary or oversized file · preview is text-only');
+                    let source;try{source=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(_){throw Error('Not UTF-8 text · preview unavailable');}
+                    os.ossState.source=source;os.ossState.fileName=path.split('/').pop();if(code)code.textContent=source||'(Empty file)';
+                    const find=document.getElementById('oss-source-find');if(find?.value)os.ossFindSource(find.value);
+                    if(label)label.textContent=path+' · '+bytes.length.toLocaleString()+' bytes';
+                    os.ossStatus('Source loaded · '+(ref||'default branch')+' · not executed');
+                }
+            }catch(error){if(id!==os.ossState.readID)return;if(code)code.textContent=error.message;if(type==='dir'&&tree)tree.textContent='Directory unavailable · check ref or use Refresh.';os.ossStatus('Could not load '+(path||repo));}
         }
     });
 })();

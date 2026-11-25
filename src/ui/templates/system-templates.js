@@ -1,26 +1,16 @@
 // AetherOS — Window DOM Templates (system-templates)
 Object.assign(WindowContents, {
     about: `
-        <div class="flex h-full text-gray-200 text-xs select-none bg-[#07090f]/95">
-            <aside class="w-48 bg-black/45 border-r border-white/[0.08] p-3 flex flex-col gap-1 shrink-0" id="about-tab-list">
-                <div class="text-[10px] text-gray-500 uppercase tracking-wider px-2.5 py-1 mb-0.5 font-semibold">About AetherOS</div>
-                <button onclick="os.switchAboutTab('overview')" id="tab-about-overview" class="about-tab active w-full text-left px-2.5 py-1.5 rounded-lg text-white bg-white/10 hover-target cursor-none transition-all flex items-center gap-2 font-medium"><i data-lucide="info" class="w-3.5 h-3.5 text-sky-400"></i> Overview</button>
-                <button onclick="os.switchAboutTab('architecture')" id="tab-about-architecture" class="about-tab w-full text-left px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all hover-target cursor-none flex items-center gap-2 font-medium"><i data-lucide="network" class="w-3.5 h-3.5"></i> Architecture</button>
-                <button onclick="os.switchAboutTab('features')" id="tab-about-features" class="about-tab w-full text-left px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all hover-target cursor-none flex items-center gap-2 font-medium"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> App Guide</button>
-                <button onclick="os.switchAboutTab('metrics')" id="tab-about-metrics" class="about-tab w-full text-left px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all hover-target cursor-none flex items-center gap-2 font-medium"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> Tech Stack</button>
-                <button onclick="os.switchAboutTab('roadmap')" id="tab-about-roadmap" class="about-tab w-full text-left px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all hover-target cursor-none flex items-center gap-2 font-medium"><i data-lucide="milestone" class="w-3.5 h-3.5"></i> Changelog</button>
-                <button onclick="os.switchAboutTab('credits')" id="tab-about-credits" class="about-tab w-full text-left px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all hover-target cursor-none flex items-center gap-2 font-medium"><i data-lucide="heart" class="w-3.5 h-3.5"></i> Credits</button>
-
-                <div class="mt-auto pt-3 border-t border-white/[0.07]">
-                    <div class="relative">
-                        <i data-lucide="search" class="w-3 h-3 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        <input type="text" id="about-search-input" oninput="os.aboutSearch(this.value)" placeholder="Search guide..." class="w-full os-input pl-7 pr-2.5 py-1.5 text-[11px] cursor-text" autocomplete="off">
-                    </div>
-                </div>
-            </aside>
-
-            <div class="flex-1 p-5 overflow-y-auto no-scrollbar relative" id="about-panel-content"></div>
-        </div>
+      <div class="about-shell">
+        <aside id="about-tab-list" aria-label="About sections">
+          <div class="about-brand"><span class="glass-project-mark" aria-hidden="true"><img src="assets/apple-logo.svg" alt="" width="23" height="29"></span><span>AetherOS<small>Project &amp; provenance</small></span></div>
+          ${[['overview','Overview'],['creator','About me'],['architecture','Architecture'],['features','App guide'],['metrics','This browser'],['roadmap','Changelog'],['credits','Sources & limits']].map(([id,label])=>`<button type="button" id="tab-about-${id}" class="about-tab" onclick="os.switchAboutTab('${id}')" aria-pressed="${id==='overview'}">${label}</button>`).join('')}
+          <label class="about-search-label" for="about-search-input">Search app guide</label>
+          <input type="search" id="about-search-input" class="os-input" maxlength="160" placeholder="Name, source or limitation" oninput="os.aboutSearch(this.value)">
+          <p class="about-nav-note">A browser workspace.<br>Not your operating system.</p>
+        </aside>
+        <main id="about-panel-content" aria-label="Project information"></main>
+      </div>
     `,
 
     settings: `
@@ -69,11 +59,12 @@ Object.assign(WindowContents, {
     terminal: `
         <div class="h-full bg-[#06080e] text-xs overflow-hidden relative flex flex-col" id="terminal-out">
             <canvas id="terminal-matrix-canvas" class="hidden absolute inset-0 w-full h-full opacity-20 pointer-events-none"></canvas>
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">LOCAL COMMAND WORKSPACE</span><h2>Browser Console</h2><p>Work with the archive and app windows. Not a system shell; no host command execution.</p></div></header>
 
             <div class="os-toolbar relative z-10">
                 <div class="flex items-center gap-2 flex-wrap">
                     <div class="os-segmented">
-                        <button type="button" data-term-tab="shell" onclick="os.terminalSetTab('shell')" class="os-seg-btn active hover-target cursor-none">Interactive Shell</button>
+                        <button type="button" data-term-tab="shell" onclick="os.terminalSetTab('shell')" class="os-seg-btn active hover-target cursor-none">Commands</button>
                         <button type="button" data-term-tab="syslog" onclick="os.terminalSetTab('syslog')" class="os-seg-btn hover-target cursor-none">System Log <span id="term-syslog-count" class="ml-1 text-[10px] opacity-70">0</span></button>
                     </div>
                     <span id="terminal-cwd-badge" class="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] font-mono text-[10.5px] text-sky-300">/Archive</span>
@@ -94,7 +85,7 @@ Object.assign(WindowContents, {
                 <div id="terminal-feed" onclick="document.getElementById('terminal-cli')?.focus()" class="flex-1 overflow-y-auto p-4 space-y-1.5 font-mono text-[12px] leading-relaxed text-gray-200 select-text"></div>
                 <div class="border-t border-white/[0.08] bg-black/65 px-4 py-2.5 flex items-center gap-2 shrink-0 font-mono text-[12px]">
                     <span class="text-emerald-400 font-semibold">user@aetheros</span><span class="text-gray-500">:</span><span id="terminal-prompt-path" class="text-sky-300">/Archive</span><span class="text-gray-400">$</span>
-                    <input type="text" id="terminal-cli" spellcheck="false" autocomplete="off"
+                    <input type="text" id="terminal-cli" aria-label="Browser console command" maxlength="4000" spellcheck="false" autocomplete="off"
                         class="bg-transparent border-none outline-none text-white flex-1 cursor-text"
                         placeholder="Type a command (help, ls, cd, cat, touch, mkdir, ps, open, curl, ping, calc)... Tab to autocomplete">
                 </div>
@@ -112,23 +103,12 @@ Object.assign(WindowContents, {
     `,
 
     taskmanager: `
-        <div class="flex flex-col h-full bg-[#07090f]/95 text-xs select-none" id="taskmanager-root">
-            <div class="os-toolbar">
-                <div class="os-segmented">
-                    <button type="button" onclick="os.tmSwitchTab('processes')" id="tm-tab-proc" class="os-seg-btn active hover-target cursor-none">Apps &amp; Windows</button>
-                    <button type="button" onclick="os.tmSwitchTab('performance')" id="tm-tab-perf" class="os-seg-btn hover-target cursor-none">Runtime &amp; Memory</button>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="relative">
-                        <i data-lucide="search" class="w-3 h-3 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        <input id="tm-filter-input" type="text" placeholder="Filter apps..." oninput="os._tmFilter=this.value;os.tmRefreshData()"
-                            class="os-input pl-7 pr-2.5 py-1 w-36 text-[11px]">
-                    </div>
-                    <button type="button" onclick="os.tmCloseAllWindows()" class="os-btn text-rose-300 hover-target cursor-none" title="Close all open windows except Task Manager">Close All</button>
-                    <button type="button" onclick="os.tmRefresh()" class="os-btn hover-target cursor-none" title="Refresh"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
-                </div>
-            </div>
-            <div class="flex-1 overflow-hidden" id="taskmanager-content"></div>
+        <div class="tm-studio" id="taskmanager-root">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">WORKSPACE / RUNTIME</span><h2>See what’s open.</h2><p>Your AetherOS windows and measured browser-page activity. Not an operating-system process manager.</p></div></header>
+            <div id="tm-summary" class="tm-summary"></div>
+            <div class="tm-toolbar"><div class="os-segmented"><button type="button" onclick="os.tmSwitchTab('processes')" id="tm-tab-proc" class="os-seg-btn active" aria-pressed="true">Windows</button><button type="button" onclick="os.tmSwitchTab('performance')" id="tm-tab-perf" class="os-seg-btn" aria-pressed="false">Runtime history</button></div><input id="tm-filter-input" aria-label="Filter windows and apps" placeholder="Filter windows…" oninput="os._tmFilter=this.value;os.tmRefreshData()"><button type="button" id="tm-pause" class="os-btn" aria-pressed="false" onclick="os.tmTogglePause()">Pause sampling</button><button type="button" class="os-btn" onclick="os.tmRefresh()">Refresh</button><button type="button" class="os-btn" onclick="os.tmExport()">Export JSON</button><button type="button" class="os-btn tm-close-all" onclick="os.tmCloseAllWindows()">Close others</button></div>
+            <p class="tm-status" id="tm-status" role="status">Samples every two seconds while visible · history stays in this tab</p>
+            <main id="taskmanager-content" tabindex="0" aria-label="Windows and runtime details"></main>
         </div>
     `,
 

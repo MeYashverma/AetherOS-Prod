@@ -511,7 +511,7 @@ window.extendOS({
                 } catch (e) {
                     os.floor796SetStatus('REWRITE FAILED', 'text-red-300');
                     const list = document.getElementById('floor796-intel-list');
-                    if (list) list.innerHTML = `<div class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200">Live Rewrite failed: ${String(e.message || e)}</div>`;
+                    if (list) list.innerHTML = `<div class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200">Live Rewrite failed: ${window.escapeAetherHtml(String(e.message || e))}</div>`;
                 }
             },
 
@@ -873,15 +873,22 @@ window.extendOS({
                 { label: 'Reddit',     url: 'https://old.reddit.com',       icon: 'message-square', color: '#fb923c' },
             ],
 
+    browserSafeURL: value => {
+        try{const url=new URL(String(value));return ['http:','https:'].includes(url.protocol)&&!url.username&&!url.password?url.href:null;}catch{return null;}
+    },
+    browserUpdateNav: () => {
+        const tab=os.browser.tabs.find(t=>t.id===os.browser.activeTab);
+        const back=document.getElementById('browser-btn-back'),next=document.getElementById('browser-btn-fwd');
+        if(back)back.disabled=!tab||!(tab.position>0);
+        if(next)next.disabled=!tab||tab.position>=tab.entries.length-1;
+    },
     initBrowser: () => {
-                os.browser.bookmarks = JSON.parse(localStorage.getItem('aetheros_bookmarks') || '[]');
-                os.browser.history   = JSON.parse(localStorage.getItem('aetheros_bhistory')  || '[]');
-                os.browserRenderQuickLaunch();
-                os.browserRenderTabs();
-                os.browserRenderHistory();
-                os.browserRenderBookmarks();
-                lucide.createIcons({ root: document.getElementById('browser-root') });
-            },
+        const read=key=>{try{const data=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(data)?data.filter(x=>os.browserSafeURL(x?.url)).slice(0,50).map(x=>({...x,url:os.browserSafeURL(x.url)})):[];}catch{return [];}};
+        os.browser.bookmarks=read('aetheros_bookmarks');os.browser.history=read('aetheros_bhistory');
+        os.browserRenderQuickLaunch();os.browserRenderTabs();os.browserRenderHistory();os.browserRenderBookmarks();os.browserUpdateNav();
+        if(os.browser.activeTab)os.browserSwitchTab(os.browser.activeTab);
+        window.lucide?.createIcons({root:document.getElementById('browser-root')});
+    },
 
     browserGo: () => {
                 const input = document.getElementById('browser-url-input');
@@ -901,31 +908,22 @@ window.extendOS({
                 os.browserLoadURL(url);
             },
 
-    browserLoadURL: (url) => {
-                // Push to session history
-                const title = os.browserGuessTitle(url);
-                os.browser.history.unshift({ url, title, ts: Date.now() });
-                if (os.browser.history.length > 50) os.browser.history.pop();
-                try { localStorage.setItem('aetheros_bhistory', JSON.stringify(os.browser.history)); } catch(e){}
-
-                // Manage tabs
-                const tabId = 'tab_' + Date.now();
-                os.browser.tabs.push({ id: tabId, url, title });
-                os.browser.activeTab = tabId;
-
-                // Update URL bar
-                const input = document.getElementById('browser-url-input');
-                if (input) input.value = url;
-
-                os.browserRenderTabs();
-                os.browserRenderHistory();
-
-                // Try to fetch a preview; on failure, show the launch card
-                os.browserFetchPreview(url, tabId, title);
-                os.browserSetStatus(`Loading ${os.browserDomain(url)}…`);
-            },
+    browserLoadURL: raw => {
+        const url=os.browserSafeURL(raw);if(!url){os.browserSetStatus('Only HTTP(S) URLs without embedded credentials are supported.');return false;}
+        let tab=os.browser.tabs.find(t=>t.id===os.browser.activeTab);
+        const title=os.browserGuessTitle(url);
+        if(!tab){tab={id:'tab_'+Date.now()+'_'+(os.browser._tabSeq=(os.browser._tabSeq||0)+1),url,title,entries:[],position:-1};os.browser.tabs.push(tab);os.browser.activeTab=tab.id;}
+        tab.entries=tab.entries||[tab.url];tab.position=Number.isInteger(tab.position)?tab.position:0;
+        tab.entries=tab.entries.slice(0,tab.position+1);tab.entries.push(url);tab.position=tab.entries.length-1;tab.url=url;tab.title=title;
+        os.browser.history.unshift({url,title,ts:Date.now()});os.browser.history=os.browser.history.slice(0,50);
+        try{localStorage.setItem('aetheros_bhistory',JSON.stringify(os.browser.history));}catch{os.browserSetStatus('History is session-only: browser storage unavailable.');}
+        const input=document.getElementById('browser-url-input');if(input)input.value=url;
+        os.browserRenderTabs();os.browserRenderHistory();os.browserUpdateNav();os.browserSetStatus(`Loading ${os.browserDomain(url)}…`);os.browserFetchPreview(url,tab.id,title);return true;
+    },
 
     browserFetchPreview: async (url, tabId, title) => {
+        const request=os.browser._readerRequest=(os.browser._readerRequest||0)+1;
+        const current=()=>request===os.browser._readerRequest&&tabId===os.browser.activeTab;
         os.browserShowPreview();
         const content = document.getElementById('browser-preview-content');
         const domainEl = document.getElementById('browser-preview-domain');
@@ -950,12 +948,13 @@ window.extendOS({
                 const lang = wikiMatch[1];
                 const slug = wikiMatch[2];
                 const [sumRes, extRes] = await Promise.all([
-                    fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`),
-                    fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${slug}&format=json&origin=*`)
+                    fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`,{signal:AbortSignal.timeout(9000),credentials:'omit'}),
+                    fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${slug}&format=json&origin=*`,{signal:AbortSignal.timeout(9000),credentials:'omit'})
                 ]);
                 if (sumRes.ok) {
                     const sum = await sumRes.json();
                     const extJson = extRes.ok ? await extRes.json() : null;
+                    if(!current())return;
                     const pages = extJson?.query?.pages || {};
                     const fullText = Object.values(pages)[0]?.extract || sum.extract || '';
                     const paras = String(fullText).split(/\n+/).map((p) => p.trim()).filter((p) => p.length > 25).slice(0, 45);
@@ -985,6 +984,10 @@ window.extendOS({
             } catch (_) {}
         }
 
+        if(!current())return;
+        if(os.browser._relayAllowedUrl!==url){
+            os.browserShowLaunchCard(url,title,content,'Reader relays are off for this URL.');os.browserSetStatus('Choose embed, open externally, or explicitly allow a public reader relay.');return;
+        }
         // General Reader extraction via CORS-friendly HTML relays
         const proxies = [
             `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -998,10 +1001,13 @@ window.extendOS({
                 const res = await fetch(pUrl, { signal: AbortSignal.timeout(9000) });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 html = await res.text();
+                if(!current())return;
+                if(html.length>3000000)throw Error('Reader response exceeds 3 MB');
                 if (html && html.length > 80) break;
             } catch (e) { lastErr = e; }
         }
 
+        if(!current())return;
         if (!html) {
             os.browserShowLaunchCard(url, title, content, lastErr ? lastErr.message : 'Cross-origin restriction');
             os.browserSetStatus(`External site · ${os.browserDomain(url)}`);
@@ -1097,17 +1103,20 @@ window.extendOS({
         }
     },
 
-    browserClipToVFS: () => {
+    browserClipToVFS: async () => {
         const url = os.browser._currentUrl || document.getElementById('browser-url-input')?.value?.trim();
         if (!url) return;
         const title = document.getElementById('browser-preview-title')?.innerText || os.browserDomain(url);
         const body = os.browser._currentReaderMd || `# ${title}\n\n- **URL**: ${url}\n- **Saved**: ${new Date().toLocaleString()}\n`;
-        if (window.AetherVFS && AetherVFS.saveClipperItem) {
-            AetherVFS.saveClipperItem({ title, content: body, sourceUrl: url, tags: ['web-clip'] });
-        } else if (os.fmCreateNewFile) {
-            os.fmCreateNewFile(`${title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 40)}.md`, body, '/Archive/User Uploads');
-        }
-        window.Notifications && Notifications.push('Web Browser', `Saved "${title.slice(0, 36)}" to Files`);
+        if(!window.AetherVFS){os.browserSetStatus('File storage unavailable. No clip was saved.');return;}
+        try{const record=await AetherVFS.saveClipperItem({title,content:body,sourceUrl:url,tags:['web-clip']});os.browserSetStatus(record?.persistence==='session-only'?'Clip is session-only. Export it before reloading.':'Reader clip saved to Files.');}
+        catch(_){os.browserSetStatus('Clip could not be saved. Try downloading the source instead.');}
+    },
+    browserAllowRelay: () => {
+        const url=os.browser._currentUrl;if(!os.browserSafeURL(url))return;
+        const host=new URL(url).hostname;if(host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||host.startsWith('[')||/^[0-9.]+$/.test(host)){os.browserSetStatus('Reader relays are disabled for local hosts and IP addresses.');return;}
+        if(!window.confirm('Send this URL to public reader relays (AllOrigins / CodeTabs)? They can see the full URL and fetch its public content. Do not use private links or URLs with tokens.'))return;
+        os.browser._relayAllowedUrl=url;const tab=os.browser.tabs.find(t=>t.id===os.browser.activeTab);if(tab)os.browserFetchPreview(url,tab.id,tab.title);
     },
 
     browserShowLaunchCard: (url, title, container, reason) => {
@@ -1115,7 +1124,6 @@ window.extendOS({
         const esc = (s) => os.escapeHtml ? os.escapeHtml(String(s ?? '')) : String(s ?? '');
         const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
         if (!container) return;
-        const safeJsUrl = String(url).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center h-full text-center py-12 space-y-4">
                 <img src="${faviconUrl}" class="w-12 h-12 rounded-xl opacity-90" onerror="this.style.display='none'">
@@ -1124,11 +1132,12 @@ window.extendOS({
                     <div class="text-gray-500 text-xs font-mono max-w-md break-all">${esc(url)}</div>
                 </div>
                 <div class="text-xs text-amber-200/80 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5 max-w-sm leading-relaxed">
-                    Reader extraction was blocked by cross-origin policy (${esc(reason)}). Try <b>Live Embed</b> above or open in a browser tab.
+                    This is a reader and embed workspace, not a full browser. ${esc(reason)} Embeds may be blocked by the site. You can always open its original page.
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="os.browserSetRenderMode('embed')" class="os-btn hover-target cursor-none">Try Live Embed</button>
-                    <button type="button" onclick="window.open('${safeJsUrl}', '_blank', 'noopener')" class="os-btn-primary px-4 py-2 text-xs hover-target cursor-none">
+                    <button type="button" onclick="os.browserAllowRelay()" class="os-btn">Allow reader relay…</button>
+                    <button type="button" onclick="os.browserOpenExternal()" class="os-btn-primary px-4 py-2 text-xs hover-target cursor-none">
                         <i data-lucide="external-link" class="w-3.5 h-3.5 inline mr-1"></i> Open ${esc(domain)}
                     </button>
                 </div>
@@ -1144,6 +1153,8 @@ window.extendOS({
             },
 
     browserShowHome: () => {
+                os.browser._readerRequest=(os.browser._readerRequest||0)+1;os.browser.activeTab=null;os.browser._currentUrl='';os.browser._currentReaderMd='';os.browserRenderTabs();os.browserUpdateNav();
+                const frame=document.getElementById('browser-iframe-view');if(frame)frame.src='about:blank';
                 const home = document.getElementById('browser-home');
                 const prev = document.getElementById('browser-preview');
                 if (home) home.style.display = '';
@@ -1166,7 +1177,7 @@ window.extendOS({
     browserRenderTabs: () => {
                 const row = document.getElementById('browser-tabs-row');
                 if (!row) return;
-                row.innerHTML = os.browser.tabs.slice(-8).map(tab => {
+                row.innerHTML = os.browser.tabs.map(tab => {
                     const active = tab.id === os.browser.activeTab;
                     const domain = os.browserDomain(tab.url);
                     return `
@@ -1187,18 +1198,15 @@ window.extendOS({
                 os.browser.activeTab = id;
                 const input = document.getElementById('browser-url-input');
                 if (input) input.value = tab.url;
-                os.browserRenderTabs();
+                os.browserRenderTabs();os.browserUpdateNav();
                 os.browserFetchPreview(tab.url, id, tab.title);
             },
 
-    browserCloseTab: (id) => {
-                os.browser.tabs = os.browser.tabs.filter(t => t.id !== id);
-                if (os.browser.activeTab === id) {
-                    os.browser.activeTab = os.browser.tabs.length ? os.browser.tabs[os.browser.tabs.length-1].id : null;
-                }
-                os.browserRenderTabs();
-                if (!os.browser.activeTab) os.browserShowHome();
-            },
+    browserCloseTab: id => {
+        const active=os.browser.activeTab===id;os.browser.tabs=os.browser.tabs.filter(t=>t.id!==id);
+        if(active){const next=os.browser.tabs.at(-1);if(next)os.browserSwitchTab(next.id);else os.browserShowHome();}
+        os.browserRenderTabs();os.browserUpdateNav();
+    },
 
     browserRenderHistory: () => {
         const section = document.getElementById('browser-history-section');
@@ -1272,16 +1280,16 @@ window.extendOS({
     browserOpenExternal: () => {
                 const input = document.getElementById('browser-url-input');
                 const url = input?.value?.trim() || 'https://duckduckgo.com';
-                if (url.startsWith('http')) window.open(url, '_blank', 'noopener');
+                const safe=os.browserSafeURL(url);if(safe)window.open(safe,'_blank','noopener,noreferrer');else os.browserSetStatus('Enter a valid HTTP(S) URL before opening externally.');
             },
 
-    browserNav: (dir) => {
-                // No true back/forward within the preview engine, but navigate history list
-                const histLen = os.browser.history.length;
-                if (dir === 'back' && histLen > 1) {
-                    os.browserLoadURL(os.browser.history[1].url);
-                }
-            },
+    browserNav: dir => {
+        const tab=os.browser.tabs.find(t=>t.id===os.browser.activeTab);if(!tab)return;
+        const position=tab.position+(dir==='back'?-1:1);if(position<0||position>=tab.entries.length)return;
+        tab.position=position;tab.url=tab.entries[position];tab.title=os.browserGuessTitle(tab.url);
+        const input=document.getElementById('browser-url-input');if(input)input.value=tab.url;
+        os.browserRenderTabs();os.browserUpdateNav();os.browserFetchPreview(tab.url,tab.id,tab.title);
+    },
 
     browserGuessTitle: (url) => {
                 try {
@@ -1318,219 +1326,119 @@ window.extendOS({
     _feedSearchQuery: '',
     _feedSelectedId: null,
     _feedSaved: null,
-
+    _feedReaderID: 0,
+    _feedFetchID: 0,
+    _feedControllers: new Set(),
+    _feedSourceStatus: {},
+    _feedRead: new Set(),
+    _feedUnreadOnly: false,
+    feedEscape: value => String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),
+    feedSafeLink: link => {try{const url=new URL(link);return ['http:','https:'].includes(url.protocol)&&!url.username&&!url.password?url.href:null;}catch(_){return null;}},
+    feedStatus: text => {const el=document.getElementById('feed-status');if(el)el.textContent=text;},
+    feedFetch: async url => {
+        const controller=new AbortController();os._feedControllers.add(controller);const timer=setTimeout(()=>controller.abort(),9000);
+        try{const response=await fetch(url,{signal:controller.signal,credentials:'omit'});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();return {ok:true,json:async()=>data};}
+        finally{clearTimeout(timer);os._feedControllers.delete(controller);}
+    },
+    feedDispose: () => {os._feedReaderID++;os._feedFetchID++;for(const c of os._feedControllers)c.abort();os._feedControllers.clear();},
     _feedLoadSaved: () => {
-        if (!os._feedSaved) {
-            try { os._feedSaved = JSON.parse(localStorage.getItem('aether_feed_saved_v1') || '[]'); }
-            catch (_) { os._feedSaved = []; }
+        if(!Array.isArray(os._feedSaved)){
+            try{const stored=JSON.parse(localStorage.getItem('aether_feed_saved_v1')||'[]');os._feedSaved=Array.isArray(stored)?stored.filter(item=>item&&typeof item.id==='string'&&typeof item.title==='string'&&os.feedSafeLink(item.link)).slice(0,100):[];}
+            catch(_){os._feedSaved=[];os._feedSessionOnly=true;}
         }
-        const badge = document.getElementById('feed-saved-count');
-        if (badge) badge.textContent = String(os._feedSaved.length);
-        return os._feedSaved;
+        const badge=document.getElementById('feed-saved-count');if(badge)badge.textContent=String(os._feedSaved.length);return os._feedSaved;
     },
-
-    initSignalFeed: async (forceRefresh = false) => {
-        os._feedLoadSaved();
-        if (forceRefresh || !os._feedItems.length) {
-            await os.fetchSignals(true);
-        } else {
-            os.feedRenderList();
+    initSignalFeed: async (force=false) => {
+        os._feedLoadSaved();const search=document.getElementById('feed-search-input');if(search)search.value=os._feedSearchQuery;
+        os.feedRenderSources();const unread=document.getElementById('feed-unread');if(unread)unread.setAttribute('aria-pressed',String(os._feedUnreadOnly));
+        os.feedSetSource(os._feedSourceFilter);if(force||!os._feedItems.length)await os.fetchSignals(true);
+        os.feedStatus(os._feedSessionOnly?'Saved links are session-only · export a backup':'Saved links stay in this browser · not full offline articles');
+    },
+    feedClearReader: () => {
+        os._feedReaderID++;os._feedSelectedId=null;const pane=document.getElementById('feed-reader-pane');
+        if(pane)pane.innerHTML='<div class="news-reader-empty"><span class="news-empty-symbol">✦</span><span class="news-eyebrow">A LITTLE LESS NOISE</span><h3>Make room for a good read.</h3><p>Choose a story. DEV articles and Hacker News discussions load from their public APIs; other sources show a summary with a link to the original.</p></div>';
+    },
+    feedSetSource: source => {
+        if(!['all','hn','devto','github','reddit','saved'].includes(source))return;os._feedSourceFilter=source;
+        for(const button of document.querySelectorAll('[data-feed-src]')){const active=button.dataset.feedSrc===source;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}
+        os.feedClearReader();os.feedRenderList();
+    },
+    feedSetSearch: query => {os._feedSearchQuery=String(query||'').trim().toLowerCase();os.feedRenderList();},
+    feedToggleUnread: button => {os._feedUnreadOnly=!os._feedUnreadOnly;button.setAttribute('aria-pressed',String(os._feedUnreadOnly));os.feedClearReader();os.feedRenderList();},
+    feedToggleSave: id => {
+        const saved=[...os._feedLoadSaved()],index=saved.findIndex(item=>item.id===id);
+        if(index>=0)saved.splice(index,1);else{const item=os._feedItems.find(item=>item.id===id);if(!item)return;if(saved.length>=100){os.feedStatus('Saved-link limit is 100 · remove a link or export your list');return;}saved.unshift({...item});}
+        os._feedSaved=saved;
+        try{localStorage.setItem('aether_feed_saved_v1',JSON.stringify(saved));os._feedSessionOnly=false;os.feedStatus('Saved-link list updated in this browser');}
+        catch(_){os._feedSessionOnly=true;os.feedStatus('Storage unavailable · saved-link changes are session-only; export a backup');}
+        os._feedLoadSaved();os.feedRenderList();
+    },
+    feedExportSaved: () => {
+        const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,savedLinks:os._feedLoadSaved()},null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='aether-saved-news.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);os.feedStatus('Saved-link JSON download requested · article bodies are not included');
+    },
+    feedRenderSources: () => {
+        const root=document.getElementById('feed-source-health');if(!root)return;root.replaceChildren();
+        for(const [key,name]of Object.entries({hn:'Hacker News',devto:'DEV',github:'GitHub',reddit:'Reddit'})){
+            const status=os._feedSourceStatus[key]||{state:'waiting',count:0},el=document.createElement('div');el.className='news-source-health';el.dataset.state=status.state;
+            const title=document.createElement('strong'),detail=document.createElement('span');title.textContent=name;detail.textContent=status.state==='updated'?status.count+' stories · updated':status.state==='cached'?status.count+' cached · refresh failed':status.state==='loading'?'Refreshing…':status.state==='failed'?'Unavailable':'Waiting';el.append(title,detail);root.append(el);
         }
     },
-
-    feedSetSource: (src) => {
-        os._feedSourceFilter = src || 'all';
-        document.querySelectorAll('#feed-source-tabs [data-feed-src]').forEach((b) => {
-            b.classList.toggle('active', b.getAttribute('data-feed-src') === os._feedSourceFilter);
-        });
-        os.feedRenderList();
-    },
-
-    feedSetSearch: (q) => {
-        os._feedSearchQuery = String(q || '').trim().toLowerCase();
-        os.feedRenderList();
-    },
-
-    feedToggleSave: (id) => {
-        const saved = os._feedLoadSaved();
-        const idx = saved.findIndex((x) => x.id === id);
-        if (idx >= 0) {
-            saved.splice(idx, 1);
-        } else {
-            const item = os._feedItems.find((x) => x.id === id);
-            if (item) saved.unshift(item);
-        }
-        try { localStorage.setItem('aether_feed_saved_v1', JSON.stringify(saved.slice(0, 100))); } catch (_) {}
-        const badge = document.getElementById('feed-saved-count');
-        if (badge) badge.textContent = String(saved.length);
-        os.feedRenderList();
-    },
-
     feedRenderList: () => {
-        const container = document.getElementById('signal-stream-container');
-        if (!container) return;
-        const saved = os._feedLoadSaved();
-        const savedIds = new Set(saved.map((x) => x.id));
-        const src = os._feedSourceFilter || 'all';
-        const q = os._feedSearchQuery || '';
-
-        const pool = src === 'saved' ? saved : os._feedItems;
-        const filtered = pool.filter((item) => {
-            if (src !== 'all' && src !== 'saved' && item.cat !== src) return false;
-            if (q && !(item.title + ' ' + item.source + ' ' + (item.author || '')).toLowerCase().includes(q)) return false;
-            return true;
-        });
-
-        const countEl = document.getElementById('signal-buffer-count');
-        if (countEl) countEl.textContent = `${filtered.length} stories`;
-
-        if (!filtered.length) {
-            container.innerHTML = `<div class="py-10 text-center text-gray-500 text-xs">${src === 'saved' ? 'No bookmarked stories yet. Click the star on any story to save it.' : 'No stories match your filter.'}</div>`;
-            return;
+        const root=document.getElementById('signal-stream-container');if(!root)return;
+        const saved=os._feedLoadSaved(),savedIDs=new Set(saved.map(item=>item.id)),source=os._feedSourceFilter;
+        const pool=source==='saved'?saved:os._feedItems,query=os._feedSearchQuery;
+        const items=pool.filter(item=>(source==='all'||source==='saved'||item.cat===source)&&(!query||(item.title+' '+item.source+' '+(item.author||'')).toLowerCase().includes(query))&&(!os._feedUnreadOnly||!os._feedRead.has(item.id)));
+        const scroll=root.scrollTop;root.replaceChildren();const count=document.getElementById('signal-buffer-count');if(count)count.textContent=items.length+' stories';
+        if(!items.length){const empty=document.createElement('p');empty.className='news-list-empty';empty.textContent=source==='saved'?'No saved links match. Save a story to build your reading list.':'No matching stories. Change filters or refresh sources.';root.append(empty);}
+        for(const item of items){
+            const card=document.createElement('article');card.className='news-story-card';card.dataset.source=item.cat;card.classList.toggle('news-story-selected',os._feedSelectedId===item.id);card.classList.toggle('news-story-read',os._feedRead.has(item.id));
+            const top=document.createElement('div');top.className='news-story-meta';const sourceLabel=document.createElement('span');sourceLabel.textContent=item.source+(item.stale?' · cached':'');
+            const save=document.createElement('button');save.type='button';save.className='news-bookmark';save.textContent=savedIDs.has(item.id)?'★':'☆';save.setAttribute('aria-label',(savedIDs.has(item.id)?'Unsave ':'Save ')+item.title);save.setAttribute('aria-pressed',String(savedIDs.has(item.id)));save.addEventListener('click',()=>os.feedToggleSave(item.id));top.append(sourceLabel,save);
+            const open=document.createElement('button');open.type='button';open.className='news-story-open';open.setAttribute('aria-current',os._feedSelectedId===item.id?'true':'false');
+            const title=document.createElement('h3'),description=document.createElement('p'),meta=document.createElement('span');title.textContent=item.title;description.textContent=item.subtitle||'';meta.textContent=[item.time,item.author].filter(Boolean).join(' · ');open.append(title,description,meta);open.addEventListener('click',()=>os.feedOpenItem(item.id));card.append(top,open);root.append(card);
         }
-
-        container.innerHTML = filtered.map((item) => {
-            const active = os._feedSelectedId === item.id;
-            const isSaved = savedIds.has(item.id);
-            return `
-                <div data-feed-id="${os.escapeHtml(item.id)}"
-                    class="rounded-xl p-3 border transition cursor-none hover-target group ${
-                        active ? 'bg-white/[0.09] border-white/20' : 'bg-white/[0.025] hover:bg-white/[0.06] border-white/[0.06]'
-                    }">
-                    <div class="flex items-center justify-between gap-2 text-[10.5px] mb-1">
-                        <span class="font-semibold ${item.color || 'text-sky-300'} flex items-center gap-1.5">
-                            <i data-lucide="${item.icon || 'newspaper'}" class="w-3 h-3"></i>
-                            ${os.escapeHtml(item.source)}
-                        </span>
-                        <div class="flex items-center gap-2 text-gray-500 font-mono text-[10px] tabular-nums">
-                            ${item.points ? `<span>▲ ${item.points}</span>` : ''}
-                            <span>${os.escapeHtml(item.time || '')}</span>
-                            <button type="button" data-save-story="${os.escapeHtml(item.id)}" title="Bookmark story"
-                                class="${isSaved ? 'text-amber-300' : 'text-gray-500 hover:text-amber-300'} cursor-none hover-target">★</button>
-                        </div>
-                    </div>
-                    <div class="text-xs font-medium text-gray-100 leading-snug group-hover:text-white">${os.escapeHtml(item.title)}</div>
-                    ${item.subtitle ? `<div class="text-[11px] text-gray-400 mt-1 line-clamp-2">${os.escapeHtml(item.subtitle)}</div>` : ''}
-                </div>`;
-        }).join('');
-
-        container.querySelectorAll('[data-feed-id]').forEach((row) => {
-            row.addEventListener('click', (ev) => {
-                if (ev.target.closest('[data-save-story]')) return;
-                os.feedOpenItem(row.getAttribute('data-feed-id'));
-            });
-        });
-        container.querySelectorAll('[data-save-story]').forEach((btn) => {
-            btn.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                os.feedToggleSave(btn.getAttribute('data-save-story'));
-            });
-        });
-        if (window.lucide) lucide.createIcons({ root: container });
-
-        if (!os._feedSelectedId && filtered[0]) {
-            os.feedOpenItem(filtered[0].id);
-        }
+        root.scrollTop=scroll;
     },
-
-    feedOpenItem: async (id) => {
-        const pool = [...os._feedItems, ...(os._feedSaved || [])];
-        const item = pool.find((x) => x.id === id);
-        if (!item) return;
-        os._feedSelectedId = id;
-        os.feedRenderList();
-
-        const reader = document.getElementById('feed-reader-pane');
-        if (!reader) {
-            if (item.link) os.openLinkInProxy(item.link);
-            return;
-        }
-        const esc = (s) => os.escapeHtml(String(s ?? ''));
-        const safeLink = String(item.link || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-        reader.innerHTML = `
-            <div class="max-w-2xl space-y-4">
-                ${item.cover ? `<img src="${esc(item.cover)}" class="w-full max-h-52 object-cover rounded-xl border border-white/10" onerror="this.style.display='none'">` : ''}
-                <div class="border-b border-white/[0.08] pb-3.5 space-y-2">
-                    <div class="flex items-center gap-2 text-xs">
-                        <span class="os-badge ${item.color || 'text-sky-300'}">${esc(item.source)}</span>
-                        ${item.author ? `<span class="text-gray-400">by <b class="text-gray-200">${esc(item.author)}</b></span>` : ''}
-                        <span class="text-gray-500 font-mono text-[11px]">${esc(item.time || '')}</span>
-                    </div>
-                    <h2 class="text-white font-display font-bold text-lg leading-snug">${esc(item.title)}</h2>
-                    <div class="flex items-center gap-2 pt-1 flex-wrap">
-                        ${item.link ? `<button type="button" onclick="os.openLinkInProxy('${safeLink}')" class="os-btn hover-target cursor-none"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Open in Web Browser</button>
-                        <button type="button" onclick="window.open('${safeLink}','_blank','noopener')" class="os-btn hover-target cursor-none"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Original Link</button>` : ''}
-                        <button type="button" id="feed-clip-btn" class="os-btn text-emerald-300 hover-target cursor-none"><i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i> Save to Files</button>
-                    </div>
-                </div>
-                <div id="feed-reader-body" class="space-y-3 text-[13px] leading-relaxed text-gray-300">
-                    ${item.subtitle ? `<p class="text-gray-300">${esc(item.subtitle)}</p>` : '<div class="text-gray-400 text-xs">Loading article details...</div>'}
-                </div>
-            </div>`;
-
-        reader.querySelector('#feed-clip-btn')?.addEventListener('click', () => {
-            const bodyText = document.getElementById('feed-reader-body')?.innerText || item.subtitle || '';
-            window.AetherVFS && window.AetherVFS.saveClipperItem({
-                title: item.title,
-                content: `# ${item.title}\n\n- **Source**: ${item.source}\n- **Link**: ${item.link || 'N/A'}\n\n${bodyText}`,
-                sourceUrl: item.link || '',
-                tags: ['news', item.cat || 'rss']
-            });
-            window.Notifications && Notifications.push('News & RSS', 'Saved story to Files');
-        });
-        if (window.lucide) lucide.createIcons({ root: reader });
-
-        const bodyEl = document.getElementById('feed-reader-body');
-        if (!bodyEl) return;
-
-        // Enrich Dev.to full article markdown or Hacker News top comments
-        if (item.devtoId) {
-            try {
-                const r = await fetch(`https://dev.to/api/articles/${item.devtoId}`);
-                if (r.ok) {
-                    const full = await r.json();
-                    const paras = String(full.body_markdown || '').replace(/```[\s\S]*?```/g, (m) => `\n[Code Block]\n${m.replace(/```.*\n?/g, '')}\n`).split(/\n{2,}/).slice(0, 35);
-                    bodyEl.innerHTML = paras.map((p) => {
-                        const clean = p.trim();
-                        if (!clean) return '';
-                        if (clean.startsWith('#')) return `<h3 class="text-white font-semibold text-sm pt-2">${esc(clean.replace(/^#+\s*/, ''))}</h3>`;
-                        if (clean.startsWith('[Code Block]')) return `<pre class="bg-black/60 border border-white/10 rounded-lg p-3 font-mono text-xs text-emerald-200 overflow-x-auto">${esc(clean.replace('[Code Block]\n', ''))}</pre>`;
-                        return `<p>${esc(clean)}</p>`;
-                    }).join('');
-                }
-            } catch (_) {}
-        } else if (item.hnId) {
-            try {
-                const r = await fetch(`https://hacker-news.firebaseio.com/v0/item/${item.hnId}.json`);
-                if (r.ok) {
-                    const story = await r.json();
-                    const kids = (story.kids || []).slice(0, 6);
-                    const comments = (await Promise.all(kids.map((cid) =>
-                        fetch(`https://hacker-news.firebaseio.com/v0/item/${cid}.json`).then((x) => x.json()).catch(() => null)
-                    ))).filter((c) => c && c.text && !c.deleted);
-                    const stripHtml = (h) => {
-                        const d = new DOMParser().parseFromString(h, 'text/html');
-                        return d.body.textContent || '';
-                    };
-                    bodyEl.innerHTML = `
-                        ${story.text ? `<div class="os-card p-3.5 text-gray-200 whitespace-pre-wrap">${esc(stripHtml(story.text))}</div>` : ''}
-                        <div class="text-xs font-semibold text-gray-400 pt-1">Top Hacker News Comments (${story.descendants || comments.length})</div>
-                        ${comments.length ? comments.map((cm) => `
-                            <div class="os-card p-3 space-y-1">
-                                <div class="text-[11px] text-orange-300 font-medium">${esc(cm.by || 'user')}</div>
-                                <div class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">${esc(stripHtml(cm.text).slice(0, 700))}</div>
-                            </div>`).join('') : '<div class="text-xs text-gray-500">No comments posted yet.</div>'}`;
-                }
-            } catch (_) {}
-        }
+    feedClip: async item => {
+        const button=document.getElementById('feed-clip-btn');if(button?.disabled)return;if(button)button.disabled=true;
+        try{if(!window.AetherVFS?.saveClipperItem)throw Error('Files service unavailable');const record=await AetherVFS.saveClipperItem({title:item.title,content:document.getElementById('feed-reader-body')?.textContent||item.subtitle||'',sourceUrl:item.link,tags:['news',item.cat]});if(!record)throw Error('Files did not return a saved record');os.feedStatus(record?.persistence==='session-only'?'Session-only file copy · export before closing':'Visible text clipped to Files');}
+        catch(error){os.feedStatus('Clip failed: '+error.message);}
+        finally{if(button)button.disabled=false;}
+    },
+    feedOpenItem: async id => {
+        const item=[...os._feedItems,...os._feedLoadSaved()].find(item=>item.id===id);if(!item)return;
+        const token=++os._feedReaderID;os._feedSelectedId=id;os._feedRead.add(id);if(os._feedRead.size>1000)os._feedRead.delete(os._feedRead.values().next().value);os.feedRenderList();
+        const pane=document.getElementById('feed-reader-pane');if(!pane)return;pane.scrollTop=0;
+        const esc=os.feedEscape,link=os.feedSafeLink(item.link);
+        pane.innerHTML='<article class="news-reader-article"><div class="news-reader-kicker"><span class="news-source-mark">'+esc(({hn:'HN',devto:'DEV',github:'GH',reddit:'R'})[item.cat]||'N')+'</span><div><span class="news-eyebrow">'+esc(item.source)+'</span><p>'+esc([item.time,item.author].filter(Boolean).join(' · '))+'</p></div></div><h2>'+esc(item.title)+'</h2><div class="news-reader-actions">'+(link?'<a class="os-btn" target="_blank" rel="noopener noreferrer" href="'+esc(link)+'">Read original ↗</a>':'<span>Original URL unavailable</span>')+'<button type="button" id="feed-clip-btn" class="os-btn">Clip visible text</button><label>Text size <input type="range" min="13" max="21" value="'+(os._feedTextSize||15)+'" id="feed-text-size" aria-label="Article text size"></label></div><p class="news-reader-scope" id="feed-reader-scope">'+(item.devtoId?'Loading DEV article text…':item.hnId?'Loading Hacker News discussion · not the linked article':'Summary only · visit the original for the full story')+'</p><div id="feed-reader-body" class="news-reader-body"></div></article>';
+        const body=pane.querySelector('#feed-reader-body');body.style.fontSize=(os._feedTextSize||15)+'px';body.textContent=item.subtitle||'No summary provided.';
+        pane.querySelector('#feed-text-size').addEventListener('input',event=>{os._feedTextSize=Number(event.target.value);body.style.fontSize=os._feedTextSize+'px';});
+        pane.querySelector('#feed-clip-btn').addEventListener('click',()=>os.feedClip(item));
+        try{
+            if(item.devtoId&&/^\d+$/.test(String(item.devtoId))){
+                const data=await(await os.feedFetch('https://dev.to/api/articles/'+item.devtoId)).json();if(token!==os._feedReaderID||!body.isConnected)return;
+                body.textContent=typeof data.body_markdown==='string'?data.body_markdown.slice(0,60000):item.subtitle||'Article text unavailable';pane.querySelector('#feed-reader-scope').textContent='DEV article · plain Markdown text'+(data.body_markdown?.length>60000?' · truncated at 60,000 characters':'');
+            }else if(item.hnId&&/^\d+$/.test(String(item.hnId))){
+                const story=await(await os.feedFetch('https://hacker-news.firebaseio.com/v0/item/'+item.hnId+'.json')).json();
+                if(token!==os._feedReaderID)return;
+                const comments=await Promise.all((Array.isArray(story?.kids)?story.kids:[]).slice(0,6).filter(id=>/^\d+$/.test(String(id))).map(async id=>{try{return await(await os.feedFetch('https://hacker-news.firebaseio.com/v0/item/'+id+'.json')).json();}catch(_){return null;}}));
+                if(token!==os._feedReaderID||!body.isConnected)return;
+                body.replaceChildren();const text=html=>new DOMParser().parseFromString(String(html||''),'text/html').body.textContent||'';
+                if(story?.text){const p=document.createElement('p');p.textContent=text(story.text);body.append(p);}
+                for(const comment of comments.filter(c=>c&&c.text&&!c.deleted&&!c.dead)){const block=document.createElement('blockquote'),by=document.createElement('strong'),p=document.createElement('p');by.textContent=comment.by||'Unknown author';p.textContent=text(comment.text).slice(0,5000);block.append(by,p);body.append(block);}
+                if(!body.children.length)body.textContent='No readable discussion text returned. Open the original for the full thread.';
+                pane.querySelector('#feed-reader-scope').textContent='Hacker News discussion · up to six top-level comments, not a full article';
+            }
+        }catch(error){if(token===os._feedReaderID&&body.isConnected)pane.querySelector('#feed-reader-scope').textContent='Details unavailable · summary retained; open the original';}
     },
 
     fetchSignals: async (fromUI = false) => {
+        const requestID=++os._feedFetchID;
         const activeSources = [];
+        for(const key of ['hn','devto','github','reddit'])os._feedSourceStatus[key]={state:'loading',count:0};os.feedRenderSources();
         const collected = [];
         const relTime = (unixSec) => {
-            if (!unixSec) return 'Recent';
+            if (!unixSec) return 'Time unavailable';
             const m = Math.max(1, Math.floor((Date.now() / 1000 - unixSec) / 60));
             return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`;
         };
@@ -1538,12 +1446,12 @@ window.extendOS({
         const tasks = [
             // 1. Hacker News Top Stories (parallel fetch!)
             (async () => {
-                const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', { signal: AbortSignal.timeout(8000) });
+                const hnRes = await os.feedFetch('https://hacker-news.firebaseio.com/v0/topstories.json');
                 if (!hnRes.ok) return;
                 const hnIds = await hnRes.json();
-                if (!Array.isArray(hnIds)) return;
+                if (!Array.isArray(hnIds)||requestID!==os._feedFetchID) return;
                 const stories = await Promise.all(hnIds.slice(0, 10).map((id) =>
-                    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((r) => r.json()).catch(() => null)
+                    os.feedFetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then((r) => r.json()).catch(() => null)
                 ));
                 stories.filter((s) => s && s.id && s.title).forEach((s) => {
                     collected.push({
@@ -1566,7 +1474,7 @@ window.extendOS({
 
             // 2. Dev.to Featured Articles (100% CORS enabled, full Markdown!)
             (async () => {
-                const r = await fetch('https://dev.to/api/articles?per_page=10&top=7', { signal: AbortSignal.timeout(8000) });
+                const r = await os.feedFetch('https://dev.to/api/articles?per_page=10&top=7');
                 if (!r.ok) return;
                 const list = await r.json();
                 if (!Array.isArray(list)) return;
@@ -1583,7 +1491,7 @@ window.extendOS({
                         points: a.public_reactions_count || 0,
                         subtitle: a.description || '',
                         cover: a.cover_image || a.social_image || '',
-                        time: `${a.reading_time_minutes || 3}m read`,
+                        time: a.reading_time_minutes>0?`${a.reading_time_minutes}m read`:'Read time unavailable',
                         link: a.url
                     });
                 });
@@ -1592,9 +1500,9 @@ window.extendOS({
 
             // 3. GitHub Trending / Popular Active Repos (safe Array guard!)
             (async () => {
-                const ghUser = (SystemState.settings.api_github || '').trim();
+                const ghUser = String(SystemState.settings.api_github || '').trim();
                 if (ghUser) {
-                    const r = await fetch(`https://api.github.com/users/${encodeURIComponent(ghUser)}/events/public?per_page=8`, { signal: AbortSignal.timeout(8000) });
+                    const r = await os.feedFetch(`https://api.github.com/users/${encodeURIComponent(ghUser)}/events/public?per_page=8`);
                     if (!r.ok) return;
                     const data = await r.json();
                     if (!Array.isArray(data)) return;
@@ -1612,7 +1520,8 @@ window.extendOS({
                         });
                     });
                 } else {
-                    const r = await fetch('https://api.github.com/search/repositories?q=stars:>1500+pushed:>2026-01-01&sort=updated&order=desc&per_page=8', { signal: AbortSignal.timeout(8000) });
+                    const since=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+                    const r = await os.feedFetch('https://api.github.com/search/repositories?q='+encodeURIComponent('stars:>1500 pushed:>'+since)+'&sort=updated&order=desc&per_page=8');
                     if (!r.ok) return;
                     const data = await r.json();
                     if (!Array.isArray(data?.items)) return;
@@ -1637,7 +1546,7 @@ window.extendOS({
 
             // 4. Reddit r/technology
             (async () => {
-                const r = await fetch('https://www.reddit.com/r/technology/hot.json?limit=8', { signal: AbortSignal.timeout(8000) });
+                const r = await os.feedFetch('https://www.reddit.com/r/technology/hot.json?limit=8');
                 if (!r.ok) return;
                 const redData = await r.json();
                 const kids = redData?.data?.children;
@@ -1665,20 +1574,15 @@ window.extendOS({
 
         await Promise.all(tasks);
 
-        if (collected.length) {
-            // Interleave sources so "All" tab feels balanced
-            os._feedItems = collected;
-            os.signalFeed.buffer = collected.slice(0, 15);
+        if(requestID!==os._feedFetchID)return;
+        const categories={hn:'Hacker News',devto:'Dev.to',github:'GitHub',reddit:'Reddit'},groups=[];
+        for(const [cat,name]of Object.entries(categories)){
+            const updated=activeSources.includes(name),items=(updated?collected:os._feedItems).filter(item=>item.cat===cat&&typeof item.title==='string'&&os.feedSafeLink(item.link)).map(item=>({...item,stale:!updated}));
+            os._feedSourceStatus[cat]={state:updated?'updated':items.length?'cached':'failed',count:items.length};groups.push(items);
         }
-
-        const srcLbl = document.getElementById('signal-sources-lbl');
-        if (srcLbl) {
-            srcLbl.innerText = activeSources.length > 0
-                ? `Connected: ${activeSources.join(' · ')}`
-                : 'Offline — unable to reach public feeds';
-        }
-        if (fromUI || document.getElementById('signal-stream-container')) {
-            os.feedRenderList();
-        }
+        os._feedItems=[];for(let i=0;i<Math.max(0,...groups.map(group=>group.length));i++)for(const group of groups)if(group[i])os._feedItems.push(group[i]);
+        os.signalFeed=os.signalFeed||{};os.signalFeed.buffer=os._feedItems.slice(0,15);os.feedRenderSources();
+        const label=document.getElementById('signal-sources-lbl');if(label)label.textContent=activeSources.length+' / 4 sources refreshed · '+new Date().toLocaleTimeString();
+        if(fromUI||document.getElementById('signal-stream-container'))os.feedRenderList();
     }
 });

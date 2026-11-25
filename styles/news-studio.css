@@ -1,0 +1,43 @@
+/* A glass editorial reading room; no opaque list or article backplates. */
+#win-feed{background:linear-gradient(125deg,#d2efff22,transparent 62%),rgba(var(--adaptive-rgb,12,22,37),.25)!important;backdrop-filter:blur(18px) saturate(145%)!important;-webkit-backdrop-filter:blur(18px) saturate(145%)!important}
+#win-feed>div:nth-child(2),#signal-feed-root,#signal-stream-container,#feed-reader-pane{background:transparent!important;background-image:none!important}
+.news-studio{display:flex;flex-direction:column;height:100%;min-height:0;container-type:inline-size;color:var(--material-ink,#edf5ff);font:12px/1.6 Inter,system-ui,sans-serif}
+#signal-feed-root .studio-app-heading{padding:18px 24px;flex-shrink:0;background:transparent!important}
+#signal-feed-root .studio-app-heading h2{font-size:29px;letter-spacing:-1.1px;font-weight:550}
+#signal-feed-root .studio-app-heading p{max-width:560px;font-size:10px;color:var(--material-muted)}
+.news-source-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 20px 15px;flex-shrink:0}
+.news-source-health{position:relative;display:flex;flex-direction:column;gap:5px;padding:12px 14px 12px 22px;border:1px solid var(--material-line-soft,#d6eeff26);border-radius:13px;background:#d3efff04}
+.news-source-health::before{content:'';position:absolute;top:18px;left:11px;width:4px;height:4px;border-radius:50%;background:#aec4d0}
+.news-source-health[data-state=updated]::before{background:#a6d9c5;box-shadow:0 0 9px #a6d9c540}.news-source-health[data-state=cached]::before{background:#ebd39c}.news-source-health[data-state=failed]::before{background:#e2a6b0}
+.news-source-health strong{font-weight:550;font-size:11px}.news-source-health span{font:9px/1.6 ui-monospace,monospace;color:var(--material-muted)}
+.news-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 20px;border-block:1px solid var(--material-line-soft,#d6eeff26);flex-shrink:0}
+.news-toolbar input{flex:1;min-width:90px;width:120px;padding:7px 9px;border:1px solid var(--material-line-soft,#d6eeff26);border-radius:9px;background:#d3efff08;color:inherit;font-size:10px}.news-toolbar button{font-size:10px}
+.news-status{font:9px/1.6 ui-monospace,monospace;color:var(--material-muted);padding:7px 20px;margin:0;flex-shrink:0}
+.news-workspace{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(0,1.4fr);grid-template-rows:minmax(0,1fr);flex:1 1 0;min-height:0;overflow:hidden;padding:3px 12px 12px;gap:12px}
+#signal-stream-container,#feed-reader-pane{min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;border:1px solid var(--material-line-soft,#d6eeff26);border-radius:18px;touch-action:pan-y}
+#signal-stream-container{padding:8px}#feed-reader-pane{padding:28px;scroll-behavior:auto}
+.news-story-card{--news-accent:#a5c9df;border-bottom:1px solid var(--material-line-soft,#d6eeff26);padding:11px 10px;border-radius:11px;margin-bottom:4px;transition:background .15s}
+.news-story-card[data-source=hn]{--news-accent:#f0c396}.news-story-card[data-source=devto]{--news-accent:#a5d7c7}.news-story-card[data-source=github]{--news-accent:#c9b5ef}.news-story-card[data-source=reddit]{--news-accent:#e6b3ba}
+.news-story-selected{background:#c4e8ff0c;box-shadow:inset 2px 0 var(--news-accent)}
+.news-story-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;color:var(--news-accent);font:9px/1.5 ui-monospace,monospace}
+.news-bookmark{font:20px/1 system-ui;padding:3px;cursor:pointer;color:var(--material-muted)}.news-bookmark[aria-pressed=true]{color:#edd29a}
+.news-story-open{display:block;width:100%;text-align:left;cursor:pointer;color:inherit}.news-story-open h3{font-size:13px;line-height:1.5;font-weight:550;letter-spacing:-.15px;margin:0}.news-story-open p{font-size:10px;line-height:1.65;color:var(--material-muted);margin:7px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.news-story-open>span{font:9px/1.6 ui-monospace,monospace;color:var(--material-muted)}
+.news-story-read .news-story-meta>span::after{content:' · read'}
+.news-list-empty{color:var(--material-muted);padding:24px 12px;font-size:11px;line-height:1.9}
+.news-reader-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;max-width:300px;min-height:280px;height:100%;margin:auto;text-align:center;color:var(--material-muted)}.news-empty-symbol{font-size:65px;color:#a7d9e5;text-shadow:0 0 35px #9ddaea50;margin-bottom:18px}.news-reader-empty h3{font-size:23px;font-weight:500;line-height:1.4;letter-spacing:-.7px;color:var(--material-ink);margin:9px 0}.news-reader-empty p{font-size:11px;line-height:1.9}
+.news-eyebrow{font:9px/1.6 ui-monospace,monospace;letter-spacing:.15em;color:var(--material-muted)}
+.news-reader-article{max-width:700px;margin:0 auto;user-select:text;min-width:0}.news-reader-kicker{display:flex;align-items:center;gap:12px;margin-bottom:22px}.news-source-mark{display:grid;place-items:center;width:52px;height:52px;flex-shrink:0;border-radius:16px;border:1px solid var(--material-line,#d6eeff30);background:linear-gradient(135deg,#c1e7ff17,#c1e7ff04);box-shadow:inset 0 1px 0 #ffffff30;font:550 16px ui-monospace,monospace;color:var(--material-ink)}.news-reader-kicker p{margin:5px 0 0;font-size:10px;color:var(--material-muted)}
+.news-reader-article h2{font-size:28px;line-height:1.3;letter-spacing:-.9px;font-weight:550;margin:0 0 20px;overflow-wrap:anywhere}
+.news-reader-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 0;border-block:1px solid var(--material-line-soft,#d6eeff26)}.news-reader-actions .os-btn{font-size:10px}.news-reader-actions label{display:flex;align-items:center;gap:8px;font-size:9px;color:var(--material-muted)}.news-reader-actions input{width:65px;accent-color:#a7d9e5}
+.news-reader-scope{font:9px/1.8 ui-monospace,monospace;color:var(--material-muted);margin:15px 0 20px}
+.news-reader-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;color:var(--material-ink);font-size:15px}.news-reader-body blockquote{border-left:2px solid #d0dceb55;padding:8px 0 8px 16px;margin:15px 0}.news-reader-body blockquote strong{font:10px ui-monospace,monospace;color:var(--material-muted)}.news-reader-body blockquote p{margin:8px 0}
+.news-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--material-line-soft,#d6eeff26);font:9px/1.6 ui-monospace,monospace;color:var(--material-muted);padding:8px 20px;flex-shrink:0}
+#signal-feed-root :is(button,input,a,[tabindex]):focus-visible{outline:2px solid #8ad6f3;outline-offset:-2px}
+html[data-system-mode=day] #win-feed{background:linear-gradient(125deg,#ffffff30,transparent 65%),rgba(229,242,252,.4)!important}html[data-system-mode=day] .news-story-meta{color:#365b79}html[data-system-mode=day] .news-bookmark[aria-pressed=true]{color:#8a6018}
+html[data-glass-clarity=clear] #win-feed{background:rgba(var(--adaptive-rgb,12,22,37),.18)!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+html[data-glass-clarity=solid] #win-feed{background:var(--material-solid,#142334)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@container(max-width:700px){.news-workspace{grid-template-columns:1fr;grid-template-rows:230px minmax(320px,1fr);overflow:auto}#signal-feed-root .studio-app-heading{padding:14px 16px}#signal-feed-root .studio-app-heading h2{font-size:23px}.news-source-overview{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 12px 12px}.news-toolbar{padding:10px 12px}.news-source-health{padding-block:8px}.news-source-health::before{top:14px}#feed-reader-pane{padding:20px}.news-reader-article h2{font-size:24px}}
+@media(prefers-reduced-transparency:reduce){#win-feed{background:var(--material-solid,#142334)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+@media(prefers-reduced-motion:reduce){.news-story-card{transition:none}}
+@media(forced-colors:active){#win-feed{background:Canvas!important;color:CanvasText!important;backdrop-filter:none!important}.news-story-meta,.news-bookmark{color:CanvasText!important}.news-story-selected{border:2px solid Highlight;box-shadow:none}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#win-feed{background:var(--material-solid,#142334)!important}}

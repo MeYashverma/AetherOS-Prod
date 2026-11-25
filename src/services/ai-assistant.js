@@ -777,7 +777,7 @@
         spacexhub: 'Orbital Launch Control tracks live global rocket launch countdowns and SpaceX fleet hardware.',
         worldfactbook: 'World Factbook explores 250+ nations and converts currencies via ECB Frankfurter rates.',
         gutendex: 'Gutenberg Library reads 70,000+ public-domain books via Gutendex.',
-        shadertoy: 'GLSL Shader Studio compiles 60fps WebGL fragment shaders and embeds Shadertoy.',
+        shadertoy: 'GLSL Shader Studio compiles WebGL fragment shaders and embeds Shadertoy.',
         stellarium: 'NASA Eyes & Planetarium flies 3D Solar System, Asteroids, Earth satellites, and Stellarium night sky.',
         chiptune: 'Retro & 3D Makers hosts BeepBox chiptune DAW, Blockbench 3D studio, and JSPaint.',
         georadar: 'GeoRadar Explorer pairs OpenStreetMap with Wikipedia GeoSearch 10km landmark discovery.'

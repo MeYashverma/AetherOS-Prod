@@ -1,31 +1,47 @@
 // Frost app structure, not the content: text/media keep full opacity.
 (() => {
   const mounted = new Map();
-  const structure = 'div,main,section,aside,header,footer,nav,article';
-  const preserve = '.verci-stage,.phone,canvas,video,img,iframe,svg,[data-preserve-surface]';
+  const structure = 'div,main,section,aside,header,footer,nav,article,form,ul,ol,dl,table,thead,tbody,tfoot,tr,fieldset';
+  const preserve = '[data-surface=content],[role=img],.verci-stage,.phone,canvas,video,img,iframe,svg,.theme-btn,.glass-icon-tile,[data-preserve-surface]';
+  const typography='span,p,h1,h2,h3,h4,h5,label,button,input,textarea,select,summary,pre,code,dt,dd,th,td,small,a,output,time';
+  function adaptInk(node){
+    if(!(node instanceof HTMLElement)||node.closest(preserve))return;
+    const c=getComputedStyle(node).color.match(/[\d.]+/g)?.map(Number);
+    if(c&&c.length>=3&&Math.max(...c.slice(0,3))-Math.min(...c.slice(0,3))<60){
+      const classes=String(node.className);node.dataset.adaptiveInk=/(?:gray|slate|zinc)-[456]/.test(classes)?'muted':'primary';
+    }
+  }
   function frost(node, body) {
     if (!(node instanceof HTMLElement) || node.closest(preserve)) return;
     if (!node.matches(structure)) return;
     const style = getComputedStyle(node);
     const values = style.backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
     const [r = 0, g = 0, b = 0, alpha = 1] = values;
-    const dark = (r * .2126 + g * .7152 + b * .0722) < 135;
     const neutral = Math.max(r,g,b) - Math.min(r,g,b) < 65;
     const gradient = style.backgroundImage.includes('gradient') && !style.backgroundImage.includes('url(');
     const gradientColors = [...style.backgroundImage.matchAll(/rgba?\(([^)]+)\)/g)].map(m => m[1].split(',').map(Number));
     const darkGradient = gradientColors.length > 0 && gradientColors.every(([r,g,b]) => Math.max(r,g,b) < 140);
-    const layout = node === body || node.parentElement === body || node.matches('main,aside,section,header,footer,nav') || /(?:shell|sidebar|panel|h-full|flex-1|overflow-|flex-col)/.test(node.className);
+    const appRoot = node === body || node.parentElement === body;
+    const layout = appRoot || node.matches('main,aside,header,footer,nav') || /(?:shell|sidebar|panel|h-full|flex-1|overflow-|flex-col)/.test(node.className);
+    // Structural layout owns no opaque paint, regardless of its accent hue.
+    // Small status chips, content previews and media are not layout surfaces.
     // Nested cards and layout-less wrappers also occlude the backdrop. Do not
     // add another alpha tint at every depth: the frame owns the glass tint.
-    if ((values.length >= 3 && dark && neutral && alpha > .15) || (gradient && (layout || darkGradient))) {
+    if (appRoot || (values.length >= 3 && (neutral || layout) && alpha > .15) || (gradient && (layout || darkGradient))) {
       if (!node.classList.contains('liquid-app-surface')) node.classList.add('liquid-app-surface');
+      // Inline !important beats any stylesheet: clear only structural paint,
+      // without changing content opacity, artwork, borders or status controls.
+      for(const property of ['background','background-color','background-image']){
+        if(node.style.getPropertyPriority(property)==='important' && node.style.getPropertyValue(property)!==(property==='background-image'?'none':'transparent'))node.style.setProperty(property,property==='background-image'?'none':'transparent','important');
+      }
     }
   }
 
   function scan(node, body) {
-    frost(node, body);
+    frost(node, body);adaptInk(node);
     if (!(node instanceof HTMLElement) || node.closest(preserve)) return;
-    for (const child of [...node.querySelectorAll(structure)].slice(0, 800)) frost(child, body);
+    for (const child of [...node.querySelectorAll(structure)].slice(0, 800)){frost(child, body);adaptInk(child);}
+    for (const text of [...node.querySelectorAll(typography)].slice(0,1200))adaptInk(text);
   }
   function unmount(id) {
     const key = mounted.has(id) ? id : `win-${id}`, state = mounted.get(key);

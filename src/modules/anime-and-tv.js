@@ -170,8 +170,8 @@ window.extendOS({
     ytchtvCopyVideoId: () => {
         const videoIdEl = document.getElementById('ytchtv-custom-video-id');
         if (videoIdEl && videoIdEl.innerText !== '--') {
-            navigator.clipboard?.writeText(`https://youtu.be/${videoIdEl.innerText}`);
-            if (window.Notifications) Notifications.push('Retro TV', 'Copied YouTube URL to clipboard.');
+            if(!navigator.clipboard){window.Notifications?.push('Retro TV','Clipboard unavailable. Copy the video ID manually.');return;}
+            navigator.clipboard.writeText(`https://youtu.be/${videoIdEl.innerText}`).then(()=>window.Notifications?.push('Retro TV','YouTube URL copied.'),()=>window.Notifications?.push('Retro TV','Clipboard permission denied. Copy the video ID manually.'));
         }
     },
 

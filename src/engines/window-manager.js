@@ -27,7 +27,10 @@ class WindowManager {
                     this.updateTopBarAppInfo();
                     os.updateSystemIndicators(false);
                 }, 30000);
-                window.addEventListener('resize', () => this.clampAllOpenWindows(), { passive: true });
+                let resizeFrame=null;
+                const resize=()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>this.clampAllOpenWindows());};
+                window.addEventListener('resize',resize,{passive:true});
+                window.visualViewport?.addEventListener('resize',resize,{passive:true});
             }
 
             updateTopBarAppInfo() {
@@ -42,13 +45,13 @@ class WindowManager {
                     activeAppEl.innerText = topWin ? topWin.title : 'AetherOS';
                     let icon = document.getElementById('active-app-icon');
                     if (!icon) { icon = document.createElement('span'); icon.id = 'active-app-icon'; activeAppEl.before(icon); }
-                    icon.innerHTML = window.AetherDesign?.appIcon(topWin?.id || 'finder', 19) || '';
+                    icon.innerHTML = window.AetherDesign?.appIcon(topWin?.id || 'finder', 19, 'plain') || '';
                 }
             }
 
             _computeClampedBounds(winData) {
                 const rect = this.canvas?.getBoundingClientRect?.() || { width: window.innerWidth, height: window.innerHeight - 38 };
-                const availW = Math.max(280, rect.width || window.innerWidth);
+                const availW = Math.max(280, Math.min(rect.width || window.innerWidth,window.visualViewport?.width||window.innerWidth));
                 const dockClearance = window.innerWidth < 768 ? 72 : 84;
                 const availH = Math.max(220, (rect.height || (window.innerHeight - 38)) - dockClearance);
                 const pad = window.innerWidth < 640 ? 6 : 12;
@@ -69,7 +72,7 @@ class WindowManager {
                     if (el.dataset.maximized === 'true') {
                         const rect = this.canvas?.getBoundingClientRect?.() || { width: window.innerWidth, height: window.innerHeight - 38 };
                         const dockClearance = window.innerWidth < 768 ? 70 : 82;
-                        el.style.width = `${Math.max(280, rect.width - 12)}px`;
+                        el.style.width = `${Math.max(280, Math.min(rect.width,window.innerWidth) - 12)}px`;
                         el.style.height = `${Math.max(220, rect.height - dockClearance)}px`;
                         gsap.set(el, { x: 6, y: 6 });
                         return;
@@ -105,7 +108,7 @@ class WindowManager {
                         height: parseInt(el.style.height, 10) || winData.height
                     };
                     el.dataset.maximized = 'true';
-                    const targetW = Math.max(280, rect.width - 12);
+                    const targetW = Math.max(280, Math.min(rect.width,window.innerWidth) - 12);
                     const targetH = Math.max(220, rect.height - dockClearance);
                     gsap.to(el, { x: 6, y: 6, width: targetW, height: targetH, duration: 0.24, ease: 'power2.out' });
                 }
@@ -150,11 +153,12 @@ class WindowManager {
                         </div>
                         <!-- Centered Title -->
                         <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;pointer-events:none;z-index:1;max-width:calc(100% - 130px)">
-                            ${window.AetherDesign?.appIcon(winData.id, 19) || ''}
+                            ${window.AetherDesign?.appIcon(winData.id, 19, 'plain') || ''}
                             <span style="font:500 12px/1 'Inter',sans-serif;letter-spacing:-0.02em;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.4)">${window.escapeAetherHtml(winData.title)}</span>
                         </div>
-                        <!-- Right Window Controls: Quick Snap & Always-on-Top Pin -->
-                        <div class="flex items-center justify-end gap-1 win-header-tools" style="width:68px;position:relative;z-index:2">
+                        <!-- Source-backed app guide and window controls -->
+                        <div class="flex items-center justify-end gap-1 win-header-tools" style="width:90px;position:relative;z-index:2">
+                            <button type="button" class="win-hdr-action hover-target" onclick="window.AetherAppDetails?.show('${winData.id}')" title="App sources and limitations" aria-label="Sources and limitations for ${window.escapeAetherHtml(winData.title)}"><i data-lucide="info" style="width:11px;height:11px"></i></button>
                             <button type="button" class="win-hdr-action win-btn-snap-l hover-target cursor-none" title="Snap Left 50% (Alt+←)" aria-label="Snap Left"><i data-lucide="panel-left" style="width:11px;height:11px"></i></button>
                             <button type="button" class="win-hdr-action win-btn-snap-r hover-target cursor-none" title="Snap Right 50% (Alt+→)" aria-label="Snap Right"><i data-lucide="panel-right" style="width:11px;height:11px"></i></button>
                             <button type="button" class="win-hdr-action win-btn-pin ${winData.pinned ? 'pinned' : ''} hover-target cursor-none" title="Always on Top across Spaces" aria-label="Pin Always on Top"><i data-lucide="pin" style="width:11px;height:11px"></i></button>
@@ -487,12 +491,14 @@ class WindowManager {
 
             _killWindowProcesses(id) {
                 window.AetherWindowSurfaces?.unmount(id);
+                if (id === 'gutendex') os.gdDispose?.();
+                if (id === 'weather') os.weatherDispose?.();
+                if (id === 'ossradar') os.ossDispose?.();
+                if (id === 'codeplay') os.codeplayStop?.(false);
                 if (id === 'terminal') {
                     if (os.terminalStreamInterval) { clearInterval(os.terminalStreamInterval); os.terminalStreamInterval = null; }
                 }
-                if (id === 'taskmanager') {
-                    if (os._tmRefreshInterval) { clearInterval(os._tmRefreshInterval); os._tmRefreshInterval = null; }
-                }
+                if (id === 'taskmanager') os.tmDispose?.();
                 if (id === 'media') {
                     if (os.spectrographInterval) { clearInterval(os.spectrographInterval); os.spectrographInterval = null; }
                     if (os.playbackTimerInterval) { clearInterval(os.playbackTimerInterval); os.playbackTimerInterval = null; }
@@ -511,8 +517,10 @@ class WindowManager {
                     os.lanyardSocket = null;
                 }
                 if (id === 'feed') {
+                    os.feedDispose?.();
                     if (os.feedInterval) { clearInterval(os.feedInterval); os.feedInterval = null; }
                 }
+                if (id === 'devpad' && os.killDevPad) os.killDevPad();
                 if (id === 'sysmon' && os.killSysMonitor) os.killSysMonitor();
                 if (id === 'globe' && os.killGlobe) os.killGlobe();
                 if (id === 'market' && os.killMarket) os.killMarket();
@@ -933,7 +941,7 @@ class WindowManager {
                         if (id === 'ytchtv') os.killYtchtv();
                         if (id === 'entityscanner') os.killEntityScanner();
                         if (id === 'wikiboard') os.killWikiBoard();
-                        if (id === 'taskmanager' && os._tmRefreshInterval) { clearInterval(os._tmRefreshInterval); os._tmRefreshInterval = null; }
+                        if (id === 'taskmanager') os.tmDispose?.();
                     }
                 });
             }

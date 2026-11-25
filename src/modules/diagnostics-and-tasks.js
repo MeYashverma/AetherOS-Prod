@@ -89,8 +89,8 @@ window.extendOS({
         const feed = document.getElementById('terminal-feed');
         if (!feed || !navigator.clipboard) return;
         navigator.clipboard.writeText(feed.innerText || '').then(() => {
-            window.Notifications && Notifications.push('Terminal', 'Copied shell session output to clipboard');
-        });
+            window.Notifications && Notifications.push('Terminal', 'Copied console output to clipboard');
+        }).catch(()=>window.Notifications?.push('Terminal','Clipboard permission denied. Select the output and copy manually.'));
     },
 
     terminalToggleMatrix: () => {
@@ -199,7 +199,7 @@ window.extendOS({
             setTimeout(() => cliInput.focus(), 40);
         }
 
-        os.terminalWrite('AetherOS Interactive Shell (ash 2.6) — Type "help" for commands or Tab to autocomplete.', 'accent');
+        os.terminalWrite('AetherOS Browser Console — Type "help" for commands or Tab to autocomplete.', 'accent');
         os.terminalWrite('Working directory mounted at /Archive · Ctrl+L clears screen · Switch to "System Log" tab for background events.', 'muted');
     },
 
@@ -270,12 +270,12 @@ window.extendOS({
             os.terminalWrite([
                 '      /\\         user@aetheros',
                 '     /  \\        -------------',
-                `    / /\\ \\       OS:       AetherOS Liquid Glass 2.6 (Web Workstation)`,
-                `   / ____ \\      Shell:    ash 2.6 · cwd ${cwd}`,
+                `    / /\\ \\       Runtime:  AetherOS (browser workspace)`,
+                `   / ____ \\      Console:  JavaScript command interpreter · cwd ${cwd}`,
                 `  /_/    \\_\\     Theme:    ${SystemState.settings.active_theme || 'midnight'} (${SystemState.settings.performance_mode || 'eco'} profile)`,
                 `                 Desktop:  Workspace 0${SystemState.settings.active_space || 1} · ${openWins} open window(s)`,
                 `                 Apps:     ${enabledMods} enabled / ${totalMods} installed · ${vfsCount} VFS files`,
-                `                 Runtime:  ${navigator.hardwareConcurrency || '?'} CPU threads · ${navigator.deviceMemory ? navigator.deviceMemory + ' GB RAM · ' : ''}uptime ${Math.floor(upSec / 60)}m ${upSec % 60}s`
+                `                 Runtime:  ${navigator.hardwareConcurrency || '?'} CPU threads · ${navigator.deviceMemory ? navigator.deviceMemory + ' GB (rounded hint) · ' : ''}uptime ${Math.floor(upSec / 60)}m ${upSec % 60}s`
             ].join('\n'), 'accent');
             return;
         }
@@ -450,7 +450,7 @@ window.extendOS({
             Object.values(SystemState.windows || {}).forEach((w) => {
                 if (w.isOpen && w.id !== 'terminal' && window.winManager) window.winManager.closeWindow(w.id);
             });
-            os.terminalWrite('Closed all background windows.', 'success');
+            os.terminalWrite('Closed the other app windows. Some shared services may continue.', 'muted');
             return;
         }
 
@@ -550,16 +550,13 @@ window.extendOS({
         }
 
         if (c.startsWith('ping ')) {
-            let target = raw.slice(5).trim();
-            if (!/^https?:\/\//i.test(target)) target = 'https://' + target;
-            const t0 = performance.now();
-            os.terminalWrite(`PING ${target} ...`, 'muted');
-            fetch(target, { mode: 'no-cors', cache: 'no-store' })
-                .then(() => {
-                    const ms = (performance.now() - t0).toFixed(1);
-                    os.terminalWrite(`64 bytes from ${target}: time=${ms} ms (reachable)`, 'success');
-                })
-                .catch((e) => os.terminalWrite(`ping failed: ${e.message}`, 'error'));
+            let target=raw.slice(5).trim();if(!/^https?:\/\//i.test(target))target='https://'+target;
+            try{const url=new URL(target);if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw Error();target=url.href;}
+            catch(_){os.terminalWrite('Usage: ping <http(s) URL without credentials>','error');return;}
+            const start=performance.now();os.terminalWrite(`HTTP timing probe: ${target} (not ICMP ping)`,'muted');
+            fetch(target,{mode:'no-cors',cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)})
+                .then(response=>os.terminalWrite(`Request settled in ${(performance.now()-start).toFixed(1)} ms. ${response.type==='opaque'?'Opaque response: status and reachability cannot be verified.':`HTTP ${response.status}.`} Includes browser/network overhead, not round-trip latency.`,'muted'))
+                .catch(error=>os.terminalWrite(`HTTP probe failed or timed out: ${error.message}`,'error'));
             return;
         }
 
@@ -619,8 +616,8 @@ window.extendOS({
                 if (!os.sysMonitorCanvas) return;
                 os.sysMonitorCtx = os.sysMonitorCanvas.getContext('2d');
                 os.sysmonTelemetry = os.sysmonTelemetry || { frames: [], heap: [], longTasks: 0, lastReport: {} };
-                os.sysmonTelemetry.frames = Array(160).fill(16.6);
-                os.sysmonTelemetry.heap = Array(80).fill(0);
+                os.sysmonTelemetry.frames = [];
+                os.sysmonTelemetry.heap = [];
                 os.resizeSysMonitorCanvas();
                 const root = document.getElementById('sysmon-enhanced-root') || os.sysMonitorCanvas.parentNode;
                 if (window.ResizeObserver && !os.sysmonResizeObserver) {
@@ -888,122 +885,107 @@ window.extendOS({
                     os._moduleIntervals[id].forEach(i => clearInterval(i));
                     delete os._moduleIntervals[id];
                 }
-                os.logTerminal(`Task Manager: Force killed module [${id}]`);
-                Notifications.push('TASK MGR', `Force killed: ${id}`);
+                os.logTerminal(`Task Manager: Closed app window [${id}]`);
+                Notifications.push('TASK MGR', `Closed window: ${id}`);
             },
 
     _tmTab: 'processes',
     _tmFilter: '',
-
+    _tmHistory: [],
+    _tmPaused: false,
+    tmEscape: value => String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),
+    tmStatus: message => {const host=document.getElementById('tm-status');if(host)host.textContent=message;},
+    tmSnapshot: () => {
+        const windows=Object.values(SystemState.windows||{}),memory=performance.memory;
+        const finite=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
+        return {time:new Date().toISOString(),open:windows.filter(w=>w.isOpen).length,minimized:windows.filter(w=>w.isOpen&&w.isMinimized).length,registered:windows.length,domNodes:document.querySelectorAll('*').length,
+            heapUsed:finite(memory?.usedJSHeapSize)?memory.usedJSHeapSize:null,heapLimit:finite(memory?.jsHeapSizeLimit)&&memory.jsHeapSizeLimit>0?memory.jsHeapSizeLimit:null,
+            windows:windows.filter(w=>w.isOpen).map(w=>({id:w.id,title:w.title,space:w.space||1,minimized:!!w.isMinimized,pinned:!!w.pinned}))};
+    },
+    tmSample: (scheduled=false) => {
+        const now=performance.now(),snapshot=os.tmSnapshot();
+        snapshot.callbackDelay=scheduled&&typeof os._tmNextTick==='number'?Math.max(0,now-os._tmNextTick):null;
+        if(scheduled)os._tmNextTick=now+2000;
+        os._tmHistory.push(snapshot);if(os._tmHistory.length>60)os._tmHistory.shift();
+        return snapshot;
+    },
     initTaskManager: () => {
-        if (os._tmRefreshInterval) clearInterval(os._tmRefreshInterval);
-        os.tmSwitchTab('processes');
-        os._tmRefreshInterval = setInterval(() => {
-            if (document.getElementById('taskmanager-content')) os.tmRefreshData();
-        }, 2000);
+        os.tmDispose();os._tmPaused=false;os._tmListSignature='';os._tmNextTick=performance.now()+2000;
+        const pause=document.getElementById('tm-pause');if(pause){pause.textContent='Pause sampling';pause.setAttribute('aria-pressed','false');}
+        const filter=document.getElementById('tm-filter-input');if(filter)filter.value=os._tmFilter||'';
+        os.tmSample();os.tmSwitchTab(os._tmTab||'processes');
+        os._tmRefreshInterval=setInterval(()=>{
+            if(!document.getElementById('taskmanager-content')){os.tmDispose();return;}
+            if(document.hidden||os._tmPaused){os._tmNextTick=performance.now()+2000;return;}
+            os.tmSample(true);os.tmRefreshData();
+        },2000);
     },
-
+    tmDispose: () => {if(os._tmRefreshInterval)clearInterval(os._tmRefreshInterval);os._tmRefreshInterval=null;},
+    tmTogglePause: () => {
+        os._tmPaused=!os._tmPaused;os._tmNextTick=performance.now()+2000;
+        const button=document.getElementById('tm-pause');if(button){button.textContent=os._tmPaused?'Resume sampling':'Pause sampling';button.setAttribute('aria-pressed',String(os._tmPaused));}
+        os.tmStatus(os._tmPaused?'Sampling paused · actions remain available':'Sampling resumed · every 2 seconds while visible');
+    },
+    tmCloseWindow: id => {
+        const win=SystemState.windows?.[id];if(!win?.isOpen||id==='taskmanager')return;
+        if(!window.confirm('Close '+win.title+'? Unsaved edits may be lost. Background activity may stop.'))return;
+        os.forceKillApp(id);os._tmListSignature='';os.tmRefreshData();os.tmStatus('Close requested for '+win.title);
+    },
     tmCloseAllWindows: () => {
-        Object.values(SystemState.windows || {}).forEach((w) => {
-            if (w.isOpen && w.id !== 'taskmanager') os.forceKillApp(w.id);
-        });
+        const windows=Object.values(SystemState.windows||{}).filter(w=>w.isOpen&&w.id!=='taskmanager');
+        if(!windows.length){os.tmStatus('No other windows to close');return;}
+        if(!window.confirm('Close '+windows.length+' other windows? Unsaved edits may be lost. Background activity may stop.'))return;
+        for(const win of windows)os.forceKillApp(win.id);
+        os._tmListSignature='';os.tmRefreshData();os.tmStatus('Close requested for '+windows.length+' windows');
+    },
+    tmSwitchTab: tab => {
+        if(!['processes','performance'].includes(tab))return;os._tmTab=tab;os._tmListSignature='';
+        const filter=document.getElementById('tm-filter-input');if(filter){filter.disabled=tab==='performance';filter.placeholder=tab==='performance'?'Filter on Windows tab':'Filter windows…';}
+        for(const [key,id]of Object.entries({processes:'tm-tab-proc',performance:'tm-tab-perf'})){const button=document.getElementById(id);if(button){button.classList.toggle('active',key===tab);button.setAttribute('aria-pressed',String(key===tab));}}
         os.tmRefreshData();
     },
-
-    tmSwitchTab: (tab) => {
-        os._tmTab = tab;
-        const btns = { processes: 'tm-tab-proc', performance: 'tm-tab-perf' };
-        Object.entries(btns).forEach(([t, id]) => {
-            const el = document.getElementById(id);
-            if (el) el.classList.toggle('active', t === tab);
-        });
-        os.tmRefreshData();
+    tmRefresh: () => {os.tmSample();os._tmListSignature='';os.tmRefreshData();os.tmStatus('Snapshot refreshed'+(os._tmPaused?' · automatic sampling remains paused':''));},
+    tmExport: () => {
+        const report={scope:'AetherOS browser-page measurements, not OS processes or per-app CPU/RAM',exportedAt:new Date().toISOString(),snapshot:os.tmSnapshot(),history:os._tmHistory};
+        const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='aether-runtime-report.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);os.tmStatus('Runtime JSON download requested · includes open window titles');
     },
-
-    tmRefresh: () => os.tmRefreshData(),
-
+    tmChart: (key,label,unit) => {
+        const esc=os.tmEscape,history=os._tmHistory,finite=value=>typeof value==='number'&&Number.isFinite(value),values=history.map(entry=>entry[key]),valid=values.filter(finite);
+        if(!valid.length)return '<section class="tm-chart-card"><span class="tm-eyebrow">BROWSER PAGE / '+esc(unit)+'</span><h3>'+esc(label)+'</h3><p>Measurement unavailable in this browser or still waiting for a scheduled sample.</p></section>';
+        const scale=key==='heapUsed'?1048576:1,low=Math.min(...valid)/scale,high=Math.max(...valid)/scale,span=Math.max(key==='heapUsed'?.1:1,high-low);
+        let path='',connected=false;
+        values.forEach((value,index)=>{if(!finite(value)){connected=false;return;}path+=(connected?' L':' M')+(12+index*476/Math.max(1,history.length-1)).toFixed(2)+','+(95-(value/scale-low)/span*75).toFixed(2);connected=true;});
+        const latest=valid[valid.length-1]/scale;
+        return '<section class="tm-chart-card"><div class="tm-chart-title"><div><span class="tm-eyebrow">RECORDED / '+esc(unit)+'</span><h3>'+esc(label)+'</h3></div><strong>'+latest.toFixed(key==='domNodes'?0:1)+' <small>'+esc(unit)+'</small></strong></div><svg viewBox="0 0 500 115" role="img" aria-label="'+esc(label)+' history, '+valid.length+' measured samples" data-preserve-surface><path class="tm-chart-grid" d="M10 20H490 M10 57H490 M10 95H490"/><path class="tm-chart-line" d="'+path+'"/>'+(valid.length===1?'<circle cx="12" cy="95" r="3" class="tm-chart-dot"/>':'')+'</svg><div class="tm-chart-caption"><span>'+valid.length+' recorded samples · latest '+esc(new Date(history[history.length-1].time).toLocaleTimeString())+'</span><span>Range '+low.toFixed(1)+'–'+high.toFixed(1)+'</span></div></section>';
+    },
     tmRefreshData: () => {
-        const root = document.getElementById('taskmanager-content');
-        if (!root) return;
-        const q = String(os._tmFilter || '').trim().toLowerCase();
-        if (os._tmTab === 'processes') {
-            const allWins = Object.values(SystemState.windows || {}).filter((w) => !q || (w.title + ' ' + w.id).toLowerCase().includes(q));
-            const open = allWins.filter((w) => w.isOpen);
-            const closed = allWins.filter((w) => !w.isOpen && (!os.isModuleEnabled || os.isModuleEnabled(w.id)));
-            const mem = performance.memory;
-            const totalMB = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
-
-            root.innerHTML = `
-                <div class="p-3.5 h-full flex flex-col">
-                    <div class="grid grid-cols-12 gap-2 text-[10.5px] text-gray-400 font-medium px-2.5 pb-2 border-b border-white/[0.07] mb-1.5">
-                        <span class="col-span-5">Application</span>
-                        <span class="col-span-2">Space</span>
-                        <span class="col-span-2">State</span>
-                        <span class="col-span-3 text-right">Actions</span>
-                    </div>
-                    <div class="flex-1 overflow-y-auto space-y-1 pr-0.5">
-                        ${open.length ? open.map((w) => `
-                            <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition">
-                                <div class="col-span-5 flex items-center gap-2.5 overflow-hidden">
-                                    ${window.AetherDesign?.appIcon(w.id, 20) || ''}
-                                    <span class="text-xs text-white font-medium truncate">${os.escapeHtml(w.title)}</span>
-                                </div>
-                                <span class="col-span-2 text-[11px] font-mono text-gray-400">Space 0${w.space || 1}</span>
-                                <span class="col-span-2 text-[11px] font-medium ${w.isMinimized ? 'text-amber-300' : 'text-emerald-300'}">${w.isMinimized ? 'Minimized' : 'Active'}</span>
-                                <div class="col-span-3 flex justify-end gap-1.5">
-                                    <button type="button" onclick="os.openWindow('${w.id}')" class="px-2 py-1 rounded-md bg-white/[0.06] hover:bg-white/14 text-[10.5px] text-gray-200 cursor-none hover-target transition">Focus</button>
-                                    <button type="button" onclick="os.forceKillApp('${w.id}')" class="px-2 py-1 rounded-md bg-rose-500/15 hover:bg-rose-500/30 text-[10.5px] text-rose-300 cursor-none hover-target transition">Close</button>
-                                </div>
-                            </div>`).join('') : `<div class="py-6 text-center text-gray-500 text-xs">No open windows matching filter.</div>`}
-
-                        ${closed.length ? `<div class="text-[10.5px] text-gray-500 font-semibold px-2.5 pt-3 pb-1">Available Apps (${closed.length})</div>` : ''}
-                        ${closed.slice(0, 12).map((w) => `
-                            <div class="grid grid-cols-12 gap-2 items-center px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] opacity-70 hover:opacity-100 transition">
-                                <div class="col-span-7 flex items-center gap-2.5 overflow-hidden">
-                                    ${window.AetherDesign?.appIcon(w.id, 20) || ''}
-                                    <span class="text-xs text-gray-300 truncate">${os.escapeHtml(w.title)}</span>
-                                </div>
-                                <span class="col-span-2 text-[11px] text-gray-500">Idle</span>
-                                <div class="col-span-3 flex justify-end">
-                                    <button type="button" onclick="os.openWindow('${w.id}')" class="px-2.5 py-1 rounded-md bg-white/[0.05] hover:bg-white/12 text-[10.5px] text-gray-300 cursor-none hover-target transition">Open</button>
-                                </div>
-                            </div>`).join('')}
-                    </div>
-                    <div class="mt-2.5 pt-2.5 border-t border-white/[0.07] flex items-center justify-between text-[11px] text-gray-400 px-1">
-                        <span>JS Heap: <b class="text-white font-mono tabular-nums">${totalMB} MB</b></span>
-                        <span>Open Windows: <b class="text-emerald-300 font-mono tabular-nums">${open.length}</b></span>
-                    </div>
-                </div>`;
-            if (window.lucide) lucide.createIcons({ root });
-        } else {
-            const mem = performance.memory;
-            const heapUsed = mem ? (mem.usedJSHeapSize / 1048576).toFixed(1) : '--';
-            const heapTotal = mem ? (mem.jsHeapSizeLimit / 1048576).toFixed(0) : '--';
-            const heapPct = mem ? Math.round(mem.usedJSHeapSize / mem.jsHeapSizeLimit * 100) : 0;
-            const conn = navigator.connection || {};
-            const nodes = document.querySelectorAll('*').length;
-            root.innerHTML = `
-                <div class="p-4 space-y-3 overflow-y-auto h-full text-xs">
-                    <div class="os-card p-3.5">
-                        <div class="text-[11px] font-semibold text-gray-300 mb-2">JavaScript Heap Memory</div>
-                        <div class="flex justify-between mb-1.5"><span class="text-gray-400">Used / Limit</span><span class="text-white font-mono font-semibold tabular-nums">${heapUsed} MB / ${heapTotal} MB</span></div>
-                        <div class="w-full h-2 bg-black/60 rounded-full overflow-hidden"><div class="h-full bg-emerald-400 rounded-full" style="width:${heapPct}%"></div></div>
-                        <div class="text-gray-500 text-[11px] mt-1 font-mono">${heapPct}% allocated</div>
-                    </div>
-                    <div class="os-card p-3.5 space-y-1.5">
-                        <div class="text-[11px] font-semibold text-gray-300 mb-1">Network Link</div>
-                        <div class="flex justify-between"><span class="text-gray-400">Profile</span><span class="text-white font-mono uppercase">${conn.effectiveType || conn.type || 'Standard'}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Estimated Downlink</span><span class="text-emerald-300 font-mono tabular-nums">${conn.downlink ?? '--'} Mbps</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Round-Trip Time</span><span class="text-white font-mono tabular-nums">${conn.rtt ?? '--'} ms</span></div>
-                    </div>
-                    <div class="os-card p-3.5 space-y-1.5">
-                        <div class="text-[11px] font-semibold text-gray-300 mb-1">Browser Runtime</div>
-                        <div class="flex justify-between"><span class="text-gray-400">Active DOM Elements</span><span class="text-white font-mono font-semibold tabular-nums">${nodes.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Logical CPU Threads</span><span class="text-white font-mono tabular-nums">${navigator.hardwareConcurrency || '--'}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Device Memory</span><span class="text-white font-mono tabular-nums">${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Not reported'}</span></div>
-                    </div>
-                </div>`;
+        const root=document.getElementById('taskmanager-content');if(!root)return;
+        const esc=os.tmEscape,snapshot=os.tmSnapshot(),summary=document.getElementById('tm-summary');
+        const mb=bytes=>typeof bytes==='number'?(bytes/1048576).toFixed(1)+' MiB':'Unavailable';
+        if(summary)summary.innerHTML='<div class="tm-overview"><div class="tm-count-dial" data-preserve-surface style="--tm-open:'+Math.round(snapshot.open/Math.max(1,snapshot.registered)*100)+'%"><strong>'+snapshot.open+'</strong><span>open</span></div><div><span class="tm-eyebrow">YOUR WORKSPACE</span><h3>'+snapshot.open+' open windows</h3><p>'+snapshot.minimized+' minimized · '+snapshot.registered+' registered apps</p></div></div><div class="tm-stat"><span>Page JS heap</span><strong>'+mb(snapshot.heapUsed)+'</strong><small>Not per-app or device RAM</small></div><div class="tm-stat"><span>DOM elements</span><strong>'+snapshot.domNodes.toLocaleString()+'</strong><small>This browser document</small></div>';
+        if(os._tmTab==='performance'){
+            const scroll=root.scrollTop;
+            root.innerHTML='<div class="tm-runtime-charts">'+os.tmChart('heapUsed','JavaScript heap','MiB')+os.tmChart('callbackDelay','Sampling callback delay','ms')+os.tmChart('domNodes','Document elements','nodes')+'</div><div class="tm-measurement-note"><h3>What these measurements mean</h3><p>Heap is a browser-provided page estimate, when supported. Callback delay measures how late this app’s two-second timer ran, not CPU utilization or network latency. Background tabs and sampling pauses are skipped. Charts show at most 60 actual samples, with no invented history.</p><p>Browser privacy settings may reduce precision. Device processes, per-app memory and CPU usage are not available here. The filter applies to the window list only.</p></div>';root.scrollTop=scroll;return;
         }
+        const query=String(os._tmFilter||'').trim().toLowerCase(),all=Object.values(SystemState.windows||{}),signature=JSON.stringify([query,all.map(w=>[w.id,w.title,w.isOpen,w.isMinimized,w.space,w.pinned,os.isModuleEnabled?.(w.id)])]);
+        if(signature===os._tmListSignature)return;os._tmListSignature=signature;
+        const scroll=root.scrollTop,focused=document.activeElement?.dataset?.tmAction;root.replaceChildren();
+        const matches=all.filter(w=>(w.title+' '+w.id).toLowerCase().includes(query)),open=matches.filter(w=>w.isOpen),closed=matches.filter(w=>!w.isOpen&&(!os.isModuleEnabled||os.isModuleEnabled(w.id)));
+        const heading=document.createElement('div');heading.className='tm-list-heading';heading.textContent='OPEN WINDOWS · '+open.length;root.append(heading);
+        const append=(win,isOpen)=>{
+            const row=document.createElement('article');row.className='tm-window-row';
+            const identity=document.createElement('div');identity.className='tm-window-identity';
+            const icon=document.createElement('span');icon.innerHTML=window.AetherDesign?.appIcon(win.id,30)||'';
+            const text=document.createElement('div'),title=document.createElement('strong'),state=document.createElement('span');title.textContent=win.title;
+            state.textContent=isOpen?'Space '+(win.space||1)+' · '+(win.isMinimized?'Minimized':'Open')+(win.pinned?' · Pinned':''):'Not open · available to launch';text.append(title,state);identity.append(icon,text);row.append(identity);
+            const actions=document.createElement('div');actions.className='tm-window-actions';
+            const add=(label,action)=>{const button=document.createElement('button');button.type='button';button.className='os-btn';button.textContent=label;button.dataset.tmAction=win.id+'-'+label;button.setAttribute('aria-label',label+' '+win.title);button.addEventListener('click',action);actions.append(button);};
+            add(isOpen?'Focus':'Open',()=>os.openWindow(win.id));if(isOpen&&win.id!=='taskmanager')add('Close',()=>os.tmCloseWindow(win.id));row.append(actions);root.append(row);
+        };
+        for(const win of open)append(win,true);
+        if(!open.length){const empty=document.createElement('p');empty.className='tm-empty';empty.textContent='No open windows match this filter.';root.append(empty);}
+        const available=document.createElement('div');available.className='tm-list-heading';available.textContent='AVAILABLE APPS · '+closed.length;root.append(available);for(const win of closed)append(win,false);
+        root.scrollTop=scroll;if(focused)for(const button of root.querySelectorAll('[data-tm-action]'))if(button.dataset.tmAction===focused)button.focus({preventScroll:true});
     },
 
     initSpeedTestUI: () => {

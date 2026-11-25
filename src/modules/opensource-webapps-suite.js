@@ -840,7 +840,7 @@
         ppNewDoc: (w, h, name) => {
             const frame = document.getElementById('pp-frame');
             if (!frame || !frame.contentWindow) return;
-            frame.contentWindow.postMessage(`app.documents.add(${w}, ${h}, 72, "${name}");`, '*');
+            frame.contentWindow.postMessage(`app.documents.add(${Math.max(1,Math.min(16000,Number(w)||1024))}, ${Math.max(1,Math.min(16000,Number(h)||768))}, 72, ${JSON.stringify(String(name||'Untitled').slice(0,160))});`, 'https://www.photopea.com');
         },
 
         ppOpenVfsImage: async (fileId) => {
@@ -854,9 +854,9 @@
                 try {
                     const res = await fetch(url);
                     const buf = await res.arrayBuffer();
-                    setTimeout(() => frame.contentWindow.postMessage(buf, '*'), 1800);
+                    setTimeout(() => frame.contentWindow.postMessage(buf, 'https://www.photopea.com'), 1800);
                 } catch (_) {
-                    frame.contentWindow.postMessage(`app.open("${url}", null, false);`, '*');
+                    frame.contentWindow.postMessage(`app.open(${JSON.stringify(url)}, null, false);`, 'https://www.photopea.com');
                 }
             }, 350);
         },
@@ -866,7 +866,7 @@
             if (!frame || !frame.contentWindow) return;
             os.ppState.pendingFormat = fmt;
             os.ppState.awaitingExport = true;
-            frame.contentWindow.postMessage(`app.activeDocument.saveToOE("${fmt}");`, '*');
+            frame.contentWindow.postMessage(`app.activeDocument.saveToOE(${JSON.stringify(['png','jpg','webp','psd'].includes(fmt)?fmt:'png')});`, 'https://www.photopea.com');
             window.Notifications && window.Notifications.push('PHOTOPEA BRIDGE', `Requesting ${fmt.toUpperCase()} export from Photopea...`);
         },
 
@@ -906,7 +906,7 @@
         ocExportDrawioSvg: () => {
             const frame = document.getElementById('oc-frame');
             if (!frame || !frame.contentWindow) return;
-            frame.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'xmlsvg', spinKey: 'saving' }), '*');
+            frame.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'xmlsvg', spinKey: 'saving' }), 'https://embed.diagrams.net');
         },
 
         // ── SomaFM Live API + Hybrid Open-Source Webamp 2.9 Engine ──
@@ -1602,7 +1602,7 @@
     // Global postMessage Bridge for Photopea ArrayBuffer Exports & Draw.io Official JSON Protocol
     window.addEventListener('message', async (e) => {
         // 1. Photopea binary image export -> Save straight into AetherOS File Explorer!
-        if (e.origin.includes('photopea.com') && e.data instanceof ArrayBuffer && os.ppState?.awaitingExport) {
+        if (e.origin === 'https://www.photopea.com' && e.source === document.getElementById('pp-frame')?.contentWindow && e.data instanceof ArrayBuffer && e.data.byteLength <= 25*1024*1024 && os.ppState?.awaitingExport) {
             os.ppState.awaitingExport = false;
             const fmt = os.ppState.pendingFormat || 'png';
             const mime = fmt === 'webp' ? 'image/webp' : 'image/png';
@@ -1625,7 +1625,7 @@
         }
 
         // 2. Draw.io (diagrams.net) JSON embed protocol -> Bidirectional VFS Diagram Sync!
-        if (typeof e.data === 'string' && e.origin.includes('diagrams.net')) {
+        if (typeof e.data === 'string' && e.data.length <= 5*1024*1024 && e.origin === 'https://embed.diagrams.net' && e.source === document.getElementById('oc-frame')?.contentWindow) {
             try {
                 const msg = JSON.parse(e.data);
                 const frame = document.getElementById('oc-frame');
@@ -1635,7 +1635,7 @@
                         action: 'load',
                         autosave: 1,
                         xml: os.ocState.drawioXml || '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" value="AetherOS Architecture" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e293b;strokeColor=#38bdf8;fontColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="220" y="160" width="180" height="60" as="geometry"/></mxCell></root></mxGraphModel>'
-                    }), '*');
+                    }), 'https://embed.diagrams.net');
                 } else if (msg.event === 'autosave' || msg.event === 'save') {
                     os.ocState.drawioXml = msg.xml || os.ocState.drawioXml;
                     if (msg.event === 'save') os.ocExportDrawioSvg();

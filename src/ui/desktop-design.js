@@ -13,13 +13,37 @@
   const iconStyle = id => `--app-hue:${hueFor(id)}`;
   // Vendored Microsoft Fluent UI System Icons (Color), MIT; see assets/app-icons/SOURCES.json.
   const iconIDs = new Set(["finder", "settings", "about", "terminal", "filemanager", "wikiboard", "browser", "media", "stickers", "radiobrowser", "weather", "feed", "sysmon", "taskmanager", "focus", "devpad", "kanban", "photobooth", "synthstudio", "photopea", "whiteboard", "chiptune", "worldmuseums", "gutendex", "earthpulse", "spacexhub", "stellarium", "georadar", "worldfactbook", "wayback", "winamp", "ossradar", "shadertoy", "codeplay", "aetherbridge", "aetherlink", "presence", "iss", "nasa", "globe", "market", "games", "ytchtv", "memes", "anime", "manga", "entityscanner", "floor796", "wplace", "notes"]);
-  function iconMarkup(id) {
-    const key = id === 'music' ? 'media' : id;
-    return iconIDs.has(key) ? `<img class="native-app-art" src="assets/app-icons/${key}.svg?v=fluent-1" alt="" draggable="false">` : '';
+  function iconTone(){
+    const preference=window.SystemState?.settings?.icon_appearance || 'dark';
+    return preference==='auto' ? ((document.documentElement.dataset.systemMode|| (window.matchMedia?.('(prefers-color-scheme: dark)').matches?'night':'day'))==='night'?'dark':'color') : ['color','glass'].includes(preference)?preference:'dark';
   }
-  function appIcon(id, size = 18) {
+  function setIconAppearance(value){
+    if(!['dark','color','glass','auto'].includes(value))return;
+    if(window.SystemState){SystemState.settings.icon_appearance=value;SystemState.save?.();}
+    refreshIconAppearance();
+  }
+  function refreshIconAppearance(){
+    const tone=iconTone();document.documentElement.dataset.iconTone=tone;
+    document.querySelectorAll('img[data-icon-id]').forEach(img=>{
+      const id=img.dataset.iconId;if(!iconIDs.has(id))return;
+      img.dataset.iconTone=tone;
+      if(tone==='glass'&&img.dataset.iconPlain!=='true'&&!img.parentElement.classList.contains('glass-icon-tile')){const tile=document.createElement('span');tile.className='glass-icon-tile';tile.setAttribute('aria-hidden','true');img.replaceWith(tile);tile.appendChild(img);}
+      else if(tone!=='glass'&&img.parentElement.classList.contains('glass-icon-tile'))img.parentElement.replaceWith(img);
+      img.src=`assets/app-icons/${img.dataset.iconPlain==='true'?(tone==='color'?'':'glass/'):tone==='dark'?'dark/':tone==='glass'?'glass/':''}${id}.svg?v=fluent-2`;
+    });
+  }
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',refreshIconAppearance);
+  document.addEventListener('DOMContentLoaded',refreshIconAppearance,{once:true});
+  function iconMarkup(id, plain = false) {
+    const key = id === 'music' ? 'media' : id;
+    if(!iconIDs.has(key))return '';
+    const tone=iconTone();
+    const artwork=`<img class="native-app-art" data-icon-id="${key}" data-icon-plain="${plain}" data-icon-tone="${tone}" src="assets/app-icons/${plain?(tone==='color'?'':'glass/'):tone==='dark'?'dark/':tone==='glass'?'glass/':''}${key}.svg?v=fluent-2" alt="" draggable="false">`;
+    return tone==='glass'&&!plain?`<span class="glass-icon-tile" aria-hidden="true">${artwork}</span>`:artwork;
+  }
+  function appIcon(id, size = 18, presentation = 'tile') {
     const pixels = Math.max(12, Math.min(64, Number(size) || 18));
-    return `<span class="app-identity-icon" style="--app-icon-size:${pixels}px" aria-hidden="true">${iconMarkup(id) || iconMarkup('finder')}</span>`;
+    return `<span class="app-identity-icon${presentation==='plain'?' app-identity-plain':''}" style="--app-icon-size:${pixels}px" aria-hidden="true">${iconMarkup(id,presentation==='plain') || iconMarkup('finder',presentation==='plain')}</span>`;
   }
   function hydrateAppIcons(root = document) {
     root.querySelectorAll('[data-app-icon]').forEach(node => {
@@ -88,7 +112,7 @@
     const dock = document.getElementById('dock');
     if (dock) fitDock(dock);
   }, { passive: true });
-  window.AetherDesign = { wallpapers, hueFor, iconStyle, iconMarkup, appIcon, hydrateAppIcons, selected, syncWallpaper, decorateDock };
+  window.AetherDesign = { iconTone, setIconAppearance, refreshIconAppearance, wallpapers, hueFor, iconStyle, iconMarkup, appIcon, hydrateAppIcons, selected, syncWallpaper, decorateDock };
   hydrateAppIcons();
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && typeof SystemState !== 'undefined') syncWallpaper(SystemState.settings);

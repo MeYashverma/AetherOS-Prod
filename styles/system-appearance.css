@@ -1,0 +1,49 @@
+/* System appearance owns material luminance, never whole-window opacity.
+   Native structure adapts; canvases, images and cross-origin content are preserved. */
+html[data-system-mode=night]{--adaptive-rgb:12,22,37;--adaptive-alpha:.32;--material-solid:#111f31;--material-ink:#f0f5fc;--material-muted:#b5c5d9;--material-line:#e0efff38;--material-line-soft:#deedff21;--material-inset:#e1efff09;--material-hover:#d8edff18;--adaptive-control:#e3efff0c;--adaptive-toolbar:#e1efff08;--adaptive-shadow:0 18px 55px #02071555;--studio-muted:#b5c5d9}
+html[data-system-mode=day]{--adaptive-rgb:236,244,253;--adaptive-alpha:.48;--material-solid:#edf3fa;--material-ink:#182c43;--material-muted:#445e78;--material-line:#37557136;--material-line-soft:#37557126;--material-highlight:#ffffffce;--material-inset:#ffffff21;--material-hover:#335c7c12;--adaptive-control:#ffffff55;--adaptive-toolbar:#ffffff24;--adaptive-shadow:0 18px 55px #132d4930;--studio-muted:#445e78}
+html[data-glass-clarity=clear]{--adaptive-alpha:.16;--appearance-blur:14px}
+html[data-glass-clarity=balanced]{--appearance-blur:22px}
+html[data-system-mode=day][data-glass-clarity=clear]{--adaptive-alpha:.32}
+html[data-glass-clarity=solid]{--adaptive-alpha:1;--appearance-blur:0px}
+html[data-system-mode]{--material-fill:linear-gradient(140deg,#ffffff18,transparent 62%),rgba(var(--adaptive-rgb),var(--adaptive-alpha));--material-shadow:inset 0 1px 0 #ffffff45,var(--adaptive-shadow)}
+html[data-system-mode] :is(.os-window.liquid-app-window,.liquid-shell-panel,#finder-overlay,#control-center-panel,#notification-center,.dock-container,#cmd-palette>div,.app-switcher-strip,.mc-panel,#aether-toast-stack>div){background:var(--material-fill)!important;border-color:var(--material-line)!important;color:var(--material-ink);backdrop-filter:blur(var(--appearance-blur,28px)) saturate(135%)!important;-webkit-backdrop-filter:blur(var(--appearance-blur,28px)) saturate(135%)!important;box-shadow:var(--material-shadow)!important}
+html[data-system-mode] .os-window :is(.aether-window-body,.liquid-app-surface){background:transparent!important;background-image:none!important;opacity:1}
+html[data-system-mode] .os-window :is(.window-header,.os-toolbar,.studio-app-heading){background:var(--adaptive-toolbar)!important;border-color:var(--material-line-soft)!important;color:var(--material-ink)}
+html[data-system-mode] :is(#os-layer>header,.dock-container){background:var(--material-fill)!important;color:var(--material-ink)}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) [data-adaptive-ink=primary]{color:var(--material-ink)!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) [data-adaptive-ink=muted]{color:var(--material-muted)!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(input,textarea,select,.os-btn,.os-seg-btn){background-color:var(--adaptive-control)!important;color:var(--material-ink)!important;border-color:var(--material-line)!important;caret-color:var(--material-ink)}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(input,textarea)::placeholder{color:#526b85!important;opacity:.85}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(.text-emerald-300,.text-emerald-400,.text-green-300,.text-green-400){color:#166044!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(.text-sky-300,.text-sky-400,.text-blue-300,.text-blue-400,.text-cyan-300){color:#185884!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(.text-rose-300,.text-red-300,.text-red-400){color:#a42343!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) :is(.text-amber-200,.text-amber-300,.text-yellow-300){color:#765013!important}
+html[data-system-mode=day] :is(.settings-nav-btn,.settings-pane-title,.topbar-item,.finder-app-label,.about-heading h1,.about-tab.active,.studio-app-heading h2){color:var(--material-ink)!important;text-shadow:none!important}
+html[data-system-mode=day] :is(.os-window,.liquid-shell-panel) a{color:#165c91;text-decoration-color:#165c9160}
+html[data-system-mode=day] :is(#active-app-name,#active-app-icon,#topbar-clock){color:var(--material-ink)!important}
+html[data-system-mode=day] .window-header :is(span,.win-hdr-action){color:var(--material-ink)!important;text-shadow:none!important}
+html[data-system-mode=day] .app-identity-plain img{filter:brightness(.25)!important}
+html[data-system-mode] :is(#focus-studio-root,#devpad-root,#kanban-root,#browser-root,#filemanager-root,#terminal-out){--studio-line:var(--material-line-soft);--studio-muted:var(--material-muted)}
+html[data-system-mode=day] .studio-eyebrow{color:#24604f}
+html[data-system-mode=day] :is(.studio-tool-note,.app-details-network){color:#624d24;background:#fff4d870;border-color:#8a671c33}
+.appearance-status{padding:0 16px 14px;margin:0;font:10px/1.6 ui-monospace,monospace;color:var(--material-muted)}
+html[data-glass-clarity=solid] :is(.os-window.liquid-app-window,.liquid-shell-panel,.dock-container,#os-layer>header){background:var(--material-solid)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.perf-eco[data-system-mode]:not([data-glass-clarity=solid]) :is(.os-window.liquid-app-window,.liquid-shell-panel){backdrop-filter:blur(14px) saturate(125%)!important;-webkit-backdrop-filter:blur(14px) saturate(125%)!important}
+@media(prefers-reduced-transparency:reduce){html[data-system-mode] :is(.os-window.liquid-app-window,.liquid-shell-panel,.dock-container,#os-layer>header){background:var(--material-solid)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){html[data-system-mode] :is(.os-window.liquid-app-window,.liquid-shell-panel,.dock-container,#os-layer>header){background:var(--material-solid)!important}}
+@media(forced-colors:active){html[data-system-mode] :is(.os-window.liquid-app-window,.liquid-shell-panel,.dock-container,#os-layer>header){background:Canvas!important;color:CanvasText!important;border-color:CanvasText!important;box-shadow:none!important;backdrop-filter:none!important}html[data-system-mode] :is(.os-window,.liquid-shell-panel) :is([data-adaptive-ink],input,textarea,select,a,button){color:CanvasText!important;border-color:CanvasText!important}html[data-system-mode] :is(.os-window,.liquid-shell-panel) :is(input,textarea,select){background:Canvas!important}}
+/* Appearance changes apply atomically; avoid temporarily translucent Solid mode. */
+html[data-system-mode] :is(.os-window.liquid-app-window,.liquid-shell-panel){transition:box-shadow .18s,border-color .18s!important}
+html[data-system-mode=day] .app-identity-plain>.native-app-art[data-icon-plain=true]{filter:brightness(.2)!important}
+html[data-system-mode=day] #os-layer>header .topbar-item>svg{color:var(--material-ink)!important}
+
+/* The frame is the sole glass backdrop; no nested app-wide frost sheets. */
+html[data-system-mode] .os-window.liquid-app-window .liquid-app-surface{
+  background-color:transparent!important;background-image:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+html[data-system-mode] .os-window.liquid-app-window{
+  border-top-color:var(--material-highlight,#ffffff70)!important;
+  box-shadow:inset 0 1px 0 #ffffff65,inset 1px 0 0 #ffffff18,inset 0 -1px 0 #ffffff12,var(--adaptive-shadow)!important;
+}

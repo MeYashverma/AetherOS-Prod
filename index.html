@@ -31,10 +31,18 @@
     <!-- AetherOS Modular Stylesheets -->
     <link rel="stylesheet" href="styles/core.css">
     <link rel="stylesheet" href="styles/modules-and-overlays.css">
-    <link rel="stylesheet" href="styles/liquid-glass.css?v=desktop-7">
+    <link rel="stylesheet" href="styles/liquid-glass.css?v=desktop-9">
     <link rel="stylesheet" href="styles/verci-stage.css?v=native-map-7">
     <link rel="stylesheet" href="styles/music-theater.css?v=stickersapi-31">
-    <link rel="stylesheet" href="styles/system-glass.css?v=desktop-7">
+    <link rel="stylesheet" href="styles/system-glass.css?v=desktop-9">
+    <link rel="stylesheet" href="styles/project-and-lock.css?v=icons-glass-4">
+    <link rel="stylesheet" href="styles/app-studios.css?v=studios-4">
+    <link rel="stylesheet" href="styles/system-appearance.css?v=glass-interiors-1">
+    <link rel="stylesheet" href="styles/github-workspace.css?v=glass-scroll-3">
+    <link rel="stylesheet" href="styles/weather-studio.css?v=weather-visual-3">
+    <link rel="stylesheet" href="styles/task-studio.css?v=tasks-2">
+    <link rel="stylesheet" href="styles/news-studio.css?v=news-2">
+    <link rel="stylesheet" href="styles/books-studio.css?v=books-2">
 </head>
 <body class="bg-[#0a0e1a]">
 
@@ -91,7 +99,7 @@
                     <div id="top-fps-graph" class="topbar-graph-mini"><canvas id="top-fps-canvas" width="112" height="44"></canvas><div class="topbar-graph-label" id="top-fps-label">--</div></div>
                 </div>
                 <div class="flex items-center gap-1.5 hover-target cursor-none" onclick="os.openWindow('sysmon')" style="opacity:0.7" role="button" tabindex="0" aria-label="Open System Diagnostics Activity">
-                    <span class="text-[9px]" style="color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace">LOAD</span>
+                    <span class="text-[9px]" style="color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace">REQ</span>
                     <div id="top-cpu-graph" class="topbar-graph-mini"><canvas id="top-cpu-canvas" width="112" height="44"></canvas><div class="topbar-graph-label" id="top-cpu-label">--%</div></div>
                 </div>
                 <div class="flex items-center gap-1.5 hover-target cursor-none" onclick="os.openWindow('sysmon')" style="opacity:0.7" role="button" tabindex="0" aria-label="Open System Diagnostics Memory">
@@ -474,7 +482,7 @@
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeTopBarMenus();os.lockScreen && os.lockScreen()">
                 <span class="flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5 text-violet-400"></i> Lock Screen</span>
-                <span class="text-[10px] text-gray-500 font-mono">⌘L</span>
+                <span class="text-[10px] text-gray-500 font-mono">⌘⇧L</span>
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center gap-2" onclick="location.reload()">
                 <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-gray-300"></i> Reboot System
@@ -587,40 +595,34 @@
             </button>
             <button type="button" class="dock-ctx-item w-full text-left flex items-center justify-between" onclick="os.closeDesktopContextMenu();os.lockScreen()">
                 <span class="flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5 text-gray-300"></i> Lock Screen</span>
-                <span class="text-[10px] font-mono text-gray-500">⌘L</span>
+                <span class="text-[10px] font-mono text-gray-500">⌘⇧L</span>
             </button>
         </div>
     </div>
     <div id="window-snap-preview" aria-hidden="true"></div>
     <div id="app-switcher-hud" aria-label="App Switcher"></div>
     <div id="mission-control-overlay" aria-label="Mission Control"></div>
-    <div id="lock-screen-overlay" aria-label="Lock Screen">
-        <div class="flex flex-col items-center text-center px-6 max-w-sm w-full select-none">
-            <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-5 shadow-xl">
-                <svg class="w-7 h-7 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.45)]" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
-                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
-                </svg>
-            </div>
-            <div id="lock-clock-time" class="text-6xl sm:text-7xl font-light tracking-tight text-white font-display">12:00</div>
-            <div id="lock-clock-date" class="text-sm text-gray-300 mt-2">Sunday, November 22</div>
-            <div id="lock-status-meta" class="text-xs font-mono text-gray-400 mt-1.5">--°C · Workspace 01</div>
-
-            <form id="lock-pin-wrap" onsubmit="event.preventDefault();os.unlockScreen()" style="display:none" class="mt-8 w-full flex flex-col items-center gap-2.5">
-                <div class="flex items-center gap-2 w-full max-w-[240px]">
-                    <input id="lock-pin-input" type="password" placeholder="Enter PIN..."
-                        class="flex-1 px-3.5 py-2 rounded-xl bg-white/10 border border-white/20 text-center text-sm text-white font-mono outline-none focus:border-white/45">
-                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-white text-black font-semibold text-xs hover:bg-gray-200 transition hover-target cursor-none">Unlock</button>
-                </div>
-                <div id="lock-pin-error" class="text-[11px] text-red-300 font-mono min-h-[16px]"></div>
+    <div id="lock-screen-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lock-title" aria-describedby="lock-privacy-note" tabindex="-1">
+        <div id="lock-wallpaper" aria-hidden="true"></div>
+        <div class="lock-topline"><span><span class="glass-project-mark glass-project-mark-small" aria-hidden="true"><img src="assets/apple-logo.svg" alt="" width="14" height="17"></span> AetherOS</span><span id="lock-connection-status"></span></div>
+        <div class="lock-clock"><div id="lock-clock-date" class="lock-date"></div><time id="lock-clock-time" class="lock-time">--:--</time></div>
+        <div class="workspace-lock-sheet">
+            <img class="lock-user-avatar" src="assets/app-icons/dark/presence.svg" width="76" height="76" alt="">
+            <h1 id="lock-title">My workspace</h1>
+            <p id="lock-status-meta"></p>
+            <form id="lock-pin-wrap" onsubmit="event.preventDefault();os.unlockScreen()" style="display:none">
+                <label class="lock-input-label" for="lock-pin-input">Enter passphrase to unlock</label>
+                <div class="lock-entry"><input id="lock-pin-input" type="password" autocomplete="current-password" maxlength="128" placeholder="Enter passphrase" required><button type="button" id="lock-reveal-btn" onclick="os.toggleLockPassphraseVisibility()" aria-label="Show passphrase" aria-pressed="false">◉</button><button type="submit" id="lock-submit-btn" aria-label="Unlock workspace">→</button></div>
+                <p id="lock-caps-warning" hidden>Caps Lock is on</p>
+                <p id="lock-pin-error" role="alert" aria-live="polite"></p>
             </form>
-
-            <button type="button" id="lock-instant-btn" onclick="os.unlockScreen()"
-                class="mt-8 px-6 py-2.5 rounded-full bg-white/14 hover:bg-white/22 border border-white/25 text-xs font-medium text-white transition shadow-lg hover-target cursor-none inline-flex items-center gap-2">
-                <span>Unlock Workspace</span>
-                <span class="text-[10px] font-mono text-gray-300">↵</span>
-            </button>
+            <button type="button" id="lock-instant-btn" onclick="os.unlockScreen()">Click or press Enter to unlock <span aria-hidden="true">→</span></button>
+            <p class="lock-session-note">Your apps will be right where you left them.</p>
         </div>
+        <footer class="lock-footer"><button type="button" onclick="os.blankLockDisplay()" id="lock-display-btn"><span aria-hidden="true">☾</span> Turn display dark</button><details><summary>About this lock</summary><p id="lock-privacy-note">Locks this tab only. Not your device login. Files are not encrypted; audio and network activity may continue. No Touch ID or system power control is available to this web app.</p></details></footer>
+        <button type="button" id="lock-wake-display" hidden onclick="os.wakeLockDisplay()" aria-label="Wake workspace display">Click or press a key to wake</button>
     </div>
+
     <div id="vfs-drop-overlay" aria-hidden="true">
         <div class="vfs-drop-card">
             <i data-lucide="folder-down" class="w-10 h-10 text-emerald-400 mx-auto mb-2.5"></i>
@@ -631,47 +633,51 @@
 
     <!-- AetherOS Modular Runtime Scripts -->
     <script src="src/core/primitives.js"></script>
-    <script src="src/core/system-state.js?v=desktop-7"></script>
-    <script src="src/services/vfs-and-backup.js"></script>
-    <script src="src/ui/settings-tabs.js?v=desktop-7"></script>
-    <script src="src/ui/templates/system-templates.js"></script>
-    <script src="src/ui/templates/media-space-templates.js"></script>
-    <script src="src/ui/templates/network-workspace-templates.js"></script>
+    <script src="src/core/system-state.js?v=appearance-1"></script>
+    <script src="src/ui/system-appearance.js?v=appearance-1"></script>
+    <script src="src/services/vfs-and-backup.js?v=studios-2"></script>
+    <script src="src/ui/settings-tabs.js?v=appearance-1"></script>
+    <script src="src/ui/templates/system-templates.js?v=tasks-2"></script>
+    <script src="src/ui/templates/media-space-templates.js?v=weather-2"></script>
+    <script src="src/ui/templates/network-workspace-templates.js?v=news-2"></script>
     <script src="src/engines/ambient-engines.js"></script>
     <script src="src/engines/cursor-engine.js"></script>
-    <script src="src/ui/web-wallpapers.js?v=desktop-7"></script>
-    <script src="src/ui/window-surfaces.js?v=desktop-7"></script>
-    <script src="src/ui/desktop-design.js?v=desktop-7"></script>
-    <script src="src/engines/window-manager.js?v=desktop-7"></script>
-    <script src="src/engines/command-palette.js?v=desktop-7"></script>
+    <script src="src/ui/web-wallpapers.js?v=desktop-9"></script>
+    <script src="src/ui/window-surfaces.js?v=glass-interiors-1"></script>
+    <script src="src/ui/desktop-design.js?v=appearance-1"></script>
+    <script src="src/engines/window-manager.js?v=books-2"></script>
+    <script src="src/engines/command-palette.js?v=audit-2"></script>
     <script src="src/engines/wikiboard-engine.js"></script>
     <script src="src/services/aether-bridge.js"></script>
     <script src="src/services/aether-link.js"></script>
-    <script src="src/modules/shell-and-theme.js?v=desktop-7"></script>
-    <script src="src/engines/window-snap-and-spaces.js?v=desktop-7"></script>
-    <script src="src/modules/focus-and-devpad.js"></script>
-    <script src="src/modules/power-tools.js"></script>
-    <script src="src/modules/dev-workbench.js"></script>
-    <script src="src/modules/native-media-studios.js"></script>
-    <script src="src/modules/api-earth-archive-oss.js"></script>
-    <script src="src/modules/opensource-webapps-suite.js"></script>
-    <script src="src/modules/live-world-and-science-apis.js"></script>
-    <script src="src/modules/iconic-web-universes.js"></script>
+    <script src="src/modules/shell-and-theme.js?v=desktop-9"></script>
+    <script src="src/engines/window-snap-and-spaces.js?v=desktop-9"></script>
+    <script src="src/modules/focus-and-devpad.js?v=studios-2"></script>
+    <script src="src/modules/power-tools.js?v=studios-2"></script>
+    <script src="src/modules/dev-workbench.js?v=studios-3"></script>
+    <script src="src/modules/native-media-studios.js?v=audit-2"></script>
+    <script src="src/modules/api-earth-archive-oss.js?v=glass-scroll-3"></script>
+    <script src="src/modules/opensource-webapps-suite.js?v=audit-2"></script>
+    <script src="src/modules/live-world-and-science-apis.js?v=books-2"></script>
+    <script src="src/modules/iconic-web-universes.js?v=audit-2"></script>
     <script src="src/ui/desktop-shell-extras.js"></script>
     <script src="src/modules/voice-and-companion.js"></script>
-    <script src="src/modules/lastfm-analytics.js"></script>
-    <script src="src/modules/diagnostics-and-tasks.js?v=desktop-7"></script>
-    <script src="src/modules/space-and-weather.js"></script>
-    <script src="src/modules/media-and-lyrics.js"></script>
+    <script src="src/modules/lastfm-analytics.js?v=audit-2"></script>
+    <script src="src/modules/diagnostics-and-tasks.js?v=tasks-2"></script>
+    <script src="src/modules/space-and-weather.js?v=weather-visual-3"></script>
+    <script src="src/modules/media-and-lyrics.js?v=audit-2"></script>
     <script type="module" src="src/modules/media-library.js?v=stickersapi-31"></script>
     <script type="module" src="src/modules/music-theater.js?v=native-map-7"></script>
     <script src="src/modules/radio-and-youtube.js"></script>
-    <script src="src/modules/anime-and-tv.js"></script>
-    <script src="src/modules/web-and-feeds.js"></script>
+    <script src="src/modules/anime-and-tv.js?v=audit-2"></script>
+    <script src="src/modules/web-and-feeds.js?v=news-2"></script>
     <script src="src/modules/radar-and-optics.js?v=radar-2"></script>
-    <script src="src/modules/workspace-apps.js"></script>
-    <script src="src/boot/main.js"></script>
+    <script src="src/modules/workspace-apps.js?v=studios-2"></script>
+    <script src="src/ui/about-system.js?v=audit-2"></script>
+    <script src="src/ui/app-details.js?v=audit-2"></script>
+    <script src="src/services/workspace-lock.js?v=audit-2"></script>
+    <script src="src/boot/main.js?v=audit-2"></script>
     <script src="src/ui/shell-interactions.js"></script>
-    <script src="src/services/ai-assistant.js"></script>
+    <script src="src/services/ai-assistant.js?v=audit-2"></script>
 </body>
 </html>

@@ -96,31 +96,11 @@
     //  4. OPEN BOOKSHELF & GUTENBERG E-READER (gutendex)
     // ═══════════════════════════════════════════════════════════════════════
     window.WindowContents.gutendex = `
-        <div class="h-full flex flex-col bg-[#0b0a09] text-white text-xs select-none overflow-hidden" id="gd-root">
-            <div class="p-3 bg-black/60 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
-                <form onsubmit="event.preventDefault();os.gdSearch(document.getElementById('gd-query').value)" class="flex items-center gap-1.5">
-                    <input id="gd-query" type="text" value="sherlock holmes" placeholder="Search 70,000+ free books (sci-fi, philosophy, mystery...)"
-                        class="w-60 px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white outline-none">
-                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-amber-300 text-black font-semibold text-xs hover-target cursor-none">Search Books</button>
-                </form>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="os.gdSetTheme('oled')" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/15 text-[11px] text-gray-200 hover-target cursor-none">OLED</button>
-                    <button type="button" onclick="os.gdSetTheme('sepia')" class="px-2.5 py-1 rounded-lg bg-[#f4ecd8] text-[#3b2f2f] font-medium text-[11px] hover-target cursor-none">Sepia</button>
-                    <button type="button" onclick="os.gdAdjustFont(-1)" class="px-2 py-1 rounded-lg bg-white/10 text-[11px] hover-target cursor-none">A-</button>
-                    <button type="button" onclick="os.gdAdjustFont(1)" class="px-2 py-1 rounded-lg bg-white/10 text-[11px] hover-target cursor-none">A+</button>
-                </div>
-            </div>
-
-            <div class="flex-1 grid grid-cols-1 md:grid-cols-12 min-h-0">
-                <div id="gd-list" class="md:col-span-4 p-3 overflow-y-auto space-y-2 border-b md:border-b-0 md:border-r border-white/[0.08] bg-[#0e0d0c]"></div>
-                <div id="gd-reader-wrap" class="md:col-span-8 flex flex-col min-h-0 bg-[#101114] text-gray-200 transition-colors">
-                    <div id="gd-book-bar" class="px-4 py-2 border-b border-black/15 bg-black/25 flex items-center justify-between text-[11px] font-mono">
-                        <span>Select a classic from the shelf to read full text</span>
-                    </div>
-                    <div id="gd-reader-body" class="flex-1 p-6 overflow-y-auto leading-relaxed select-text font-serif text-[15px] whitespace-pre-wrap"></div>
-                </div>
-            </div>
-        </div>
+      <div class="books-studio" id="gd-root">
+        <header class="studio-app-heading"><div><span class="studio-eyebrow">THE OPEN LIBRARY</span><h2>A world between the lines.</h2><p>Discover Project Gutenberg books · availability and copyright vary by country.</p></div><span id="gd-status" role="status">Your next chapter starts here</span></header>
+        <form class="books-toolbar" onsubmit="event.preventDefault();os.gdSearch(document.getElementById('gd-query').value)"><input id="gd-query" aria-label="Search book title or author" placeholder="Title, author, or subject…" maxlength="200"><button type="submit" class="os-btn">Search library</button><button type="button" class="os-btn" id="gd-prev" onclick="os.gdPage(-1)">Previous</button><span id="gd-page-label">Page 1</span><button type="button" class="os-btn" id="gd-next" onclick="os.gdPage(1)">Next</button></form>
+        <div class="books-workspace"><section class="books-shelf" id="gd-list" tabindex="0" aria-label="Book search results"></section><section id="gd-reader-wrap" class="books-reader"><div class="books-reader-tools"><select id="gd-theme" aria-label="Reading color theme" onchange="os.gdSetTheme(this.value)"><option value="system">System glass</option><option value="sepia">Warm sepia</option><option value="oled">Night ink</option></select><button type="button" class="os-btn" aria-label="Decrease reader font size" onclick="os.gdAdjustFont(-1)">A−</button><button type="button" class="os-btn" aria-label="Increase reader font size" onclick="os.gdAdjustFont(1)">A+</button><label class="books-import os-btn">Open .txt<input type="file" accept=".txt,text/plain" aria-label="Open local text file" onchange="os.gdImportText(this.files[0]);this.value=''"></label><button type="button" class="os-btn" onclick="os.gdDownloadText()">Download text</button></div><div id="gd-book-bar" class="books-book-bar">Select a book to begin</div><div id="gd-reader-body" class="books-reader-body" tabindex="0" role="region" aria-label="Book text, scroll to read" onscroll="os.gdReadingProgress()"><div class="books-empty"><span class="books-empty-art" aria-hidden="true">❧</span><h3>Find your next chapter.</h3><p>Choose a book from the shelf. Online text is fetched directly from Gutenberg, never through a public relay. If the provider blocks access, open its edition or import a .txt file.</p></div></div><footer class="books-progress"><span id="gd-progress-label">No book open</span><progress id="gd-progress" max="100" value="0" aria-label="Book reading progress"></progress></footer></section></div>
+      </div>
     `;
 
     const MUSEUM_FALLBACK = [
@@ -538,99 +518,94 @@
             } catch (_) {}
         },
 
-        // ── 4. Open Bookshelf & Classic E-Reader ──
-        gdState: { books: [], fontSize: 15, theme: 'oled' },
-
+        // ── Open Bookshelf: public catalog, direct bounded text, local reading ──
+        gdState: {books:[],fontSize:17,theme:'system',page:1,query:'',hasNext:false,searchID:0,readID:0,controllers:{},positions:{},text:'',activeID:null},
+        gdStatus: message => {const el=document.getElementById('gd-status');if(el)el.textContent=message;},
+        gdSafeURL: value => {try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&(url.hostname==='gutenberg.org'||url.hostname.endsWith('.gutenberg.org'))?url.href:null;}catch(_){return null;}},
+        gdRequest: async (url,channel,asText=false) => {
+            os.gdState.controllers[channel]?.abort();const controller=new AbortController();os.gdState.controllers[channel]=controller;const timer=setTimeout(()=>controller.abort(),12000);
+            try{const response=await fetch(url,{signal:controller.signal,credentials:'omit'});if(!response.ok)throw Error('Provider HTTP '+response.status);return asText?await os.gdReadText(response):await response.json();}
+            finally{clearTimeout(timer);if(os.gdState.controllers[channel]===controller)delete os.gdState.controllers[channel];}
+        },
+        gdReadText: async response => {
+            const max=2097152;if(Number(response.headers?.get('content-length'))>max)throw Error('Text exceeds the 2 MiB reader limit');
+            if(response.body?.getReader){const reader=response.body.getReader(),decoder=new TextDecoder('utf-8',{fatal:true});let total=0,text='';try{for(;;){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>max)throw Error('Text exceeds the 2 MiB reader limit');text+=decoder.decode(value,{stream:true});}return text+decoder.decode();}catch(error){try{await reader.cancel();}catch(_){}throw error;}finally{reader.releaseLock?.();}}
+            const text=await response.text();if(new TextEncoder().encode(text).length>max)throw Error('Text exceeds the 2 MiB reader limit');return text;
+        },
         initGutendex: () => {
-            if (!os.gdState.books.length) os.gdSearch('sherlock holmes');
+            if(!os.gdState.loaded){os.gdState.loaded=true;try{const positions=JSON.parse(localStorage.getItem('aether_book_positions_v1')||'{}');if(positions&&typeof positions==='object'&&!Array.isArray(positions))for(const [id,fraction]of Object.entries(positions).slice(-100))if(/^\d+$/.test(id)&&typeof fraction==='number'&&Number.isFinite(fraction)&&fraction>=0&&fraction<=1)os.gdState.positions[id]=fraction;}catch(_){os.gdStatus('Reading positions may not persist · browser storage unavailable');}}
+            os.gdSetTheme(os.gdState.theme);os.gdAdjustFont(0);
+            const query=document.getElementById('gd-query');if(query)query.value=os.gdState.query;
+            if(os.gdState.books.length)os.gdRenderShelf();else os.gdSearch('');
+            if(os.gdState.text)os.gdShowText(os.gdState.text,os.gdState.title,os.gdState.activeID);
         },
-
-        gdSetTheme: (theme) => {
-            os.gdState.theme = theme;
-            const wrap = document.getElementById('gd-reader-wrap');
-            if (!wrap) return;
-            if (theme === 'sepia') {
-                wrap.style.background = '#f4ecd8';
-                wrap.style.color = '#2c221e';
-            } else {
-                wrap.style.background = '#101114';
-                wrap.style.color = '#e5e7eb';
+        gdDispose: () => {
+            os.gdSavePosition();os.gdState.searchID++;os.gdState.readID++;for(const controller of Object.values(os.gdState.controllers))controller.abort();os.gdState.controllers={};clearTimeout(os.gdState.saveTimer);clearTimeout(os.gdState.restoreTimer);os.gdState.restoring=false;
+        },
+        gdSetTheme: theme => {if(!['system','sepia','oled'].includes(theme))return;os.gdState.theme=theme;const wrap=document.getElementById('gd-reader-wrap');if(wrap)wrap.dataset.readingTheme=theme;const select=document.getElementById('gd-theme');if(select)select.value=theme;},
+        gdAdjustFont: delta => {
+            const body=document.getElementById('gd-reader-body'),max=body?body.scrollHeight-body.clientHeight:0,fraction=max>0?body.scrollTop/max:os.gdState.positions[os.gdState.activeID]||0;
+            os.gdState.fontSize=Math.max(14,Math.min(28,os.gdState.fontSize+delta));if(body){body.style.fontSize=os.gdState.fontSize+'px';body.scrollTop=fraction*Math.max(0,body.scrollHeight-body.clientHeight);os.gdReadingProgress(false);}
+        },
+        gdSearch: async (query='',page=1) => {
+            os.gdState.query=String(query||'').trim();os.gdState.page=page;const id=++os.gdState.searchID,host=document.getElementById('gd-list');if(host)host.textContent='Finding books in the Gutenberg catalog…';os.gdStatus('Searching catalog…');
+            for(const key of ['gd-prev','gd-next']){const button=document.getElementById(key);if(button)button.disabled=true;}
+            try{
+                const data=await os.gdRequest('https://gutendex.com/books/?search='+encodeURIComponent(os.gdState.query)+'&page='+page,'search');if(id!==os.gdState.searchID)return;
+                if(!Array.isArray(data.results))throw Error('Unexpected catalog response');
+                os.gdState.books=data.results.filter(book=>Number.isSafeInteger(book.id)&&book.id>0&&typeof book.title==='string');os.gdState.hasNext=!!data.next;os.gdRenderShelf();os.gdStatus(os.gdState.books.length+' books shown · Gutendex catalog');
+            }catch(error){if(id!==os.gdState.searchID)return;os.gdState.books=[];os.gdState.hasNext=false;if(host)host.textContent='Catalog unavailable: '+(error.name==='AbortError'?'request cancelled or timed out':error.message)+'. Try Search again, or open a local .txt file.';os.gdStatus('Catalog could not be loaded · not the same as no matches');}
+            finally{if(id===os.gdState.searchID)os.gdUpdatePagination();}
+        },
+        gdUpdatePagination: () => {const prev=document.getElementById('gd-prev'),next=document.getElementById('gd-next'),label=document.getElementById('gd-page-label');if(prev)prev.disabled=os.gdState.page<=1;if(next)next.disabled=!os.gdState.hasNext;if(label)label.textContent='Page '+os.gdState.page;},
+        gdPage: delta => {if(delta!==1&&delta!==-1)return;if(delta<0&&os.gdState.page<=1||delta>0&&!os.gdState.hasNext)return;return os.gdSearch(os.gdState.query,os.gdState.page+delta);},
+        gdRenderShelf: () => {
+            const host=document.getElementById('gd-list');if(!host)return;host.replaceChildren();os.gdUpdatePagination();
+            if(!os.gdState.books.length){host.textContent='No books match. Try a title, an author, or an empty search for popular downloads.';return;}
+            for(const [index,book]of os.gdState.books.entries()){
+                const button=document.createElement('button');button.type='button';button.className='books-shelf-card';button.setAttribute('aria-pressed',String(book.id===os.gdState.activeID));
+                const jacket=document.createElement('span');jacket.className='books-jacket';jacket.dataset.preserveSurface='';
+                const cover=os.gdSafeURL(book.formats?.['image/jpeg']);
+                const initials=document.createElement('span');initials.textContent=book.title.slice(0,1);jacket.append(initials);
+                if(cover){const image=document.createElement('img');image.src=cover;image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>image.remove(),{once:true});jacket.append(image);}
+                const details=document.createElement('div'),title=document.createElement('strong'),author=document.createElement('span'),downloads=document.createElement('small');title.textContent=book.title;author.textContent=(book.authors||[]).map(a=>a.name).filter(Boolean).join(', ')||'Author not provided';downloads.textContent=(typeof book.download_count==='number'?book.download_count.toLocaleString()+' downloads':'Download count unavailable')+(os.gdState.positions[book.id]>0?' · Resume '+Math.round(os.gdState.positions[book.id]*100)+'%':'');details.append(title,author,downloads);button.append(jacket,details);button.addEventListener('click',()=>os.gdOpenBook(index));host.append(button);
             }
         },
-
-        gdAdjustFont: (delta) => {
-            os.gdState.fontSize = Math.max(12, Math.min(24, (os.gdState.fontSize || 15) + delta));
-            const body = document.getElementById('gd-reader-body');
-            if (body) body.style.fontSize = `${os.gdState.fontSize}px`;
+        gdOpenBook: async index => {
+            const book=os.gdState.books[index];if(!book)return;os.gdSavePosition();clearTimeout(os.gdState.restoreTimer);clearTimeout(os.gdState.saveTimer);os.gdState.restoring=false;const token=++os.gdState.readID;os.gdState.text='';os.gdState.activeID=book.id;os.gdState.title=book.title;os.gdRenderShelf();
+            const bar=document.getElementById('gd-book-bar'),body=document.getElementById('gd-reader-body');if(!body)return;
+            os.gdSetBookBar(book.title,book.id);body.textContent='Opening the text of “'+book.title+'”…';os.gdStatus('Loading text directly from Project Gutenberg…');
+            const formats=book.formats||{},url=os.gdSafeURL(formats['text/plain; charset=utf-8']||formats['text/plain; charset=us-ascii']||formats['text/plain'])||'https://www.gutenberg.org/cache/epub/'+book.id+'/pg'+book.id+'.txt';
+            try{const text=await os.gdRequest(url,'book',true);if(token!==os.gdState.readID)return;if(!text.trim())throw Error('Provider returned empty text');if(/^\s*<(?:!doctype|html)/i.test(text))throw Error('Provider returned an HTML page, not book text');os.gdShowText(text,book.title,book.id);os.gdStatus('Text loaded · reading position saved in this browser when available');}
+            catch(error){if(token!==os.gdState.readID)return;body.textContent='Online text unavailable: '+(error.name==='AbortError'?'request cancelled or timed out':error.message)+'\n\nUse “Gutenberg edition” above, or download a text edition and open it with “Open .txt”. No public relay is contacted and no text is silently truncated.';os.gdStatus('Unable to load book text · catalog metadata is not a full book');}
         },
-
-        gdSearch: async (query = 'science fiction') => {
-            const q = String(query || 'classic').trim();
-            const list = document.getElementById('gd-list');
-            if (list) list.innerHTML = `<div class="p-4 font-mono text-gray-400">Searching Project Gutenberg for "${esc(q)}"...</div>`;
-            try {
-                const res = await fetch(`https://gutendex.com/books?search=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                os.gdState.books = (data?.results || []).slice(0, 18);
-            } catch (_) {
-                os.gdState.books = [];
-            }
-            if (!list) return;
-            if (!os.gdState.books.length) {
-                list.innerHTML = `<div class="p-4 text-gray-500">No books matched "${esc(q)}".</div>`;
-                return;
-            }
-            list.innerHTML = os.gdState.books.map((b, i) => {
-                const author = b.authors?.[0]?.name || 'Classic Author';
-                const cover = b.formats?.['image/jpeg'] || '';
-                return `
-                    <button type="button" onclick="os.gdOpenBook(${i})"
-                        class="w-full text-left p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/[0.07] flex items-start gap-2.5 transition hover-target cursor-none">
-                        ${cover ? `<img src="${esc(cover)}" class="w-10 h-14 object-cover rounded shrink-0 bg-black" alt="">` : `<div class="w-10 h-14 rounded bg-amber-500/20 flex items-center justify-center shrink-0">📖</div>`}
-                        <div class="min-w-0 flex-1">
-                            <div class="font-semibold text-white line-clamp-2 text-[11.5px]">${esc(b.title)}</div>
-                            <div class="text-[10px] text-amber-300 truncate mt-0.5">${esc(author)}</div>
-                            <div class="text-[9.5px] font-mono text-gray-500 mt-0.5">↓ ${Number(b.download_count || 0).toLocaleString()} reads</div>
-                        </div>
-                    </button>
-                `;
-            }).join('');
-            os.gdOpenBook(0);
+        gdSetBookBar: (title,id) => {
+            const bar=document.getElementById('gd-book-bar');if(!bar)return;bar.replaceChildren();const label=document.createElement('strong');label.textContent=title;bar.append(label);
+            if(Number.isSafeInteger(id)&&id>0){const link=document.createElement('a');link.href='https://www.gutenberg.org/ebooks/'+id;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Gutenberg edition ↗';bar.append(link);}
         },
-
-        gdOpenBook: async (idx) => {
-            const b = os.gdState.books[idx];
-            if (!b) return;
-            const bar = document.getElementById('gd-book-bar');
-            const body = document.getElementById('gd-reader-body');
-            const txtUrl = b.formats?.['text/plain; charset=utf-8'] || b.formats?.['text/plain; charset=us-ascii'] || b.formats?.['text/plain'] || `https://www.gutenberg.org/cache/epub/${b.id}/pg${b.id}.txt`;
-            const htmlUrl = b.formats?.['text/html'] || `https://www.gutenberg.org/ebooks/${b.id}`;
-
-            if (bar) {
-                bar.innerHTML = `
-                    <span class="truncate font-semibold">${esc(b.title)}</span>
-                    <a href="${esc(htmlUrl)}" target="_blank" rel="noopener" class="underline shrink-0 ml-2 hover-target cursor-none">Gutenberg Edition ↗</a>
-                `;
-            }
-            if (body) body.textContent = `Opening "${b.title}"...`;
-
-            try {
-                // Direct or CORS-friendly Gutenberg mirror
-                const mirrorUrl = `https://www.gutenberg.org/cache/epub/${b.id}/pg${b.id}.txt`;
-                let text = '';
-                for (const candidate of [txtUrl, `https://api.allorigins.win/raw?url=${encodeURIComponent(mirrorUrl)}`]) {
-                    try {
-                        const r = await fetch(candidate);
-                        if (r.ok) { text = await r.text(); if (text.length > 400) break; }
-                    } catch (_) {}
-                }
-                if (body) {
-                    body.textContent = text
-                        ? text.slice(0, 140000)
-                        : `${b.title}\nby ${b.authors?.[0]?.name || 'Unknown'}\n\nSubjects:\n• ${(b.subjects || []).join('\n• ')}\n\nClick "Gutenberg Edition ↗" above to read the full illustrated HTML volume.`;
-                    body.scrollTop = 0;
-                }
-            } catch (_) {}
+        gdShowText: (text,title,id) => {
+            const body=document.getElementById('gd-reader-body');if(!body)return;clearTimeout(os.gdState.restoreTimer);clearTimeout(os.gdState.saveTimer);os.gdState.restoring=true;os.gdState.text=text;os.gdState.title=title;os.gdState.activeID=id;os.gdSetBookBar(title,id);body.textContent=text;body.style.fontSize=os.gdState.fontSize+'px';
+            os.gdState.restoreTimer=setTimeout(()=>{if(body.isConnected){body.scrollTop=(os.gdState.positions[id]||0)*Math.max(0,body.scrollHeight-body.clientHeight);os.gdState.restoring=false;os.gdReadingProgress(false);}});
+        },
+        gdReadingProgress: (save=true) => {
+            const body=document.getElementById('gd-reader-body');if(!body||!os.gdState.text)return;const max=body.scrollHeight-body.clientHeight,fraction=max>0?Math.min(1,Math.max(0,body.scrollTop/max)):0;
+            const label=document.getElementById('gd-progress-label'),bar=document.getElementById('gd-progress');if(label)label.textContent=Math.round(fraction*100)+'% through loaded text · '+os.gdState.fontSize+'px';if(bar)bar.value=fraction*100;
+            if(save&&!os.gdState.restoring){clearTimeout(os.gdState.saveTimer);os.gdState.saveTimer=setTimeout(os.gdSavePosition,200);}
+        },
+        gdSavePosition: () => {
+            const body=document.getElementById('gd-reader-body'),id=os.gdState.activeID;if(!body||!os.gdState.text||os.gdState.restoring)return;
+            const max=body.scrollHeight-body.clientHeight,fraction=max>0?Math.min(1,Math.max(0,body.scrollTop/max)):0;
+            os.gdState.positions[id]=fraction;if(!Number.isSafeInteger(id))return;
+            try{const entries=Object.entries(os.gdState.positions).filter(([key])=>/^\d+$/.test(key)).slice(-100);localStorage.setItem('aether_book_positions_v1',JSON.stringify(Object.fromEntries(entries)));}
+            catch(_){os.gdStatus('Position kept for this tab only · browser storage unavailable');}
+        },
+        gdImportText: async file => {
+            if(!file)return;os.gdState.controllers.book?.abort();const token=++os.gdState.readID;
+            try{if(file.size>2097152)throw Error('File exceeds 2 MiB');const text=await file.text();if(token!==os.gdState.readID)return;if(new TextEncoder().encode(text).length>2097152||text.includes('\0'))throw Error('Not a supported UTF-8 text file (maximum 2 MiB)');os.gdSavePosition();os.gdState.positions.local=0;os.gdShowText(text,file.name,'local');os.gdStatus('Local text opened in this tab · file is not uploaded or saved as a backup');}
+            catch(error){if(token===os.gdState.readID)os.gdStatus('Could not open text: '+error.message);}
+        },
+        gdDownloadText: () => {
+            if(!os.gdState.text){os.gdStatus('Open a book text first');return;}const url=URL.createObjectURL(new Blob([os.gdState.text],{type:'text/plain;charset=utf-8'})),link=document.createElement('a');link.href=url;link.download='gutenberg-'+(os.gdState.activeID||'text')+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);os.gdStatus('Text download requested');
         }
     });
 })();

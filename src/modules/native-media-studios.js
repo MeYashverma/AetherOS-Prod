@@ -296,8 +296,12 @@
         },
 
         killPhotoBooth: () => {
+            os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
+            const video=document.getElementById('pb-video');if(video){video.pause();video.srcObject=null;}
             if (os.pbState.raf) { cancelAnimationFrame(os.pbState.raf); os.pbState.raf = null; }
             if (os.pbState.webcamStream) {
+                os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
+                const video=document.getElementById('pb-video');if(video){video.pause();video.srcObject=null;}
                 os.pbState.webcamStream.getTracks().forEach((t) => t.stop());
                 os.pbState.webcamStream = null;
             }
@@ -318,18 +322,23 @@
                 window.Notifications && window.Notifications.push('PHOTO BOOTH', 'Camera API unavailable in this browser; using Live Shader scene.');
                 return;
             }
+            const request=os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+                if(request!==os.pbState.cameraRequest || !document.getElementById('pb-video') || !SystemState.windows.photobooth?.isOpen){stream.getTracks().forEach(t=>t.stop());return;}
                 os.pbState.webcamStream = stream;
                 const v = document.getElementById('pb-video');
-                if (v) { v.srcObject = stream; await v.play().catch(() => {}); }
+                if (v) { v.srcObject = stream; await v.play(); }
                 const st = document.getElementById('pb-cam-status');
                 const btn = document.getElementById('pb-cam-btn');
-                if (st) st.textContent = 'FaceTime HD Webcam Active';
+                if (st) st.textContent = 'Camera active · local preview';
                 if (btn) btn.innerHTML = `<i data-lucide="video-off" class="w-3.5 h-3.5 text-rose-400"></i><span>Stop Webcam</span>`;
                 if (window.lucide) lucide.createIcons();
-            } catch (_) {
-                window.Notifications && window.Notifications.push('PHOTO BOOTH', 'Camera permission declined — enjoying Live Interactive Shader mode!');
+            } catch (error) {
+                if(request!==os.pbState.cameraRequest)return;
+                if(os.pbState.webcamStream){os.pbState.webcamStream.getTracks().forEach(t=>t.stop());os.pbState.webcamStream=null;}
+                const video=document.getElementById('pb-video');if(video)video.srcObject=null;
+                window.Notifications && window.Notifications.push('PHOTO BOOTH', error.name==='NotAllowedError'?'Camera permission denied. No camera is active. The preview is a procedural demo.':'Camera could not start. No camera is active. The preview is a procedural demo.');
             }
         },
 

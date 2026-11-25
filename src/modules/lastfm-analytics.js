@@ -416,7 +416,7 @@ window.extendOS({
                         <div class="h-full flex flex-col items-center justify-center gap-2">
                             <i data-lucide="alert-circle" class="w-8 h-8 text-red-400"></i>
                             <p class="font-mono text-[10px] text-red-300 uppercase">Failed to retrieve day archives</p>
-                            <p class="font-mono text-[9px] text-gray-600">${err.message}</p>
+                            <p class="font-mono text-[9px] text-gray-600">${window.escapeAetherHtml(err.message)}</p>
                         </div>
                     `;
                 }

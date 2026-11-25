@@ -1510,14 +1510,12 @@ window.extendOS({
 
                 const bars = spect.getElementsByClassName('spect-bar');
                 os.spectrographInterval = setInterval(() => {
-                    const activeStation = SystemState.settings.media_tuner_station;
-                    const isPlaying = activeStation === 'external' || (os.audioStream && !os.audioStream.paused);
-                    
-                    for (let i = 0; i < bars.length; i++) {
-                        const baseVal = isPlaying ? 0.2 : 0.05;
-                        const randomHeight = baseVal + (isPlaying ? Math.random() * 0.8 : Math.random() * 0.1);
-                        bars[i].style.transform = `scaleY(${randomHeight})`;
-                    }
+                    const playing=Boolean(os.audioStream && !os.audioStream.paused && !os.audioStream.ended);
+                    spect.setAttribute('role','img');
+                    spect.setAttribute('aria-label','Decorative playback indicator, not audio spectrum analysis');
+                    spect.title='Decorative playback indicator · external audio cannot be measured';
+                    for(let i=0;i<bars.length;i++) bars[i].style.transform=`scaleY(${playing ? .18+.2*(1+Math.sin(performance.now()/380+i*.8)) : .06})`;
+
                 }, 120);
             },
 
@@ -1585,44 +1583,25 @@ window.extendOS({
                     }
                     throw new Error('No lyric candidates matched.');
                 }catch(e){
-                    scroller.innerHTML=`<div class="h-full flex flex-col justify-center items-center text-center py-10 text-gray-500 text-[10px] uppercase"><i data-lucide="music" class="w-6 h-6 opacity-30 mb-2"></i>Instrumental frequency detected // Lyrics unmapped<br><span class="text-[8px] text-gray-600 normal-case mt-1">${e.message}</span></div>`;
+                    scroller.innerHTML=`<div class="h-full flex flex-col justify-center items-center text-center py-10 text-gray-500 text-[10px] uppercase"><i data-lucide="music" class="w-6 h-6 opacity-30 mb-2"></i>Lyrics unavailable for this recording<br><span class="text-[8px] text-gray-600 normal-case mt-1">${String(e.message).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</span></div>`;
                     lucide.createIcons({root:scroller}); os.startPlaybackTimer(duration,{preservePosition:false});
                 }
             },
 
-    startPlaybackTimer: (durationSeconds, opts={}) => {
-                if(os.playbackTimerInterval) clearInterval(os.playbackTimerInterval);
-                os.mediaPlaybackDuration=Number(durationSeconds)||220;
-                if(!opts.preservePosition){ os.mediaPlaybackStartedAt=performance.now(); os.mediaPlaybackBase=0; os.mediaPlaybackElapsed=0; }
-                const totalLabel=document.getElementById('media-total-time'); if(totalLabel){ const d=os.mediaPlaybackDuration; totalLabel.innerText=`${Math.floor(d/60)}:${String(Math.floor(d%60)).padStart(2,'0')}`; }
+    startPlaybackTimer: () => {
+                clearInterval(os.playbackTimerInterval);
                 const tick=()=>{
-                    const activeStation=SystemState.settings.media_tuner_station;
-                    // In PLAYER mode with iframe player, the timer is simulated (iframe doesn't expose time)
-                    const isPlayerMode = SystemState.settings.media_player_mode === 'player';
-                    const hasIframePlayer = !!document.getElementById('media-full-player-iframe');
-                    if (isPlayerMode && hasIframePlayer) {
-                        // Iframe player is active — drive timer from simulation
-                        os.mediaPlaybackElapsed=(os.mediaPlaybackBase||0)+(performance.now()-(os.mediaPlaybackStartedAt||performance.now()))/1000;
-                        // Cap at duration so it doesn't run forever if iframe doesn't signal end
-                        if (os.mediaPlaybackElapsed > os.mediaPlaybackDuration) os.mediaPlaybackElapsed = os.mediaPlaybackDuration;
-                        os.updateMediaTimeUI(); os.syncLyricsToPlayback();
-                        return;
-                    }
-                    // In PLAYER mode with actual audio track (legacy audio element), the audio element drives time via ontimeupdate
-                    const hasActiveAudio = os.audioStream && !os.audioStream.paused && os.audioStream.src && os._currentTrackAudio;
-                    if (isPlayerMode && hasActiveAudio) {
-                        if (isNaN(os.audioStream.duration) || os.audioStream.duration <= 0) {
-                            os.updateMediaTimeUI(); os.syncLyricsToPlayback();
-                        }
-                        return;
-                    }
-                    const isPlaying=activeStation==='external'||(os.audioStream&&!os.audioStream.paused)||(activeStation==='lastfm' && os.mediaIsNowPlaying !== false);
-                    if(isPlaying){
-                        os.mediaPlaybackElapsed=(os.mediaPlaybackBase||0)+(performance.now()-(os.mediaPlaybackStartedAt||performance.now()))/1000;
-                        os.updateMediaTimeUI(); os.syncLyricsToPlayback();
+                    const audio=os.audioStream;
+                    if(audio && os._currentTrackAudio && Number.isFinite(audio.currentTime) && Number.isFinite(audio.duration) && audio.duration>0){
+                        os.mediaPlaybackElapsed=audio.currentTime;os.mediaPlaybackDuration=audio.duration;
+                        os.updateMediaTimeUI();os.syncLyricsToPlayback();
+                    }else{
+                        const label=document.getElementById('media-playback-time'),bar=document.getElementById('media-progress-bar');
+                        if(label)label.textContent='--:--';
+                        if(bar){bar.style.width='0%';bar.setAttribute('aria-label','Playback position unavailable for this source');}
                     }
                 };
-                tick(); os.playbackTimerInterval=setInterval(tick,250);
+                tick();os.playbackTimerInterval=setInterval(tick,500);
             },
 
     updateMediaTimeUI: () => {

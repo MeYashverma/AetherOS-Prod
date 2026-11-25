@@ -322,60 +322,8 @@
             if (window.lucide) lucide.createIcons({ root: overlay });
         },
 
-        // ── Liquid Glass Lock Screen (Ctrl/Cmd + L) ──
-        lockScreen: () => {
-            const el = document.getElementById('lock-screen-overlay');
-            if (!el) return;
-            os.isScreenLocked = true;
-            os.closeTopBarMenus && os.closeTopBarMenus();
-            os.toggleMissionControl && os.toggleMissionControl(false);
-            os._updateLockScreenClock();
-            const pinWrap = document.getElementById('lock-pin-wrap');
-            const unlockBtn = document.getElementById('lock-instant-btn');
-            const pinInput = document.getElementById('lock-pin-input');
-            const errEl = document.getElementById('lock-pin-error');
-            const hasPin = Boolean((SystemState.settings.lock_pin || '').trim());
-            if (pinWrap) pinWrap.style.display = hasPin ? 'flex' : 'none';
-            if (unlockBtn) unlockBtn.style.display = hasPin ? 'none' : 'inline-flex';
-            if (errEl) errEl.textContent = '';
-            el.style.display = 'flex';
-            if (hasPin && pinInput) {
-                pinInput.value = '';
-                setTimeout(() => pinInput.focus(), 60);
-            }
-        },
+        // Workspace lock implementation lives in services/workspace-lock.js.
 
-        unlockScreen: () => {
-            const el = document.getElementById('lock-screen-overlay');
-            if (!el) return;
-            const requiredPin = (SystemState.settings.lock_pin || '').trim();
-            if (requiredPin) {
-                const pinInput = document.getElementById('lock-pin-input');
-                const errEl = document.getElementById('lock-pin-error');
-                if (!pinInput || pinInput.value.trim() !== requiredPin) {
-                    if (errEl) errEl.textContent = 'Incorrect PIN / Passphrase';
-                    if (pinInput) pinInput.value = '';
-                    return false;
-                }
-            }
-            os.isScreenLocked = false;
-            el.style.display = 'none';
-            return true;
-        },
-
-        _updateLockScreenClock: () => {
-            const timeEl = document.getElementById('lock-clock-time');
-            const dateEl = document.getElementById('lock-clock-date');
-            const metaEl = document.getElementById('lock-status-meta');
-            const now = new Date();
-            if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-            if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-            if (metaEl) {
-                const weather = document.getElementById('topbar-weather-temp')?.textContent || '--°C';
-                const focusPill = document.getElementById('topbar-focus-label')?.textContent || '';
-                metaEl.textContent = focusPill ? `${weather}  ·  Focus ${focusPill}` : `${weather}  ·  Workspace 0${SystemState.settings.active_space || 1}`;
-            }
-        }
     });
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -384,16 +332,10 @@
         }, 2000);
 
         document.addEventListener('keydown', (e) => {
-            if (window.os && os.isScreenLocked) {
-                if (e.key === 'Enter' && !(SystemState.settings.lock_pin || '').trim()) {
-                    e.preventDefault();
-                    os.unlockScreen();
-                }
-                return;
-            }
+            if (window.os && os.isScreenLocked) return;
 
-            // Lock Screen shortcut: Ctrl/Cmd + L (when not typing in URL bar)
-            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'l') {
+            // Lock Screen shortcut: Ctrl/Cmd + Shift + L (leave browser address-bar shortcut intact)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'l') {
                 const tag = (e.target && e.target.tagName || '').toLowerCase();
                 if (tag !== 'input' && tag !== 'textarea') {
                     e.preventDefault();

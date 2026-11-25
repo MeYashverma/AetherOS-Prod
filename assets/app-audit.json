@@ -1,0 +1,390 @@
+{
+  "schemaVersion": 1,
+  "scope": "Static source review of all registered apps; not a live-provider certification",
+  "apps": [
+    {
+      "id": "settings",
+      "label": "System Settings",
+      "mode": "local",
+      "file": "src/modules/shell-and-theme.js",
+      "mechanism": "Local preferences, feature gates, themes and optional wallpaper adapters",
+      "limitations": "Browser-stored client keys and backups are not a secret vault; provider keys belong on a backend."
+    },
+    {
+      "id": "about",
+      "label": "About AetherOS",
+      "mode": "local",
+      "file": "src/ui/about-system.js",
+      "mechanism": "Registry-derived app guide, measured browser capabilities and Git/GitHub commit history",
+      "limitations": "Build metadata is a snapshot; GitHub history may be cached or unavailable. No invented hardware or performance guarantees."
+    },
+    {
+      "id": "terminal",
+      "label": "Terminal",
+      "mode": "local",
+      "file": "src/modules/diagnostics-and-tasks.js",
+      "mechanism": "JavaScript command dispatcher operating on the browser VFS",
+      "limitations": "JavaScript command console, not a Unix shell. The ping command is an HTTP timing probe, not ICMP or a reachability guarantee. Cannot execute host commands or inspect OS processes."
+    },
+    {
+      "id": "filemanager",
+      "label": "Files",
+      "mode": "hybrid",
+      "file": "src/modules/workspace-apps.js",
+      "mechanism": "IndexedDB files, uploads, previews and Wikipedia imports",
+      "limitations": "Browser storage may be denied or evicted; saves await transaction results and disclose session-only fallback. Nested file paths and custom empty folders are mounted from stored data. No host filesystem access, trash, undo deletion, or recursive folder deletion."
+    },
+    {
+      "id": "wikiboard",
+      "label": "WikiBoard",
+      "mode": "hybrid",
+      "file": "src/modules/workspace-apps.js",
+      "mechanism": "WikiBoardEngine DOM/SVG research canvas with Wikipedia requests",
+      "limitations": "External content can fail; verify graph persistence and large-board performance."
+    },
+    {
+      "id": "browser",
+      "label": "Web Browser",
+      "mode": "embed",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "Iframe navigation plus a reader/clipper",
+      "limitations": "Reader/embed workspace, not a complete browser. HTTP(S) URLs only; per-tab navigation works within the reader. Public relays require per-URL consent and can see the full URL. Third-party embeds may be blocked. External favicon services may receive domains."
+    },
+    {
+      "id": "media",
+      "label": "Music & Podcasts",
+      "mode": "hybrid",
+      "file": "src/modules/media-and-lyrics.js",
+      "mechanism": "Music-theater player adapters, podcast/audio playback, LRCLIB and Last.fm metadata",
+      "limitations": "External presence is not a playback clock. Missing lyrics do not imply an instrumental track. Legacy visual meter is not an FFT."
+    },
+    {
+      "id": "stickers",
+      "label": "Stickers & Profiles",
+      "mode": "network",
+      "file": "src/modules/media-library.js",
+      "mechanism": "Manual StickersAPI media search with licensed-source links and fallbacks",
+      "limitations": "CDN failures and content moderation depend on providers; automatic reaction matching is heuristic."
+    },
+    {
+      "id": "radiobrowser",
+      "label": "World Radio",
+      "mode": "network",
+      "file": "src/modules/radio-and-youtube.js",
+      "mechanism": "Radio Browser station directory and HTML audio streams",
+      "limitations": "Station counts are not guaranteed; browser codec, HTTPS, CORS and autoplay restrictions apply."
+    },
+    {
+      "id": "weather",
+      "label": "Weather",
+      "mode": "network",
+      "file": "src/modules/space-and-weather.js",
+      "mechanism": "Explicit city match selection or permission-based device coordinates; Open-Meteo forecast/AQI with local-time hourly/daily views, units, timeout/cancellation and labelled cached fallback",
+      "limitations": "Live provider access not verified in this sandbox. Forecast models are not local sensors or severe-weather alerts. Optional AQI may be unavailable; cached refresh failures are labelled. Selected coordinates are browser-stored and shared with Open-Meteo on requests. No silent IP lookup/default local city."
+    },
+    {
+      "id": "feed",
+      "label": "News & RSS",
+      "mode": "network",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "Curated HN/DEV/GitHub/Reddit API reading room with per-source cached/error states, safe plain-text reader, tab-session read filters, validated saved links/export and awaited visible-text clipping",
+      "limitations": "Not a general RSS subscription client. Source APIs may be blocked, rate-limited or unavailable; live access not verified here. DEV preview is bounded plain Markdown; HN is a partial discussion, other sources summaries. Saved links are not offline articles; browser storage can fail. Shared shell digest scheduling remains active when enabled."
+    },
+    {
+      "id": "sysmon",
+      "label": "Activity & Speed",
+      "mode": "local",
+      "file": "src/modules/diagnostics-and-tasks.js",
+      "mechanism": "requestAnimationFrame deltas, optional JS heap/storage/battery APIs and network speed requests",
+      "limitations": "Measures this page, not host CPU/RAM. Missing metrics must remain unavailable; speed tests transfer data."
+    },
+    {
+      "id": "taskmanager",
+      "label": "Task Manager",
+      "mode": "local",
+      "file": "src/modules/diagnostics-and-tasks.js",
+      "mechanism": "Native window inventory with confirmed close/focus actions, bounded measured browser-page heap/DOM/timer-delay history, pause/resume and JSON report export",
+      "limitations": "Not an OS process manager: no per-app CPU or RAM, and window close is not a device process kill. Heap is an optional browser estimate; callback delay includes timer scheduling/throttling effects. Session-only history, skipped while hidden or paused. Export includes open window titles."
+    },
+    {
+      "id": "focus",
+      "label": "Focus & Soundscapes",
+      "mode": "local",
+      "file": "src/modules/focus-and-devpad.js",
+      "mechanism": "Pomodoro/session state and generated WebAudio soundscapes",
+      "limitations": "Timer uses wall-clock deadlines while this page is running; closing/reloading ends the timer. Noise and two-tone pads are synthesized locally, not recordings or validated health interventions. Browser storage may be unavailable."
+    },
+    {
+      "id": "devpad",
+      "label": "Dev Studio",
+      "mode": "local",
+      "file": "src/modules/focus-and-devpad.js",
+      "mechanism": "Markdown editor and JSON/Base64/JWT/regex/SHA tools",
+      "limitations": "JWT decoding does not verify signatures. Regex runs in a worker with a 750 ms timeout and bounded input/output. Markdown is a limited renderer. Browser storage is not a backup; export important documents."
+    },
+    {
+      "id": "kanban",
+      "label": "Kanban Board",
+      "mode": "local",
+      "file": "src/modules/power-tools.js",
+      "mechanism": "Saved boards/cards, priorities, drag-and-drop and export",
+      "limitations": "Local single-browser board, not multi-user collaboration. Edits, moves and one-level deletion undo are supported; use Markdown export as a backup. Storage errors leave data session-only."
+    },
+    {
+      "id": "photobooth",
+      "label": "Photo Booth",
+      "mode": "local",
+      "file": "src/modules/native-media-studios.js",
+      "mechanism": "getUserMedia capture, real canvas filters and exports",
+      "limitations": "Camera permission and a secure context are required. Procedural preview is a demo, not camera input. Pending camera requests are invalidated on close and their tracks are stopped."
+    },
+    {
+      "id": "synthstudio",
+      "label": "SynthPad Studio",
+      "mode": "local",
+      "file": "src/modules/native-media-studios.js",
+      "mechanism": "WebAudio synthesis, sequencer and oscillator display",
+      "limitations": "Procedural audio is intentional, not a recording; timing may drift when backgrounded."
+    },
+    {
+      "id": "photopea",
+      "label": "Photopea Studio",
+      "mode": "embed",
+      "file": "src/modules/opensource-webapps-suite.js",
+      "mechanism": "Official Photopea iframe and postMessage file bridge",
+      "limitations": "Third-party editor, not a native implementation. Uploaded content goes to the iframe; bridge now checks exact origin and source."
+    },
+    {
+      "id": "whiteboard",
+      "label": "Whiteboard Studio",
+      "mode": "embed",
+      "file": "src/modules/opensource-webapps-suite.js",
+      "mechanism": "Excalidraw, diagrams.net and tldraw embeds",
+      "limitations": "Cross-origin persistence and framing policies vary; Draw.io messages require source/origin verification."
+    },
+    {
+      "id": "chiptune",
+      "label": "Retro & 3D Makers",
+      "mode": "embed",
+      "file": "src/modules/iconic-web-universes.js",
+      "mechanism": "BeepBox, Blockbench and JSPaint external studios",
+      "limitations": "Third-party tools; availability, storage and export formats are controlled by each service."
+    },
+    {
+      "id": "worldmuseums",
+      "label": "World Museum Gallery",
+      "mode": "network",
+      "file": "src/modules/live-world-and-science-apis.js",
+      "mechanism": "Art Institute of Chicago and Met Museum object APIs",
+      "limitations": "Open-access flags vary per object; retain provenance. Failed image fetches are not missing artworks."
+    },
+    {
+      "id": "gutendex",
+      "label": "Open Bookshelf",
+      "mode": "network",
+      "file": "src/modules/live-world-and-science-apis.js",
+      "mechanism": "Gutendex catalog with real Gutenberg covers/pagination, direct bounded Gutenberg text, local TXT reading, typography/themes, progress positions and text export",
+      "limitations": "Live provider/CORS access not verified here. Direct text can be blocked; no public relays used. 2 MiB text limit is explicit, never silently truncated. Text remains in this tab; saved positions are browser storage, not book backups. Copyright and availability vary by jurisdiction; download counts are not reads."
+    },
+    {
+      "id": "earthpulse",
+      "label": "Earth Monitor",
+      "mode": "hybrid",
+      "file": "src/modules/api-earth-archive-oss.js",
+      "mechanism": "USGS earthquake and EONET event APIs with Windy embed",
+      "limitations": "Not an emergency alert service; refresh time and network status determine freshness."
+    },
+    {
+      "id": "spacexhub",
+      "label": "Space Launches",
+      "mode": "network",
+      "file": "src/modules/api-earth-archive-oss.js",
+      "mechanism": "Launch APIs and astronauts feed",
+      "limitations": "Schedules change and feeds can be stale; countdown is computed from provider dates, not a confirmed launch guarantee."
+    },
+    {
+      "id": "stellarium",
+      "label": "3D Solar System & Sky",
+      "mode": "embed",
+      "file": "src/modules/iconic-web-universes.js",
+      "mechanism": "NASA Eyes and Stellarium web embeds",
+      "limitations": "Remote simulations/visualizations, not measurements made by AetherOS."
+    },
+    {
+      "id": "georadar",
+      "label": "Atlas & Landmarks",
+      "mode": "hybrid",
+      "file": "src/modules/iconic-web-universes.js",
+      "mechanism": "OSM map embeds and geotagged Wikipedia articles",
+      "limitations": "Nearby article matches do not guarantee tourist access or precise physical location."
+    },
+    {
+      "id": "worldfactbook",
+      "label": "World Factbook & FX",
+      "mode": "network",
+      "file": "src/modules/live-world-and-science-apis.js",
+      "mechanism": "REST Countries, World Bank and currency-rate requests",
+      "limitations": "Country indicators/FX have publication dates; not tick-level financial data."
+    },
+    {
+      "id": "wayback",
+      "label": "Archive & DOS Vault",
+      "mode": "hybrid",
+      "file": "src/modules/api-earth-archive-oss.js",
+      "mechanism": "Archive.org search, Wayback snapshots and DOS embeds",
+      "limitations": "An archive may have no snapshot or block embeds; preserve the actual snapshot date and original link."
+    },
+    {
+      "id": "winamp",
+      "label": "Winamp + SomaFM",
+      "mode": "hybrid",
+      "file": "src/modules/opensource-webapps-suite.js",
+      "mechanism": "Webamp integration and SomaFM stream metadata",
+      "limitations": "Winamp skin is third-party Webamp, not a rewritten native player; external stream rights and availability vary."
+    },
+    {
+      "id": "ossradar",
+      "label": "GitHub Explorer",
+      "mode": "network",
+      "file": "src/modules/api-earth-archive-oss.js",
+      "mechanism": "Live unauthenticated GitHub repository search and encoded Contents API directory/UTF-8 source browsing with ref selection, bounded previews and clipboard actions",
+      "limitations": "Public read-only repos only; unauthenticated GitHub rate limits and directory limits apply. No fake fallback statistics. Binary/non-UTF-8 or >256 KiB sources are not previewed. No Markdown execution/rendering or write operations."
+    },
+    {
+      "id": "shadertoy",
+      "label": "Shader Studio",
+      "mode": "hybrid",
+      "file": "src/modules/iconic-web-universes.js",
+      "mechanism": "Local WebGL shader compilation plus optional Shadertoy embeds",
+      "limitations": "WebGL and driver support required. Compilation does not guarantee a particular FPS; shader/program/buffer resources are released on recompile and close. External Shadertoy embeds have separate availability."
+    },
+    {
+      "id": "codeplay",
+      "label": "Code Sandbox",
+      "mode": "local",
+      "file": "src/modules/dev-workbench.js",
+      "mechanism": "Local HTML/CSS/JS editor with explicit-run opaque-origin sandbox, restrictive preview CSP, captured console, validated editable project import/export and browser draft storage",
+      "limitations": "Only run trusted code: synchronous loops can freeze the tab; Stop is not a CPU interrupt. Preview CSP restricts resource requests, not a network firewall; self-navigation can replace preview. Exported HTML runs without preview restrictions. Drafts are browser storage, not backups; Files may be session-only."
+    },
+    {
+      "id": "aetherbridge",
+      "label": "Device Sync",
+      "mode": "network",
+      "file": "src/modules/shell-and-theme.js",
+      "mechanism": "WebRTC device/folder sharing through AetherBridge service",
+      "limitations": "Requires signaling/peers; DTLS transport is not proof of peer identity or an authenticated filesystem."
+    },
+    {
+      "id": "aetherlink",
+      "label": "AetherLink P2P",
+      "mode": "network",
+      "file": "src/modules/shell-and-theme.js",
+      "mechanism": "WebRTC data channels for rooms, chat and transfers",
+      "limitations": "STUN/signaling may fail behind NAT without TURN; room codes are not a complete authentication system."
+    },
+    {
+      "id": "presence",
+      "label": "Discord Presence",
+      "mode": "network",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "Lanyard public Discord presence and optional webhook requests",
+      "limitations": "Presence requires Lanyard participation. Webhook URLs are credentials; do not expose them in shared backups."
+    },
+    {
+      "id": "iss",
+      "label": "ISS 3D Tracker",
+      "mode": "hybrid",
+      "file": "src/modules/space-and-weather.js",
+      "mechanism": "WhereTheISS position feed on a procedural Three.js globe",
+      "limitations": "Globe texture/stars are illustrative; coordinates are feed data, not a precision orbital propagator."
+    },
+    {
+      "id": "nasa",
+      "label": "NASA Space",
+      "mode": "network",
+      "file": "src/modules/space-and-weather.js",
+      "mechanism": "NASA APOD, EPIC and related source endpoints",
+      "limitations": "Demo-key limits and per-image copyrights apply; APOD can be video, not always a wallpaper."
+    },
+    {
+      "id": "globe",
+      "label": "Flight Radar",
+      "mode": "network",
+      "file": "src/modules/radar-and-optics.js",
+      "mechanism": "ADS-B provider flights drawn on a geographic viewport",
+      "limitations": "Not navigation/safety equipment; provider coverage, latency and rate limits apply. Network errors must not synthesize aircraft."
+    },
+    {
+      "id": "market",
+      "label": "Crypto Markets",
+      "mode": "network",
+      "file": "src/modules/radar-and-optics.js",
+      "mechanism": "CoinGecko crypto prices and chart history",
+      "limitations": "Delayed provider data, not executable quotes or investment advice; verify rate-limit and stale states."
+    },
+    {
+      "id": "games",
+      "label": "Arcade",
+      "mode": "embed",
+      "file": "src/modules/anime-and-tv.js",
+      "mechanism": "External web-game embeds",
+      "limitations": "Browser framing, input and availability vary; not locally implemented games."
+    },
+    {
+      "id": "ytchtv",
+      "label": "Retro TV",
+      "mode": "embed",
+      "file": "src/modules/anime-and-tv.js",
+      "mechanism": "Curated video channels and YouTube embeds",
+      "limitations": "Curated playlists are not live television; no playback clock without a player adapter."
+    },
+    {
+      "id": "memes",
+      "label": "Reddit Gallery",
+      "mode": "network",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "Reddit image feeds and lightbox",
+      "limitations": "Reddit can block anonymous browser requests; source content moderation/licensing varies."
+    },
+    {
+      "id": "anime",
+      "label": "Anime",
+      "mode": "network",
+      "file": "src/modules/anime-and-tv.js",
+      "mechanism": "Anime metadata search, seasons, trailers and external links",
+      "limitations": "Metadata does not grant streaming rights; trailers and episode links may be unavailable."
+    },
+    {
+      "id": "manga",
+      "label": "Manga Reader",
+      "mode": "network",
+      "file": "src/modules/anime-and-tv.js",
+      "mechanism": "Manga discovery, reading list and MangaDex chapter data",
+      "limitations": "Chapters depend on language, availability and region; no promise of licensed access to every title."
+    },
+    {
+      "id": "entityscanner",
+      "label": "Character Dex",
+      "mode": "hybrid",
+      "file": "src/modules/workspace-apps.js",
+      "mechanism": "Character API metadata and a local randomized battle mini-game",
+      "limitations": "Battle damage and outcomes are game mechanics, not canon power rankings or live measurements."
+    },
+    {
+      "id": "floor796",
+      "label": "Floor796 Panorama",
+      "mode": "embed",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "Floor796 external panorama/mirror viewer",
+      "limitations": "Artwork and updates belong to Floor796; mirrors may lag or block framing."
+    },
+    {
+      "id": "wplace",
+      "label": "Wplace World Canvas",
+      "mode": "embed",
+      "file": "src/modules/web-and-feeds.js",
+      "mechanism": "External collaborative canvas viewer",
+      "limitations": "No local implementation of the global canvas or guarantee of write access; provider controls sign-in/availability."
+    }
+  ]
+}

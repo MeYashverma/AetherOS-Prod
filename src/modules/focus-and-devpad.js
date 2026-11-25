@@ -6,10 +6,19 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 
+    let regexWorker=null,regexTimer=null,hashRequest=0;
+    function stopRegex(){if(regexWorker)regexWorker.terminate();regexWorker=null;clearTimeout(regexTimer);}
+    function persist(key,value,statusID){
+        const el=document.getElementById(statusID);
+        try{localStorage.setItem(key,JSON.stringify(value));if(el)el.textContent='Saved on this browser';return true;}
+        catch(_){if(el)el.textContent='Session only — storage unavailable. Export before closing.';return false;}
+    }
+
     window.WindowContents = window.WindowContents || {};
 
     window.WindowContents.focus = `
         <div class="h-full flex flex-col md:flex-row bg-[#07080c]/90 text-xs overflow-hidden" id="focus-studio-root">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">TIME &amp; ATTENTION</span><h2>Make room for one thing.</h2><p>Timed sessions and locally synthesized sound. No productivity scores.</p></div><span id="focus-save-status" role="status">Stored in this browser</span></header>
             <!-- Left: Pomodoro Timer & Session Checklist -->
             <div class="flex-1 p-5 flex flex-col gap-4 overflow-y-auto border-b md:border-b-0 md:border-r border-white/[0.07]">
                 <div class="flex items-center justify-between gap-2">
@@ -31,7 +40,7 @@
                                 stroke-linecap="round" stroke-dasharray="439.82" stroke-dashoffset="0" style="transition:stroke-dashoffset 0.4s ease"></circle>
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <div id="focus-time-display" class="text-4xl font-semibold tracking-tight text-white font-mono">25:00</div>
+                            <div id="focus-time-display" role="timer" aria-label="Time remaining" class="text-4xl font-semibold tracking-tight text-white font-mono">25:00</div>
                             <div id="focus-status-label" class="text-[10.5px] text-gray-400 uppercase tracking-widest mt-1">Ready</div>
                         </div>
                     </div>
@@ -50,7 +59,7 @@
                         <button type="button" onclick="os.focusClearDoneTasks()" class="text-[10px] text-gray-500 hover:text-white hover-target cursor-none">Clear Done</button>
                     </div>
                     <form onsubmit="event.preventDefault();os.focusAddTask()" class="flex gap-2">
-                        <input type="text" id="focus-task-input" placeholder="Add a focus objective..."
+                        <input type="text" id="focus-task-input" aria-label="New session task" maxlength="240" placeholder="Add a focus objective..."
                             class="flex-1 px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-xs text-white outline-none focus:border-white/25">
                         <button type="submit" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs hover-target cursor-none">Add</button>
                     </form>
@@ -74,6 +83,7 @@
 
     window.WindowContents.devpad = `
         <div class="h-full flex flex-col bg-[#07080c]/95 text-xs overflow-hidden" id="devpad-root">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">WRITE / FORMAT / INSPECT</span><h2>Dev Studio</h2><p>Local documents and developer utilities. Your input stays in this browser.</p></div><span id="devpad-save-status" role="status">Stored in this browser</span></header>
             <!-- Top Mode & Tab Bar -->
             <div class="px-3 py-2 border-b border-white/[0.07] bg-black/40 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5 min-w-0 overflow-x-auto" id="devpad-tabs-bar"></div>
@@ -131,7 +141,7 @@
         { id: 'rain',  label: 'Soft Rain',        icon: 'cloud-rain', desc: 'Filtered pink rain & canopy mist' },
         { id: 'brown', label: 'Warm Brown Noise', icon: 'waves',      desc: 'Deep low-frequency focus blanket' },
         { id: 'vinyl', label: 'Analog Vinyl',     icon: 'disc-3',     desc: 'Warm room tone & subtle crackle' },
-        { id: 'drone', label: 'Alpha Calm Pad',   icon: 'sparkles',   desc: 'Gentle 10 Hz binaural harmonic pad' }
+        { id: 'drone', label: 'Two-tone Pad',   icon: 'sparkles',   desc: '216 + 226 Hz sine tones, mixed in mono' }
     ];
 
     let audioCtx = null;
@@ -296,9 +306,7 @@
         } catch (_) {}
         return {
             sessionsCompleted: 0,
-            tasks: [
-                { id: 'ft-1', text: 'Ship clean workspace focus block', done: false }
-            ],
+            tasks: [],
             volumes: { rain: 0.45, brown: 0.4, vinyl: 0.35, drone: 0.3 }
         };
     }
@@ -317,7 +325,7 @@
                 {
                     id: 'doc-welcome',
                     title: 'Workspace Notes.md',
-                    content: `# AetherOS Markdown Studio\n\nWrite **clean Markdown** with instant side-by-side preview, or switch to **Dev Tools** in the top-right for local JSON, Base64, JWT, Regex, and SHA-256 utilities.\n\n## Quick Checklist\n- [x] Decluttered workspace & Settings\n- [ ] Try Window Snap (\`Alt + Left / Right\`)\n- [ ] Drop any local file onto the desktop`
+                    content: `# AetherOS Markdown Studio\n\nWrite **clean Markdown** with instant side-by-side preview, or switch to **Dev Tools** in the top-right for local JSON, Base64, JWT, Regex, and SHA-256 utilities.\n\n## Quick Checklist\n- [ ] Write one useful note\n- [ ] Try Window Snap (\`Alt + Left / Right\`)\n- [ ] Drop any local file onto the desktop`
                 }
             ]
         };
@@ -325,6 +333,7 @@
 
     const MODE_DURATIONS = { focus25: 25 * 60, deep50: 50 * 60, break5: 5 * 60, break15: 15 * 60 };
 
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden&&window.os?.focusState?.running)os.focusTick();});
     window.extendOS({
         focusState: {
             ...loadFocusState(),
@@ -339,11 +348,11 @@
         devpadState: loadDevPadState(),
 
         saveFocusState: () => {
-            localStorage.setItem('AetherOS_Focus_v1', JSON.stringify({
+            return persist('AetherOS_Focus_v1', {
                 sessionsCompleted: os.focusState.sessionsCompleted || 0,
                 tasks: os.focusState.tasks || [],
                 volumes: os.focusState.volumes || {}
-            }));
+            },'focus-save-status');
         },
 
         initFocusStudio: () => {
@@ -366,38 +375,30 @@
             os.focusSyncTopbarPill();
         },
 
-        focusToggleTimer: () => {
-            if (os.focusState.running) {
-                os.focusPauseTimer();
-            } else {
-                os.focusState.running = true;
-                clearInterval(os.focusState.timerId);
-                os.focusState.timerId = setInterval(() => {
-                    os.focusState.remainingSec = Math.max(0, os.focusState.remainingSec - 1);
-                    if (os.focusState.remainingSec <= 0) {
-                        os.focusPauseTimer();
-                        if (os.focusState.mode.startsWith('focus') || os.focusState.mode.startsWith('deep')) {
-                            os.focusState.sessionsCompleted = (os.focusState.sessionsCompleted || 0) + 1;
-                            os.saveFocusState();
-                        }
-                        playGentleChime();
-                        window.Notifications && window.Notifications.push('FOCUS COMPLETE', 'Session finished! Take a breather.');
-                        os.focusState.remainingSec = os.focusState.totalSec;
-                    }
-                    os.focusUpdateTimerDOM();
-                    os.focusSyncTopbarPill();
-                }, 1000);
+        focusTick: () => {
+            const state=os.focusState;if(!state.running)return;
+            state.remainingSec=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));
+            if(state.remainingSec===0){
+                state.running=false;state.deadline=null;clearInterval(state.timerId);state.timerId=null;
+                if(state.mode.startsWith('focus')||state.mode.startsWith('deep')){state.sessionsCompleted=(state.sessionsCompleted||0)+1;os.saveFocusState();}
+                playGentleChime();window.Notifications?.push('SESSION COMPLETE','Your timer finished. Ready when you are.');
             }
-            os.focusUpdateTimerDOM();
-            os.focusSyncTopbarPill();
+            os.focusUpdateTimerDOM();os.focusSyncTopbarPill();
+        },
+
+        focusToggleTimer: () => {
+            const state=os.focusState;
+            if(state.running){os.focusPauseTimer();return;}
+            if(state.remainingSec<=0)state.remainingSec=state.totalSec;
+            state.deadline=Date.now()+state.remainingSec*1000;state.running=true;
+            clearInterval(state.timerId);state.timerId=setInterval(os.focusTick,250);os.focusTick();
         },
 
         focusPauseTimer: () => {
-            os.focusState.running = false;
-            clearInterval(os.focusState.timerId);
-            os.focusState.timerId = null;
-            os.focusUpdateTimerDOM();
-            os.focusSyncTopbarPill();
+            const state=os.focusState;
+            if(state.running)state.remainingSec=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));
+            state.running=false;state.deadline=null;clearInterval(state.timerId);state.timerId=null;
+            os.focusUpdateTimerDOM();os.focusSyncTopbarPill();
         },
 
         focusResetTimer: () => {
@@ -427,7 +428,7 @@
             const streak = document.getElementById('focus-streak-badge');
 
             if (disp) disp.textContent = os.focusFormatTime(os.focusState.remainingSec);
-            if (status) status.textContent = os.focusState.running ? 'Focusing' : 'Paused / Ready';
+            if (status) status.textContent = os.focusState.running ? (os.focusState.mode.startsWith('break')?'On a break':'Focusing') : os.focusState.remainingSec===0?'Session complete':'Ready when you are';
             if (btn) btn.textContent = os.focusState.running ? 'Pause' : 'Start Focus';
             if (streak) streak.textContent = `${os.focusState.sessionsCompleted || 0} session${os.focusState.sessionsCompleted === 1 ? '' : 's'}`;
             if (ring) {
@@ -552,7 +553,7 @@
         //  MARKDOWN & DEVELOPER STUDIO (devpad)
         // ═══════════════════════════════════════════════════════
         saveDevPadState: () => {
-            localStorage.setItem('AetherOS_DevPad_v1', JSON.stringify(os.devpadState));
+            return persist('AetherOS_DevPad_v1',os.devpadState,'devpad-save-status');
         },
 
         initDevPad: () => {
@@ -565,6 +566,7 @@
         },
 
         devpadSetSuite: (suite) => {
+            stopRegex();hashRequest++;
             os.devpadState.suite = suite === 'devtools' ? 'devtools' : 'markdown';
             os.saveDevPadState();
             os.devpadRenderAll();
@@ -663,7 +665,7 @@
             const doc = os.devpadActiveDoc();
             if (!doc || !window.AetherVFS) return;
             const name = doc.title.endsWith('.md') ? doc.title : `${doc.title}.md`;
-            await window.AetherVFS.putFile({
+            const saved=await window.AetherVFS.putFile({
                 name,
                 mime: 'text/markdown',
                 kind: 'note',
@@ -672,7 +674,7 @@
                 content: doc.content,
                 tags: ['markdown', 'devpad']
             });
-            window.Notifications && window.Notifications.push('SAVED TO FILES', `"${name}" stored in File Explorer.`);
+            window.Notifications && window.Notifications.push(saved.persistence==='session-only'?'SESSION-ONLY COPY':'SAVED TO FILES', saved.persistence==='session-only'?'Export this document before reloading.':`"${name}" stored in File Explorer.`);
         },
 
         devpadExportMd: () => {
@@ -707,6 +709,7 @@
         },
 
         devpadRenderToolStage: () => {
+            stopRegex();hashRequest++;
             const stage = document.getElementById('devpad-tool-stage');
             if (!stage) return;
             const tool = os.devpadState.activeTool || 'json';
@@ -740,6 +743,7 @@
                 `;
             } else if (tool === 'jwt') {
                 stage.innerHTML = `
+                    <p class="studio-tool-note">Decode only. This does not verify signatures or establish that a token is valid. Do not paste production secrets.</p>
                     <input id="dt-jwt-in" type="text" placeholder="Paste eyJ... JWT token (decoded 100% locally)"
                         oninput="os.dtRunJwt(this.value)"
                         class="w-full p-3 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-white outline-none">
@@ -758,14 +762,14 @@
                     <pre id="dt-rx-out" class="flex-1 p-3 rounded-xl bg-black/60 border border-white/[0.07] font-mono text-xs text-emerald-300 overflow-auto select-text"></pre>
                 `;
             } else {
-                const uuid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id-' + Math.random().toString(36).slice(2));
+                const uuid = os.dtGenerateUuid();
                 stage.innerHTML = `
                     <div class="p-3 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between gap-2">
                         <div>
                             <div class="text-[10px] text-gray-400 uppercase font-mono">Fresh UUID v4</div>
                             <div id="dt-uuid-val" class="font-mono text-xs text-white select-text mt-0.5">${uuid}</div>
                         </div>
-                        <button type="button" onclick="document.getElementById('dt-uuid-val').textContent=(crypto.randomUUID?crypto.randomUUID():Date.now())"
+                        <button type="button" onclick="document.getElementById('dt-uuid-val').textContent=os.dtGenerateUuid()"
                             class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-white hover-target cursor-none">Regenerate</button>
                     </div>
                     <textarea id="dt-hash-in" rows="4" placeholder="Type text to compute SHA-256 hex digest..." oninput="os.dtRunSha256(this.value)"
@@ -806,41 +810,45 @@
             const out = document.getElementById('dt-jwt-out');
             if (!out) return;
             const parts = String(token || '').trim().split('.');
-            if (parts.length < 2) { out.textContent = 'Enter a 3-part JWT (header.payload.signature)'; return; }
+            if (parts.length !== 3) { out.textContent = 'Enter a 3-part JWT (header.payload.signature)'; return; }
             try {
                 const dec = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/')))));
                 const header = dec(parts[0]);
                 const payload = dec(parts[1]);
-                const expInfo = payload.exp ? `\nExpires: ${new Date(payload.exp * 1000).toISOString()} (${payload.exp * 1000 > Date.now() ? 'VALID' : 'EXPIRED'})` : '';
-                out.textContent = `// HEADER\n${JSON.stringify(header, null, 2)}\n\n// PAYLOAD${expInfo}\n${JSON.stringify(payload, null, 2)}`;
+                const expInfo = payload.exp ? `\nExpires: ${new Date(payload.exp * 1000).toISOString()} (${payload.exp * 1000 > Date.now() ? 'NOT YET EXPIRED — NOT VERIFIED' : 'EXPIRED'})` : '';
+                out.textContent = `SIGNATURE NOT VERIFIED — decoded claims are untrusted.\n\n// HEADER\n${JSON.stringify(header, null, 2)}\n\n// PAYLOAD${expInfo}\n${JSON.stringify(payload, null, 2)}`;
             } catch (e) {
                 out.textContent = 'Could not decode JWT: ' + e.message;
             }
         },
 
         dtRunRegex: () => {
-            const pat = document.getElementById('dt-rx-pat')?.value || '';
-            const flags = document.getElementById('dt-rx-flags')?.value || 'g';
-            const txt = document.getElementById('dt-rx-text')?.value || '';
-            const out = document.getElementById('dt-rx-out');
-            if (!out || !pat) return;
-            try {
-                const rx = new RegExp(pat, flags.includes('g') ? flags : flags + 'g');
-                const matches = [...txt.matchAll(rx)];
-                out.textContent = matches.length
-                    ? matches.map((m, i) => `#${i + 1} [${m.index}]: ${JSON.stringify(m[0])}${m.length > 1 ? '  groups: ' + JSON.stringify(m.slice(1)) : ''}`).join('\n')
-                    : '0 matches';
-            } catch (e) {
-                out.textContent = 'Regex error: ' + e.message;
-            }
+            stopRegex();
+            const pattern=document.getElementById('dt-rx-pat')?.value||'', flags=document.getElementById('dt-rx-flags')?.value||'';
+            const text=document.getElementById('dt-rx-text')?.value||'',out=document.getElementById('dt-rx-out');
+            if(!out)return;if(!pattern){out.textContent='Enter a pattern to test. Runs in an isolated worker; 750 ms execution limit.';return;}
+            if(pattern.length>2000||text.length>100000){out.textContent='Limit: 2,000 pattern characters and 100,000 input characters';return;}
+            if(!window.Worker){out.textContent='Regex testing requires Web Worker support. No unsafe main-thread fallback is used.';return;}
+            try{
+                const worker=regexWorker=new Worker('src/workers/regex-runner.js');out.textContent='Testing pattern…';
+                worker.onmessage=event=>{if(worker!==regexWorker)return;out.textContent=String(event.data.text).slice(0,100000);stopRegex();};
+                worker.onerror=()=>{if(worker!==regexWorker)return;out.textContent='Regex worker unavailable. Check browser content restrictions.';stopRegex();};
+                regexTimer=setTimeout(()=>{if(worker!==regexWorker)return;stopRegex();out.textContent='Stopped: pattern exceeded 750 ms. Simplify the pattern or shorten the input.';},750);
+                worker.postMessage({pattern,flags,text});
+            }catch(_){stopRegex();out.textContent='Regex worker could not start. No code ran on the UI thread.';}
         },
 
-        dtRunSha256: async (txt) => {
-            const out = document.getElementById('dt-hash-out');
-            if (!out || !window.crypto || !crypto.subtle) return;
-            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt || ''));
-            out.textContent = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+        dtGenerateUuid: () => {
+            const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+            const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
         },
+        dtRunSha256: async (txt) => {
+            const request=++hashRequest,out=document.getElementById('dt-hash-out');if(!out)return;
+            if(!window.crypto?.subtle){out.textContent='SHA-256 requires a secure browser context.';return;}
+            try{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt||''));if(request===hashRequest&&out.isConnected)out.textContent=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+            catch(_){if(request===hashRequest)out.textContent='Hash calculation failed.';}
+        },
+        killDevPad: () => {stopRegex();hashRequest++;},
 
         devpadRenderAll: () => {
             const mdPane = document.getElementById('devpad-markdown-pane');

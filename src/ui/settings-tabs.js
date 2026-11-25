@@ -227,18 +227,28 @@
                             class="os-switch hover-target cursor-none" data-setting-switch="screen_awake_enabled" data-on="${awakeOn}"></button>
                     </div>
 
+                    <div class="settings-row" data-search-item="icons dark color appearance">
+                      <div class="settings-row-main"><div><div class="settings-row-title">App icon appearance</div><div class="settings-row-desc">Original Fluent artwork, dark tiles, or translucent Liquid Glass. Applies across Dock, launcher and windows.</div></div></div>
+                      <select class="os-input px-2 py-1" aria-label="App icon appearance" onchange="AetherDesign.setIconAppearance(this.value)">${[['glass','Liquid Glass'],['dark','Dark'],['color','Original color'],['auto','Match device']].map(([v,t])=>`<option value="${v}" ${(st.icon_appearance||'dark')===v?'selected':''}>${t}</option>`).join('')}</select>
+                    </div>
+                    <div class="settings-row" data-search-item="lock screen name idle automatic privacy">
+                      <div class="settings-row-main"><div><div class="settings-row-title">Lock screen profile &amp; automatic locking</div><div class="settings-row-desc">Locks this workspace tab, not the device. Idle locking is best-effort while the tab is running.</div></div></div>
+                      <div class="flex flex-wrap gap-2"><input class="os-input px-2 py-1" aria-label="Lock screen display name" maxlength="40" value="${esc(st.lock_display_name||'My workspace')}" onchange="os.setLockPreference('lock_display_name',this.value)">
+                      <select class="os-input px-2 py-1" aria-label="Automatically lock after inactivity" onchange="os.setLockPreference('lock_idle_minutes',this.value)">${[[0,'Never auto-lock'],[1,'After 1 minute'],[5,'After 5 minutes'],[15,'After 15 minutes'],[30,'After 30 minutes']].map(([v,t])=>`<option value="${v}" ${Number(st.lock_idle_minutes||0)===v?'selected':''}>${t}</option>`).join('')}</select>
+                      <label><input type="checkbox" ${st.lock_when_hidden?'checked':''} onchange="os.setLockPreference('lock_when_hidden',this.checked)"> Lock when leaving tab</label></div>
+                    </div>
                     <div class="settings-row" data-search-item="lock screen pin password privacy security">
                         <div class="settings-row-main">
                             <div class="settings-row-icon"><i data-lucide="lock" class="w-3.5 h-3.5 text-violet-400"></i></div>
                             <div>
-                                <div class="settings-row-title">Lock Screen &amp; Optional PIN</div>
-                                <div class="settings-row-desc">Press <kbd class="px-1 py-0.5 rounded bg-white/10 text-[10px] font-mono">⌘L</kbd> anytime to lock your workspace behind Liquid Glass.</div>
+                                <div class="settings-row-title">Workspace privacy curtain</div>
+                                <div class="settings-row-desc">Press Ctrl/⌘ + Shift + L to pause the workspace. Passphrases are stored as salted PBKDF2 verifiers, not plaintext. This is not device security or file encryption.<p id="lock-setting-status" role="status"></p></div>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <input type="password" value="${esc(st.lock_pin || '')}" placeholder="Optional PIN"
-                                onchange="SystemState.settings.lock_pin = this.value.trim(); SystemState.save();"
-                                class="w-24 px-2 py-1 rounded-lg bg-black/45 border border-white/10 text-[11px] text-white font-mono outline-none focus:border-white/30">
+                            <input id="lock-setting-input" type="password" autocomplete="new-password" maxlength="128" placeholder="New passphrase" aria-label="New workspace passphrase" class="os-input w-32 px-2 py-1">
+                            <button type="button" class="os-btn px-2 py-1" onclick="os.setLockPassphrase(document.getElementById('lock-setting-input').value)">Save</button>
+                            <button type="button" class="os-btn px-2 py-1" onclick="os.clearLockPassphrase()">Remove</button>
                             <button type="button" onclick="os.lockScreen && os.lockScreen()" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 border border-white/15 text-[11px] font-medium text-white transition hover-target cursor-none">Lock Now</button>
                         </div>
                     </div>
@@ -304,6 +314,15 @@
                 <div class="settings-pane-header">
                     <div class="settings-pane-title">Appearance</div>
                     <div class="settings-pane-subtitle">Color themes, accent highlights, backdrop mode, and pointer style.</div>
+                </div>
+
+                <div class="settings-section-label">System appearance</div>
+                <div class="settings-card" data-search-item="day night auto light dark glass transparency clarity">
+                  <div class="settings-row"><div class="settings-row-main"><div><div class="settings-row-title">Day / Night / Auto</div><div class="settings-row-desc">Auto follows your device’s light or dark preference, including changes while AetherOS is open. Color themes below remain your accent and wallpaper choice.</div></div></div>
+                  <select class="os-input px-3 py-2" aria-label="System appearance" onchange="AetherAppearance.set('system_appearance',this.value)">${[['day','Day'],['night','Night'],['auto','Auto · match device']].map(([v,t])=>`<option value="${v}" ${(st.system_appearance||'auto')===v?'selected':''}>${t}</option>`).join('')}</select></div>
+                  <div class="settings-row"><div class="settings-row-main"><div><div class="settings-row-title">Glass clarity</div><div class="settings-row-desc">Clear reveals more wallpaper; Balanced adds reading contrast. Solid removes transparency and blur. Your device’s reduced-transparency preference takes priority.</div></div></div>
+                  <select class="os-input px-3 py-2" aria-label="Glass clarity" onchange="AetherAppearance.set('glass_clarity',this.value)">${[['clear','Clear'],['balanced','Balanced'],['solid','Solid · maximum contrast']].map(([v,t])=>`<option value="${v}" ${(st.glass_clarity||'balanced')===v?'selected':''}>${t}</option>`).join('')}</select></div>
+                  <p id="system-appearance-status" role="status" class="appearance-status">${esc(document.documentElement.dataset.systemMode||'auto')} · ${esc(st.glass_clarity||'balanced')} glass</p>
                 </div>
 
                 <div class="settings-section-label">System Theme</div>

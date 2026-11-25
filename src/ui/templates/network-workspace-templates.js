@@ -5,43 +5,16 @@ Object.assign(WindowContents, {
     `,
 
     feed: `
-        <div class="flex flex-col h-full bg-[#07090f]/95 text-xs select-none" id="signal-feed-root">
-            <div class="os-toolbar">
-                <div class="os-segmented flex-wrap" id="feed-source-tabs">
-                    <button type="button" data-feed-src="all" onclick="os.feedSetSource('all')" class="os-seg-btn active hover-target cursor-none">All</button>
-                    <button type="button" data-feed-src="hn" onclick="os.feedSetSource('hn')" class="os-seg-btn hover-target cursor-none">Hacker News</button>
-                    <button type="button" data-feed-src="devto" onclick="os.feedSetSource('devto')" class="os-seg-btn hover-target cursor-none">Dev.to</button>
-                    <button type="button" data-feed-src="github" onclick="os.feedSetSource('github')" class="os-seg-btn hover-target cursor-none">GitHub</button>
-                    <button type="button" data-feed-src="reddit" onclick="os.feedSetSource('reddit')" class="os-seg-btn hover-target cursor-none">Reddit</button>
-                    <button type="button" data-feed-src="saved" onclick="os.feedSetSource('saved')" class="os-seg-btn hover-target cursor-none">Saved <span id="feed-saved-count" class="ml-0.5 opacity-70">0</span></button>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="relative">
-                        <i data-lucide="search" class="w-3 h-3 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        <input id="feed-search-input" type="text" placeholder="Filter stories..." oninput="os.feedSetSearch(this.value)"
-                            class="os-input pl-7 pr-2.5 py-1 w-40 text-[11px]">
-                    </div>
-                    <button type="button" onclick="os.initSignalFeed(true)" class="os-btn hover-target cursor-none" title="Refresh feeds"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
-                </div>
-            </div>
-
-            <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[360px_1fr] overflow-hidden">
-                <div class="border-r border-white/[0.07] overflow-y-auto p-2.5 space-y-1.5 bg-black/25" id="signal-stream-container">
-                    <div class="py-10 text-center text-gray-400 text-xs">Loading stories from Hacker News, Dev.to, GitHub &amp; Reddit...</div>
-                </div>
-                <div class="hidden md:flex flex-col min-h-0 overflow-y-auto p-5 bg-[#090c14]/70 select-text" id="feed-reader-pane">
-                    <div class="m-auto text-center text-gray-500 max-w-xs space-y-2">
-                        <i data-lucide="newspaper" class="w-8 h-8 mx-auto text-gray-600"></i>
-                        <div class="text-sm font-medium text-gray-300">Select a story to read</div>
-                        <div class="text-xs text-gray-500 leading-relaxed">Read full Dev.to articles, inspect Hacker News top comments, or clip stories straight to Files.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t border-white/[0.07] px-3.5 py-1.5 bg-black/45 text-[11px] text-gray-400 flex justify-between items-center shrink-0">
-                <span id="signal-sources-lbl">Connecting to feeds...</span>
-                <span id="signal-buffer-count" class="font-mono text-gray-300 tabular-nums">0 stories</span>
-            </div>
+        <div class="news-studio" id="signal-feed-root">
+          <header class="studio-app-heading"><div><span class="studio-eyebrow">THE READING ROOM</span><h2>A fresh perspective.</h2><p>Technology, ideas and open source · public API digests, not a custom RSS subscription client.</p></div><button class="os-btn" type="button" onclick="os.initSignalFeed(true)">Refresh sources</button></header>
+          <div class="news-source-overview" id="feed-source-health" aria-label="Feed source availability"></div>
+          <div class="news-toolbar"><div class="os-segmented" id="feed-source-tabs">
+            <button type="button" data-feed-src="all" onclick="os.feedSetSource('all')" class="os-seg-btn active">All</button><button type="button" data-feed-src="hn" onclick="os.feedSetSource('hn')" class="os-seg-btn">HN</button><button type="button" data-feed-src="devto" onclick="os.feedSetSource('devto')" class="os-seg-btn">DEV</button><button type="button" data-feed-src="github" onclick="os.feedSetSource('github')" class="os-seg-btn">GitHub</button><button type="button" data-feed-src="reddit" onclick="os.feedSetSource('reddit')" class="os-seg-btn">Reddit</button><button type="button" data-feed-src="saved" onclick="os.feedSetSource('saved')" class="os-seg-btn">Saved <span id="feed-saved-count">0</span></button></div>
+            <input id="feed-search-input" aria-label="Filter stories" placeholder="Find in stories…" oninput="os.feedSetSearch(this.value)"><button type="button" class="os-btn" id="feed-unread" aria-pressed="false" onclick="os.feedToggleUnread(this)">Unread only</button><button type="button" class="os-btn" onclick="os.feedExportSaved()">Export saved</button>
+          </div>
+          <p id="feed-status" class="news-status" role="status">Saved links stay in this browser · read/unread state lasts for this tab</p>
+          <div class="news-workspace"><section id="signal-stream-container" tabindex="0" aria-label="Story list"></section><section id="feed-reader-pane" tabindex="0" aria-label="Article reader"></section></div>
+          <footer class="news-footer"><span id="signal-sources-lbl">Waiting for public feeds</span><span id="signal-buffer-count">0 stories</span></footer>
         </div>
     `,
 
@@ -109,12 +82,13 @@ Object.assign(WindowContents, {
 
     browser: `
         <div class="flex flex-col h-full bg-[#07090f] overflow-hidden text-xs" id="browser-root">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">READ / COLLECT / EXPLORE</span><h2>A quieter place to read.</h2><p>Wikipedia reader, optional site embeds and saved links. Other sites may block embedding.</p></div><button type="button" class="os-btn" onclick="os.browserShowHome()">New tab</button></header>
             <div class="flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.07] bg-black/50 shrink-0">
-                <button type="button" onclick="os.browserNav('back')" id="browser-btn-back" title="Back"
+                <button type="button" onclick="os.browserNav('back')" id="browser-btn-back" aria-label="Back" title="Back" disabled
                     class="os-btn px-2 py-1.5 hover-target cursor-none disabled:opacity-35">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                 </button>
-                <button type="button" onclick="os.browserNav('forward')" id="browser-btn-fwd" title="Forward"
+                <button type="button" onclick="os.browserNav('forward')" id="browser-btn-fwd" aria-label="Forward" title="Forward" disabled
                     class="os-btn px-2 py-1.5 hover-target cursor-none disabled:opacity-35">
                     <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                 </button>
@@ -125,7 +99,7 @@ Object.assign(WindowContents, {
 
                 <div class="flex-1 relative flex items-center">
                     <i data-lucide="globe" class="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
-                    <input id="browser-url-input" type="text"
+                    <input id="browser-url-input" type="text" aria-label="Search or enter an HTTP or HTTPS URL" maxlength="4000"
                         class="w-full os-input pl-9 pr-16 py-1.5 text-xs font-mono cursor-text"
                         placeholder="Search Wikipedia / DuckDuckGo or enter a URL..."
                         onkeydown="if(event.key==='Enter') os.browserGo()">
@@ -211,12 +185,12 @@ Object.assign(WindowContents, {
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-5 no-scrollbar select-text" id="browser-preview-content"></div>
-                    <iframe id="browser-iframe-view" title="Live Web View" src="about:blank" class="hidden flex-1 w-full border-0 bg-white" referrerpolicy="no-referrer"></iframe>
+                    <iframe id="browser-iframe-view" sandbox="allow-scripts allow-forms allow-same-origin allow-popups" title="External website embed (availability controlled by provider)" src="about:blank" class="hidden flex-1 w-full border-0 bg-white" referrerpolicy="no-referrer"></iframe>
                 </div>
             </div>
 
             <div class="flex items-center justify-between px-3.5 py-1 border-t border-white/[0.06] bg-black/45 shrink-0 text-[11px] text-gray-400">
-                <span id="browser-status">Ready</span>
+                <span id="browser-status" role="status">Public reader relays are off unless you explicitly allow them for a URL.</span>
                 <span class="text-gray-500">Reader Mode + Live Embed</span>
             </div>
         </div>
@@ -544,6 +518,7 @@ Object.assign(WindowContents, {
 
     filemanager: `
         <div class="fm-shell flex flex-col h-full bg-[#07090f] text-xs overflow-hidden relative select-none" id="filemanager-root">
+            <header class="studio-app-heading"><div><span class="studio-eyebrow">YOUR BROWSER ARCHIVE</span><h2>Keep the useful things.</h2><p>Notes, uploads and web clips. Browser storage is not your device filesystem or a backup.</p></div></header>
             <div class="os-toolbar">
                 <div class="flex items-center gap-1.5 min-w-0 flex-1">
                     <button type="button" onclick="os.fmGoBack()" class="os-btn px-2 py-1.5 hover-target cursor-none" title="Back"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i></button>
@@ -565,12 +540,12 @@ Object.assign(WindowContents, {
             <div class="h-8 shrink-0 border-b border-white/[0.06] bg-black/35 flex items-center justify-between px-3 relative z-10">
                 <div class="flex items-center gap-1 overflow-x-auto no-scrollbar" id="fm-tabs"></div>
                 <div class="flex items-center gap-3 text-[11px] text-gray-400 shrink-0">
-                    <span id="fm-status-live" class="text-emerald-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> IndexedDB Ready</span>
+                    <span id="fm-status-live" role="status" class="text-gray-300">Storage checked when saving</span>
                     <span id="fm-count-label" class="font-mono tabular-nums">0 items</span>
                 </div>
             </div>
 
-            <div class="flex-1 min-h-0 grid grid-cols-[200px_minmax(280px,1fr)_320px] relative z-10">
+            <div class="fm-workspace-grid flex-1 min-h-0 grid grid-cols-[200px_minmax(280px,1fr)_320px] relative z-10">
                 <aside class="border-r border-white/[0.07] bg-black/30 flex flex-col min-h-0">
                     <div class="p-3 border-b border-white/[0.06]">
                         <div class="text-[10.5px] font-semibold text-gray-400 mb-2">Locations</div>

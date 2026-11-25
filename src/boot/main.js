@@ -201,8 +201,8 @@ window.onload = () => {
                 _netFrameAccum = _netFrameAccum * 0.7 + Math.min(50, Math.max(0, frameDelta - 16)) * 0.3;
                 const busySignal = Math.min(1, _netFrameAccum / 20);
                 const reqSignal = Math.min(1, newReqs / 4);
-                const load = Math.max(reqSignal, busySignal * 0.6);
-                const barVal = Math.max(0.08, Math.min(1, load));
+                const load = reqSignal; // request activity, not OS CPU or network throughput
+                const barVal = Math.max(0, Math.min(1, load));
                 netHistory.shift();
                 netHistory.push(barVal);
                 netBars.forEach((bar, i) => {
