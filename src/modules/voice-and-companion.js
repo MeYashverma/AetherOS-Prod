@@ -882,6 +882,9 @@ window.extendOS({
                 },
 
                 triggerAvatarEmotion: function(emotion) {
+                    // The island face is CSS-animated locally; do not fetch GIFs
+                    // or start a hidden OLED renderer behind its conversation.
+                    if (document.getElementById('aether-island')) return;
                     // Emo OLED Face mode
                     if (os.companionEmotionMode && os.companionEmotionMode() === 'emo') {
                         if (!os.emoFaceEngine) os.initEmoFace();

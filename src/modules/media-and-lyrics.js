@@ -534,6 +534,8 @@ window.extendOS({
             },
 
     renderMediaDashboard: () => {
+                if(window.AetherMusic?.render)return window.AetherMusic.render();
+                if(window.AetherMusicBoot)return window.AetherMusicBoot.render();
                 const container = document.getElementById('media-console-panel');
                 if (!container) return;
 
@@ -1560,6 +1562,8 @@ window.extendOS({
             },
 
     fetchTrackLyrics: async (artist, title) => {
+                const lyricIdentity = os.mediaLyricsIdentity = {artist,track:title};
+                os.mediaLyricsParsed=[];
                 const scroller=document.getElementById('media-lyric-scroller'); if(!scroller) return;
                 scroller.innerHTML=`<div class="space-y-2 animate-pulse py-6 px-2"><div class="h-3 bg-white/5 rounded w-[90%]"></div><div class="h-3 bg-white/10 rounded w-[80%]"></div><div class="h-3 bg-white/5 rounded w-[85%]"></div><div class="text-[8px] text-os-accent uppercase tracking-widest pt-2">Negotiating lyric timeline...</div></div>`;
                 os.mediaLyricsParsed=[]; os.mediaLyricActiveIdx=-1; os.mediaLyricOffset=0; os.mediaLyricSource='NONE';
@@ -1567,10 +1571,11 @@ window.extendOS({
                 let duration=Number(os.mediaPlaybackDuration)||220;
                 try{
                     const best=await os.lyricsGetBestCandidate(cleanArtist, cleanTitle);
+                    if(os.mediaLyricsIdentity!==lyricIdentity)return;
                     if(best){ duration=Number(best.duration)||duration; if(best.syncedLyrics){ os.mediaLyricsParsed=os.parseLrcLyrics(best.syncedLyrics); os.mediaLyricSource=`LRCLIB_SYNC:${Math.round(best._score||0)}`; } else if(best.plainLyrics){ os.mediaLyricsParsed=os.parsePlainLyrics(best.plainLyrics,duration); os.mediaLyricSource=`LRCLIB_PLAIN:${Math.round(best._score||0)}`; } }
                     if(!os.mediaLyricsParsed.length){
                         const resOvh=await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`);
-                        if(resOvh.ok){ const j=await resOvh.json(); if(j.lyrics){ os.mediaLyricsParsed=os.parsePlainLyrics(j.lyrics,duration); os.mediaLyricSource='LYRICS_OVH_PLAIN'; }}
+                        if(resOvh.ok){ const j=await resOvh.json(); if(os.mediaLyricsIdentity!==lyricIdentity)return; if(j.lyrics){ os.mediaLyricsParsed=os.parsePlainLyrics(j.lyrics,duration); os.mediaLyricSource='LYRICS_OVH_PLAIN'; }}
                     }
                     if(os.mediaLyricsParsed.length){
                         scroller.innerHTML=os.mediaLyricsParsed.map((line,idx)=>`<div class="lyric-line lyric-future transition-all duration-300 hover:text-white cursor-none hover-target text-[10px]" data-idx="${idx}" onclick="os.clickLyricLine(this)">${os.fmEscape?os.fmEscape(line.text):line.text.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</div>`).join('');
@@ -1583,6 +1588,7 @@ window.extendOS({
                     }
                     throw new Error('No lyric candidates matched.');
                 }catch(e){
+                    if(os.mediaLyricsIdentity!==lyricIdentity)return;
                     scroller.innerHTML=`<div class="h-full flex flex-col justify-center items-center text-center py-10 text-gray-500 text-[10px] uppercase"><i data-lucide="music" class="w-6 h-6 opacity-30 mb-2"></i>Lyrics unavailable for this recording<br><span class="text-[8px] text-gray-600 normal-case mt-1">${String(e.message).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</span></div>`;
                     lucide.createIcons({root:scroller}); os.startPlaybackTimer(duration,{preservePosition:false});
                 }

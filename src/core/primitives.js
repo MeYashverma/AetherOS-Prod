@@ -53,6 +53,12 @@ const Notifications = window.Notifications = {
         if (window.NotificationCenter && typeof window.NotificationCenter._record === 'function') {
             window.NotificationCenter._record(String(title || 'System'), String(message || ''));
         }
+        const activity = new CustomEvent('aether:notification', {cancelable:true, detail:{title:String(title || 'System'),message:String(message || '')}});
+        window.dispatchEvent(activity);
+        if (activity.defaultPrevented) {
+            try { window.os?.speakSystemNotification?.(title, message); } catch (_) {}
+            return;
+        }
         const stack = this._ensureStack();
         while (stack.children.length >= 4) {
             stack.firstElementChild.remove();

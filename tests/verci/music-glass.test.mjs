@@ -1,0 +1,4 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+test('lyric glass is scoped, late-loaded and cached without filtering video or canvas',()=>{const css=fs.readFileSync('styles/music-glass.css','utf8'),html=fs.readFileSync('index.html','utf8'),sw=fs.readFileSync('sw.js','utf8');assert.ok(html.indexOf('styles/music-glass.css')>html.indexOf('styles/system-glass.css'));assert.ok(sw.includes('styles/music-glass.css?v=music-glass-1'));for(const term of ['#music-stage.verci-stage','backdrop-filter:blur(18px)','pointer-events:none','prefers-reduced-transparency','forced-colors','html.perf-eco','data-glass-clarity=solid','data-system-mode=day'])assert.ok(css.includes(term),term);assert.doesNotMatch(css,/iframe[^{}]*\{[^}]*filter:/);assert.doesNotMatch(css,/canvas[^{}]*\{[^}]*opacity:/);});

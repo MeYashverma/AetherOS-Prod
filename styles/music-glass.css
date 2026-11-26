@@ -1,0 +1,37 @@
+/* Music's nested scene surfaces: glass chrome, never a filter over video/artwork. */
+#media-console-panel{
+ --music-scene-fill:linear-gradient(135deg,#d5f2ff16,#cad6ff05 45%,#081b302c);
+ --music-scene-line:#e0f5ff30;
+ --music-scene-shine:#f1fcff63;
+ --music-scene-ink:#f4fbff;
+}
+#media-console-panel .music-body>main{background:transparent}
+#media-console-panel #music-stage.verci-stage{
+ background:radial-gradient(ellipse at 5% 0,#bfefff19,transparent 55%),radial-gradient(ellipse at 100% 100%,#b7a1fc13,transparent 65%),var(--music-scene-fill)!important;
+ border:1px solid var(--music-scene-line);border-top-color:var(--music-scene-shine);border-radius:22px;
+ box-shadow:inset 0 1px 0 #ffffff20,inset 0 -1px 0 #b3d4ff10,0 8px 24px #05132616;
+ backdrop-filter:blur(18px) saturate(135%);-webkit-backdrop-filter:blur(18px) saturate(135%);
+ background-clip:padding-box;
+}
+/* Specular edge is above the renderers but cannot capture any input. */
+#media-console-panel #music-stage::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:20;border:1px solid transparent;background:linear-gradient(125deg,#e8fcff55,transparent 23%,transparent 75%,#c8e5ff24) border-box;mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);mask-composite:exclude;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor}
+#media-console-panel #music-stage :is(.k-ship,.k-visual,.k-fish){--hi:var(--music-scene-ink);--sec:#d5e5f06e}
+#media-console-panel #music-stage .k-ship .sw{color:var(--music-scene-ink);text-shadow:0 2px 12px #071b3d30}
+#media-console-panel .music-scroll button.active{color:var(--music-scene-ink);text-shadow:0 2px 14px #0a20364d}
+#media-console-panel .music-scroll button{color:#dce8f263}
+#media-console-panel .music-now{background:linear-gradient(125deg,#defaff12,#d4dbff05);border-color:var(--music-scene-line);border-top-color:#e3f6ff42;box-shadow:inset 0 1px 0 #ffffff0c}
+#media-console-panel .music-video-slot{background:linear-gradient(135deg,#d5f2ff0a,#a8b8e704);border-color:#deedff19;box-shadow:inset 0 1px 0 #ffffff0c}
+/* The bright shell needs dark typography, not an opaque black scene. */
+html[data-system-mode=day] #media-console-panel{--music-scene-fill:linear-gradient(135deg,#f7ffff44,#d4e9ff19 55%,#7285b51c);--music-scene-line:#e8f9ff80;--music-scene-shine:#ffffffc9;--music-scene-ink:#17394f}
+html[data-system-mode=day] #media-console-panel #music-stage :is(.k-ship,.k-visual,.k-fish){--sec:#24465e75}
+html[data-system-mode=day] #media-console-panel #music-stage .k-ship .sw{color:var(--music-scene-ink);text-shadow:0 1px 8px #ffffff45}
+html[data-system-mode=day] #media-console-panel .music-scroll button{color:#25485c69}
+html[data-system-mode=day] #media-console-panel .music-scroll button.active{color:var(--music-scene-ink);text-shadow:0 1px 8px #ffffff66}
+/* Fullscreen scenes retain contrast even without the desktop behind them. */
+#media-console-panel #music-stage:fullscreen{background:linear-gradient(135deg,#21354c,#172438)!important;--music-scene-ink:#f4fbff;border-radius:0}
+html.perf-eco #media-console-panel #music-stage{backdrop-filter:none;-webkit-backdrop-filter:none}
+html[data-glass-clarity=solid] #media-console-panel #music-stage{background:#1b2d42!important;backdrop-filter:none;-webkit-backdrop-filter:none;--music-scene-ink:#f4fbff}
+html[data-system-mode=day][data-glass-clarity=solid] #media-console-panel #music-stage{background:#d7e6f1!important;--music-scene-ink:#17394f}
+@media(prefers-reduced-transparency:reduce){#media-console-panel #music-stage.verci-stage{background:#1b2d42!important;backdrop-filter:none;-webkit-backdrop-filter:none;--music-scene-ink:#f4fbff}html[data-system-mode=day] #media-console-panel #music-stage.verci-stage{background:#d7e6f1!important;--music-scene-ink:#17394f}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){#media-console-panel #music-stage.verci-stage{background:#1b2d42!important;--music-scene-ink:#f4fbff}html[data-system-mode=day] #media-console-panel #music-stage.verci-stage{background:#d7e6f1!important;--music-scene-ink:#17394f}}
+@media(forced-colors:active){#media-console-panel #music-stage.verci-stage{background:Canvas!important;border:1px solid CanvasText;--music-scene-ink:CanvasText;backdrop-filter:none}#media-console-panel #music-stage::after{display:none}}
