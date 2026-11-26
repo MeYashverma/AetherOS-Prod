@@ -7,7 +7,7 @@ window.extendOS({
             },
 
     saveRadioFavorites: () => {
-                try { localStorage.setItem('AetherOS_RadioFavs', JSON.stringify(os._radioFavorites)); } catch {}
+                try { localStorage.setItem('AetherOS_RadioFavs', JSON.stringify(os._radioFavorites)); return true; } catch { Notifications.push('RADIO', 'Favorites could not be saved. Browser storage may be full or blocked.'); return false; }
             },
 
     toggleRadioFav: (station) => {
@@ -39,6 +39,7 @@ window.extendOS({
 
     rbSwitchTab: (tab) => {
         os._rbCurrentTab = tab;
+        os._rbRequest = (os._rbRequest || 0) + 1;
         const tabs = { search: 'rb-tab-search', favorites: 'rb-tab-favs', trending: 'rb-tab-trend' };
         Object.entries(tabs).forEach(([t, id]) => {
             const el = document.getElementById(id);
@@ -74,7 +75,7 @@ window.extendOS({
         if (!station) return;
         const uuid = station.stationuuid || station.url_resolved || '';
         const tagsStr = (station.tags ? station.tags.split(',').slice(0, 3).join(' · ') : '') || station.country || 'World';
-        os.playRadioBrowserStation(station.url_resolved || '', station.name || 'Radio Station', station.favicon || '', tagsStr, station.bitrate || 128, uuid);
+        os.playRadioBrowserStation(station.url_resolved || '', station.name || 'Radio Station', station.favicon || '', tagsStr, station.bitrate || 0, uuid);
     },
 
     _rbRenderStations: (container, data) => {
@@ -105,7 +106,7 @@ window.extendOS({
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="text-[10.5px] font-mono text-gray-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">${Number(station.bitrate) || 128}k</span>
+                    <span class="text-[10.5px] font-mono text-gray-400 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">${Number(station.bitrate) > 0 ? Number(station.bitrate) + 'k' : 'Unknown bitrate'}</span>
                     <button type="button" data-rb-fav="${os.escapeHtml(uuid)}" onclick="event.stopPropagation();os.toggleRadioFavByIndex(${idx})" class="${isFav ? 'text-amber-300 ' : 'text-gray-500 hover:text-amber-300 '}p-1 cursor-none hover-target transition-colors" aria-label="Toggle favorite"><i data-lucide="star" class="w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}"></i></button>
                     <button type="button" onclick="os.playRadioStationByIndex(${idx})" class="w-8 h-8 bg-white/[0.06] rounded-lg flex items-center justify-center group-hover:bg-sky-400 group-hover:text-slate-950 transition-all cursor-none hover-target" aria-label="Play station">
                         <i data-lucide="play" class="w-3.5 h-3.5 fill-current ml-0.5"></i>
@@ -117,6 +118,7 @@ window.extendOS({
     },
 
     searchRadioBrowser: async (query) => {
+        const request = os._rbRequest = (os._rbRequest || 0) + 1;
         const container = document.getElementById('rb-results');
         if (!container) return;
         container.innerHTML = '<div class="p-6 text-center text-gray-400 text-xs">Loading stations...</div>';
@@ -138,9 +140,11 @@ window.extendOS({
                 const res = await fetch(url, { signal: AbortSignal.timeout(7000) });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
+                if (request !== os._rbRequest || !container.isConnected) return;
                 os._rbRenderStations(container, data);
                 return;
             } catch (e) {
+                if (request !== os._rbRequest || !container.isConnected) return;
                 lastErr = e;
             }
         }
@@ -148,6 +152,7 @@ window.extendOS({
     },
 
     playRadioBrowserStation: (url, name, favicon, tags, bitrate, uuid) => {
+                try { const stream = new URL(url); if (!['https:', 'http:'].includes(stream.protocol) || stream.username || stream.password) throw new Error(); } catch { Notifications.push('RADIO', 'Invalid stream URL. Choose another station.'); return; }
                 os.stopFullTrackPlayback?.();
                 os.initAudioEngine();
                 if(os.audioStream) { try { os.audioStream.pause(); os.audioStream.src = ''; } catch(e){} }
@@ -173,7 +178,7 @@ window.extendOS({
                     if(bitrateEl) bitrateEl.innerText = bitrate ? bitrate+'kbps' : '';
                     if(dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse';
                     if(lblEl) { lblEl.innerText = 'ON AIR'; lblEl.className = 'text-[8px] text-green-400'; }
-                    if(iconEl) iconEl.innerHTML = favicon ? `<img src="${favicon}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<i data-lucide="radio" class="w-4 h-4 text-green-400 animate-pulse"></i>';
+                    if(iconEl) iconEl.innerHTML = favicon ? `<img src="${os.escapeHtml(favicon)}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<i data-lucide="radio" class="w-4 h-4 text-green-400 animate-pulse"></i>';
                     os.loadRadioFavorites();
                     const isFav = os._radioFavorites.some(s => (s.stationuuid||s.url_resolved) === uuid);
                     if(favBtn) { favBtn.innerHTML = isFav ? '★ Favorited' : '☆ Favorite'; }
@@ -553,8 +558,8 @@ window.extendOS({
                     const colorMode = os._rbVizColorMode || 'palette';
                     if (os._rbAnalyser) { os._rbAnalyser.getByteFrequencyData(freq); os._rbAnalyser.getByteTimeDomainData(time); }
                     else {
-                        for(let i=0;i<freq.length;i++) freq[i] = 18 + Math.abs(Math.sin(now*0.004 + Math.log(i+1)*3.1))*150*Math.max(.18, Number(SystemState.settings.media_tuner_volume||.7));
-                        for(let i=0;i<time.length;i++) time[i] = 128 + Math.sin(now*.006 + i*.18)*28 + Math.sin(now*.002+i*.035)*9;
+                        freq.fill(0); time.fill(128);
+                        canvas.setAttribute('aria-label', 'Audio analysis unavailable; flat display, not measured audio.');
                     }
                     const bass = avgRange(freq,0,18), mid = avgRange(freq,18,90), high = avgRange(freq,90,210);
                     const energy = (bass*1.25 + mid + high*.62)/3;

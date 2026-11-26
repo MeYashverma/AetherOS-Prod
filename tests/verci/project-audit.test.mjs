@@ -33,7 +33,7 @@ test('privacy curtain hashes passphrases, hides background and restores focus',a
  dom.window.close();
 });
 test('editor bridges reject broad origin matching and sandbox console is bounded',()=>{
- const editors=source('src/modules/opensource-webapps-suite.js');assert.ok(!editors.includes("e.origin.includes("));assert.ok(editors.includes("e.source === document.getElementById('pp-frame')?.contentWindow"));
+ const editors=source('src/modules/opensource-webapps-suite.js');assert.ok(!editors.includes("e.origin.includes("));assert.ok(editors.includes("event.origin!=='https://www.photopea.com'||event.source!==frame?.contentWindow"));assert.ok(editors.includes("event.origin!=='https://embed.diagrams.net'||event.source!==frame?.contentWindow"));
  const sandbox=source('src/modules/dev-workbench.js');assert.ok(sandbox.includes('host.children.length>200'));assert.ok(sandbox.includes('d.text.slice(0,8000)'));
 });
 test('every sourced icon has a dark presentation variant and preserved provenance',()=>{

@@ -1,0 +1,88 @@
+/* Content-first fleet interiors. The enclosing window owns the glass blur;
+   nested panes use only material tint, so Clear/Balanced/Solid remain coherent. */
+.os-window[data-workspace] {container-type:inline-size}
+.fleet-workspace {display:flex;flex-direction:column;min-height:0;min-width:0;color:var(--material-ink);isolation:isolate}
+.fleet-workspace > :not(.fleet-tools) {flex:1 1 0%;min-height:0;min-width:0;height:auto}
+.fleet-tools {display:flex;align-items:center;gap:5px;min-height:30px;padding:4px 10px;flex:0 0 auto;border-bottom:1px solid var(--material-line-soft);color:var(--material-muted);font:10px/1.4 Inter,system-ui,sans-serif;background:var(--material-inset)}
+.fleet-note {min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fleet-tools button {flex:none;padding:3px 7px;border:1px solid var(--material-line-soft);border-radius:7px;background:var(--material-inset);color:var(--material-ink);font:inherit;cursor:pointer;white-space:nowrap;min-height:24px}
+.fleet-tools button:hover {background:var(--material-hover);border-color:var(--material-line)}
+.fleet-tools button:focus-visible {outline:2px solid var(--material-accent);outline-offset:2px}
+.fleet-announcement:empty{display:none}.fleet-announcement {position:absolute;bottom:7px;left:10px;right:10px;z-index:60;padding:7px 10px;border:1px solid var(--material-line);border-radius:9px;background:var(--material-solid);color:var(--material-ink);pointer-events:none;box-shadow:0 3px 14px #0003}
+/* Compact inherited hero blocks without taking space from an editor or map. */
+[data-workspace] .studio-app-heading {padding:8px 12px;gap:12px;min-height:0}
+[data-workspace] .studio-app-heading h2 {font-size:15px;line-height:1.2;margin:0;letter-spacing:-.025em}
+[data-workspace] .studio-app-heading :is(p,.studio-eyebrow) {display:none}
+[data-workspace] .os-toolbar {padding:7px 10px;gap:7px;min-height:34px;flex-wrap:wrap}
+[data-workspace] .os-segmented {max-width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+[data-workspace] .os-seg-btn {white-space:nowrap;font-size:10px;padding:5px 8px}
+[data-workspace] :is(input,select,textarea) {max-width:100%;min-width:0}
+[data-workspace] :is(aside,main,section,[class*=overflow-]) {min-height:0;min-width:0;scrollbar-width:thin;scrollbar-color:var(--material-line) transparent}
+[data-workspace] :is(input,button,a,select,textarea):focus-visible {outline:2px solid var(--material-accent);outline-offset:2px}
+/* Reference libraries: consistent, dense split panes and image-led cards. */
+:is(#anime-root,#manga-root) > :first-child {width:32%;min-width:240px;max-width:340px;border-right:1px solid var(--material-line-soft)}
+:is(#anime-results,#manga-results) {padding:8px;gap:8px}
+:is(#anime-results,#manga-results) > button {border-radius:12px;border-color:var(--material-line-soft);background:var(--material-inset);box-shadow:inset 0 1px 0 #ffffff12}
+:is(#anime-results,#manga-results) > button:hover {border-color:var(--material-line);background:var(--material-hover)}
+:is(#anime-detail,#manga-detail) > div > .relative {padding:16px}
+:is(#anime-detail,#manga-detail) .text-2xl {font-size:20px;line-height:1.2}
+:is(#anime-detail,#manga-detail) .w-40 {width:112px;height:168px;border-radius:12px}
+#stickers-library-panel {padding:14px 18px;gap:10px}
+#stickers-library-panel .aether-library-eyebrow {display:none}
+#stickers-library-panel h1 {font-size:18px;margin:0}
+#stickers-library-panel .aether-library-lead {font-size:11px;line-height:1.5;margin:0;max-width:90ch}
+[data-workspace=worldfactbook] #wfb-detail {padding:16px!important}
+[data-workspace=worldfactbook] #wfb-detail .text-xl {font-size:18px}
+[data-workspace=worldfactbook] #wfb-list > button {padding:8px 12px;border-bottom:1px solid var(--material-line-soft)}
+[data-workspace=worldfactbook] #wfb-gdp-box {background:var(--material-inset);border-color:var(--material-line)}
+/* Map rooms: the canvas remains the hero, never a large top heading. */
+[data-workspace-kind=map] .studio-app-heading {padding:7px 12px}
+#ep-event-list > button {padding:10px;border-bottom:1px solid var(--material-line-soft)}
+#ep-event-list:empty::after {content:'Choose a feed to load observations.';display:block;padding:18px;color:var(--material-muted)}
+#ep-selected-bar {padding:8px 12px!important;gap:10px;min-height:42px}
+[data-workspace=georadar] #geo-preset-row {padding:6px 10px!important;gap:5px}
+[data-workspace=iss] canvas,[data-workspace=globe] canvas {display:block}
+/* Audio decks retain album art and the real visualizer; surrounding controls shrink. */
+#rb-root {grid-template-columns:minmax(235px,37%) minmax(0,1fr)!important}
+#rb-results > * {border-bottom:1px solid var(--material-line-soft)}
+[data-workspace=winamp] #somafm-grid {padding:10px;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+[data-workspace=winamp] #somafm-search {min-width:130px;flex:1}
+[data-workspace=winamp] #somafm-grid > * {border-radius:12px}
+/* Network tools keep connection state visible and never imply a connected peer. */
+[data-workspace-kind=network] :is(.text-3xl,.text-4xl) {font-size:21px;line-height:1.25}
+[data-workspace-kind=network] .p-8 {padding:16px}
+[data-workspace-kind=network] .p-6 {padding:14px}
+[data-workspace-kind=network] textarea {font:11px/1.6 ui-monospace,monospace}
+[data-workspace=entityscanner] :is(.text-3xl,.text-4xl) {font-size:23px}
+[data-workspace=sysmon] #sysmon-content {padding:10px}
+[data-workspace=settings] .text-3xl {font-size:22px}
+/* Every embedded viewer stays edge-to-edge; cross-origin content is not recolored. */
+[data-workspace-kind=embed] iframe {min-width:0;min-height:0;border:0}
+[data-workspace-kind=embed] .p-6 {padding:12px}
+@container (max-width:620px) {
+ .fleet-note {display:none}.fleet-tools {flex-wrap:wrap;justify-content:flex-end;padding:3px 7px;gap:4px}
+ :is(#anime-root,#manga-root) {flex-direction:column;overflow-y:auto!important}
+ :is(#anime-root,#manga-root)>:first-child {width:100%;max-width:none;min-width:0;flex:none;height:240px;border-right:0;border-bottom:1px solid var(--material-line)}
+ :is(#anime-detail,#manga-detail) {flex:none;min-height:320px;overflow:visible}
+ #rb-root {display:flex;flex-direction:column;overflow-y:auto!important}
+ #rb-root > * {min-height:240px;flex:none}
+ [data-workspace=winamp] #somafm-grid {grid-template-columns:1fr}
+ #ep-selected-bar {flex-wrap:wrap}
+ [data-workspace] .studio-app-heading > [role=status] {font-size:9px;max-width:140px}
+}
+@media (forced-colors:active) {.fleet-tools,.fleet-tools button {border-color:CanvasText;background:Canvas;color:CanvasText}}
+/* Bound map/sidebar grid tracks so provider lists scroll inside the window. */
+#ep-map-pane {grid-template-columns:minmax(0,1fr) minmax(240px,31%);grid-template-rows:minmax(0,1fr);overflow:hidden}
+#ep-map-pane > div {grid-column:auto!important;min-height:0;min-width:0;overflow:hidden}
+#ep-map-canvas {min-height:0;height:0;min-width:0;flex:1 1 0%;display:block}
+#ep-event-list {min-height:0;overflow-y:auto;overscroll-behavior:contain}
+@container (max-width:620px) {
+ #ep-map-pane {grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(190px,42%) minmax(0,1fr)}
+ #ep-map-pane > div {min-height:0!important}
+}
+/* Light-mode accent ink must remain legible on transparent/solid light panes. */
+html[data-system-mode=day] .fleet-workspace :is(.text-sky-100,.text-sky-200,.text-sky-300,.text-blue-200,.text-blue-300) {color:#245d83!important}
+html[data-system-mode=day] .fleet-workspace :is(.text-emerald-200,.text-emerald-300,.text-green-300) {color:#17664e!important}
+html[data-system-mode=day] .fleet-workspace :is(.text-amber-200,.text-amber-300,.text-yellow-300) {color:#80541a!important}
+html[data-system-mode=day] .fleet-workspace :is(.text-rose-200,.text-rose-300,.text-red-300) {color:#9c3049!important}
+.iss-feed-status {display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px 16px;padding:5px 10px;border-bottom:1px solid var(--material-line-soft);font:9px/1.4 ui-monospace,monospace;color:var(--material-muted)}

@@ -45,7 +45,7 @@ test('source find highlights literal text safely; wrap and focus toggle real lay
 });
 test('entrypoint and offline cache request the same versioned Explorer implementation and explicit glass stylesheet',()=>{
  const html=fs.readFileSync('index.html','utf8'),sw=fs.readFileSync('sw.js','utf8');
- for(const asset of ['src/modules/api-earth-archive-oss.js?v=glass-scroll-3','styles/github-workspace.css?v=glass-scroll-3']){assert.ok(html.includes(asset));assert.ok(sw.includes(asset));}
+ for(const asset of ['src/modules/api-earth-archive-oss.js?v=fleet-1','styles/github-workspace.css?v=glass-scroll-3']){assert.ok(html.includes(asset));assert.ok(sw.includes(asset));}
  const css=fs.readFileSync('styles/github-workspace.css','utf8');assert.match(css,/#oss-root #oss-file-tree/);assert.match(css,/prefers-reduced-transparency/);assert.match(css,/data-glass-clarity=solid/);
 });
 test('selected-source region is keyboard focusable and its layout chain allows internal scrolling',()=>{

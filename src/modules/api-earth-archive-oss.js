@@ -52,7 +52,7 @@
                 </div>
                 <div class="md:col-span-4 flex flex-col min-h-0 bg-[#080c16]">
                     <div class="px-3.5 py-2 border-b border-white/[0.07] flex items-center justify-between text-[10.5px] font-mono text-gray-400">
-                        <span id="ep-feed-title">LIVE TELEMETRY STREAM</span>
+                        <span id="ep-feed-title">PROVIDER OBSERVATIONS</span>
                         <span id="ep-feed-count" class="text-emerald-400">--</span>
                     </div>
                     <div id="ep-event-list" class="flex-1 overflow-y-auto divide-y divide-white/[0.05]"></div>
@@ -236,6 +236,7 @@
         },
 
         killEarthPulse: () => {
+            os.epState.request = (os.epState.request || 0) + 1;
             if (os.epState.raf) { cancelAnimationFrame(os.epState.raf); os.epState.raf = null; }
             const f = document.getElementById('ep-windy-frame');
             if (f) f.src = 'about:blank';
@@ -266,17 +267,21 @@
         },
 
         epFetchQuakes: async (feed = '2.5_day') => {
+            const request = os.epState.request = (os.epState.request || 0) + 1;
+            os.epState.error = '';
             const title = document.getElementById('ep-feed-title');
             if (title) title.textContent = 'USGS SEISMIC STREAM';
             try {
                 const res = await fetch(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${feed}.geojson`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
+                if (request !== os.epState.request) return;
                 const feats = Array.isArray(data?.features) ? data.features : [];
                 os.epState.events = feats.slice(0, 60).map((f) => ({
                     id: f.id,
                     title: f.properties?.place || 'Tectonic Event',
                     mag: Number(f.properties?.mag || 0),
-                    time: f.properties?.time ? new Date(f.properties.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                    time: f.properties?.time ? new Date(f.properties.time).toLocaleString() : '',
                     tsunami: Boolean(f.properties?.tsunami),
                     url: f.properties?.url || 'https://earthquake.usgs.gov',
                     lon: Number(f.geometry?.coordinates?.[0] || 0),
@@ -285,11 +290,9 @@
                     kind: 'quake'
                 }));
             } catch (_) {
-                os.epState.events = [
-                    { id: 'q1', title: '42 km E of Honshu, Japan', mag: 5.4, time: 'LIVE', lon: 142.4, lat: 38.2, depthKm: 34, kind: 'quake', url: 'https://earthquake.usgs.gov' },
-                    { id: 'q2', title: 'Southern Alaska Trench', mag: 4.8, time: 'LIVE', lon: -151.8, lat: 59.4, depthKm: 21, kind: 'quake', url: 'https://earthquake.usgs.gov' },
-                    { id: 'q3', title: 'Atacama Region, Chile', mag: 5.1, time: 'LIVE', lon: -70.5, lat: -26.8, depthKm: 48, kind: 'quake', url: 'https://earthquake.usgs.gov' }
-                ];
+                if (request !== os.epState.request) return;
+                os.epState.events = [];
+                os.epState.error = 'USGS unavailable. No earthquake observations loaded. Retry or check the official source.';
             }
             os.epState.selected = os.epState.events[0] || null;
             os.epRenderEventList();
@@ -297,33 +300,36 @@
         },
 
         epFetchEonet: async () => {
+            const request = os.epState.request = (os.epState.request || 0) + 1;
+            os.epState.error = '';
             const title = document.getElementById('ep-feed-title');
             if (title) title.textContent = 'NASA EONET ACTIVE EVENTS';
             try {
                 const res = await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=40');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
+                if (request !== os.epState.request) return;
                 const evs = Array.isArray(data?.events) ? data.events : [];
                 os.epState.events = evs.map((ev) => {
                     const g = ev.geometry && ev.geometry[ev.geometry.length - 1];
-                    const coords = Array.isArray(g?.coordinates) ? g.coordinates : [0, 0];
+                    const coords = Array.isArray(g?.coordinates) ? g.coordinates : [];
                     const cat = ev.categories?.[0]?.title || 'Natural Event';
                     return {
                         id: ev.id,
                         title: ev.title,
                         category: cat,
-                        mag: cat.includes('Volcano') ? 6.0 : cat.includes('Storm') ? 5.5 : 4.2,
+                        mag: null,
                         time: g?.date ? g.date.slice(0, 10) : 'ACTIVE',
-                        lon: Number(coords[0] || 0),
-                        lat: Number(coords[1] || 0),
+                        lon: Number(coords[0]),
+                        lat: Number(coords[1]),
                         url: ev.sources?.[0]?.url || 'https://eonet.gsfc.nasa.gov',
                         kind: 'eonet'
                     };
                 }).filter((x) => Number.isFinite(x.lon) && Number.isFinite(x.lat));
             } catch (_) {
-                os.epState.events = [
-                    { id: 'e1', title: 'Kilauea Volcano Thermal Anomaly', category: 'Volcanoes', mag: 6.0, time: 'ACTIVE', lon: -155.28, lat: 19.42, kind: 'eonet', url: 'https://eonet.gsfc.nasa.gov' },
-                    { id: 'e2', title: 'Mount Etna Plume Activity', category: 'Volcanoes', mag: 5.8, time: 'ACTIVE', lon: 14.99, lat: 37.75, kind: 'eonet', url: 'https://eonet.gsfc.nasa.gov' }
-                ];
+                if (request !== os.epState.request) return;
+                os.epState.events = [];
+                os.epState.error = 'NASA EONET unavailable. No event observations loaded. Retry or check the official source.';
             }
             os.epState.selected = os.epState.events[0] || null;
             os.epRenderEventList();
@@ -333,8 +339,9 @@
         epRenderEventList: () => {
             const list = document.getElementById('ep-event-list');
             const cnt = document.getElementById('ep-feed-count');
-            if (cnt) cnt.textContent = `${os.epState.events.length} LIVE`;
+            if (cnt) cnt.textContent = os.epState.error ? 'UNAVAILABLE' : `${os.epState.events.length} observations`;
             if (!list) return;
+            if (!os.epState.events.length) { list.textContent = os.epState.error || 'No observations in this feed.'; return; }
             list.innerHTML = os.epState.events.map((ev, idx) => {
                 const badgeCol = ev.mag >= 5.5 ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
                                : ev.mag >= 4.0 ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
@@ -365,9 +372,10 @@
         epRenderSelectedBar: () => {
             const bar = document.getElementById('ep-selected-bar');
             const ev = os.epState.selected;
-            if (!bar || !ev) return;
+            if (!bar) return;
+            if (!ev) { bar.textContent = 'No event selected · Not an emergency alert service. Consult official local authorities.'; return; }
             const detail = ev.kind === 'quake'
-                ? `Magnitude ${ev.mag.toFixed(1)} · Depth ${ev.depthKm.toFixed(1)} km${ev.tsunami ? ' · TSUNAMI WATCH' : ''}`
+                ? `Magnitude ${ev.mag.toFixed(1)} · Depth ${ev.depthKm.toFixed(1)} km${ev.tsunami ? ' · Provider tsunami flag; not an official warning' : ''}`
                 : `${ev.category || 'Active Event'} · ${ev.lat.toFixed(2)}°, ${ev.lon.toFixed(2)}°`;
             bar.innerHTML = `
                 <div class="min-w-0">
@@ -406,13 +414,19 @@
             const draw = (ts) => {
                 const c = document.getElementById('ep-map-canvas');
                 if (!c) return;
+                if (ts && os.epState.lastDraw && ts - os.epState.lastDraw < 66) { os.epState.raf = requestAnimationFrame(draw); return; }
+                os.epState.lastDraw = ts;
                 const ctx = c.getContext('2d');
+                const rect = c.getBoundingClientRect(), ratio = Math.min(1.5, window.devicePixelRatio || 1);
+                const width = Math.max(1, Math.min(1400, Math.round(rect.width * ratio))), height = Math.max(1, Math.min(1000, Math.round(rect.height * ratio)));
+                if (c.width !== width || c.height !== height) { c.width = width; c.height = height; }
                 const w = c.width, h = c.height;
-                ctx.fillStyle = '#040812';
+                const day = document.documentElement.dataset.systemMode === 'day';
+                ctx.fillStyle = day ? '#e2edf1' : '#040812';
                 ctx.fillRect(0, 0, w, h);
 
                 // Latitude / Longitude tactical grid
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+                ctx.strokeStyle = day ? 'rgba(40,85,110,.16)' : 'rgba(56,189,248,.12)';
                 ctx.lineWidth = 1;
                 for (let lon = -150; lon <= 150; lon += 30) {
                     const x = ((lon + 180) / 360) * w;
@@ -424,8 +438,8 @@
                 }
 
                 // Vector continent outlines
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
-                ctx.fillStyle = 'rgba(30, 41, 59, 0.45)';
+                ctx.strokeStyle = day ? '#8faab7' : 'rgba(148,163,184,.36)';
+                ctx.fillStyle = day ? '#bfd0d8' : 'rgba(30,41,59,.6)';
                 ctx.lineWidth = 1.2;
                 CONTINENT_OUTLINES.forEach((poly) => {
                     ctx.beginPath();
@@ -440,7 +454,7 @@
                 });
 
                 // Pulsing seismic / natural event nodes
-                const phase = ((ts || performance.now()) % 1800) / 1800;
+                const phase = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : ((ts || performance.now()) % 1800) / 1800;
                 os.epState.events.forEach((ev) => {
                     const x = ((ev.lon + 180) / 360) * w;
                     const y = ((90 - ev.lat) / 180) * h;
@@ -503,6 +517,7 @@
         },
 
         killWayback: () => {
+            os._waybackRequest = (os._waybackRequest || 0) + 1;
             ['wb-dos-frame', 'wb-tm-frame', 'wb-lib-embed'].forEach((id) => {
                 const el = document.getElementById(id);
                 if (el) el.src = 'about:blank';
@@ -562,27 +577,34 @@
         },
 
         wbLookupSnapshot: async () => {
-            const rawUrl = (document.getElementById('wb-url-input')?.value || 'apple.com').trim().replace(/^https?:\/\//i, '');
-            const year = document.getElementById('wb-year-select')?.value || '2004';
             const pill = document.getElementById('wb-status-pill');
             const frame = document.getElementById('wb-tm-frame');
             const ext = document.getElementById('wb-snap-ext');
-            if (pill) pill.textContent = `Querying Wayback CDX for ${rawUrl} (${year})...`;
-
-            let snapUrl = `https://web.archive.org/web/${year}0615if_/http://${rawUrl}`;
+            const request = os._waybackRequest = (os._waybackRequest || 0) + 1;
+            if (frame) frame.src = 'about:blank';
+            if (ext) ext.removeAttribute('href');
             try {
-                const res = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(rawUrl)}&timestamp=${year}0615`);
+                const raw = (document.getElementById('wb-url-input')?.value || '').trim();
+                const url = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+                if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || !url.hostname.includes('.')) throw new Error('Enter a public HTTP or HTTPS website.');
+                const year = document.getElementById('wb-year-select')?.value || '2004';
+                if (!/^\d{4}$/.test(year)) throw new Error('Choose a valid year.');
+                if (pill) pill.textContent = 'Checking Archive.org availability…';
+                const res = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(url.href)}&timestamp=${year}0615`);
+                if (!res.ok) throw new Error('Archive.org returned HTTP ' + res.status);
                 const data = await res.json();
+                if (request !== os._waybackRequest) return;
                 const closest = data?.archived_snapshots?.closest;
-                if (closest?.timestamp) {
-                    snapUrl = `https://web.archive.org/web/${closest.timestamp}if_/http://${rawUrl}`;
-                    if (pill) pill.textContent = `Snapshot: ${closest.timestamp.slice(0, 4)}-${closest.timestamp.slice(4, 6)}-${closest.timestamp.slice(6, 8)} · HTTP ${closest.status || 200}`;
-                }
-            } catch (_) {
-                if (pill) pill.textContent = `Loaded ${year} Time-Machine route for ${rawUrl}`;
+                if (!closest?.available || !/^\d{14}$/.test(closest.timestamp || '')) throw new Error('No archived snapshot found near this date. Try another year or website.');
+                const snap = new URL(closest.url);
+                if (snap.hostname !== 'web.archive.org' || !['http:', 'https:'].includes(snap.protocol)) throw new Error('Invalid archive response.');
+                snap.protocol = 'https:';
+                if (frame) frame.src = snap.href;
+                if (ext) ext.href = snap.href;
+                if (pill) pill.textContent = `Closest snapshot: ${closest.timestamp.slice(0,4)}-${closest.timestamp.slice(4,6)}-${closest.timestamp.slice(6,8)} · Embedding depends on Archive.org`;
+            } catch (error) {
+                if (request === os._waybackRequest && pill) pill.textContent = 'Unavailable · ' + error.message;
             }
-            if (frame) frame.src = snapUrl;
-            if (ext) ext.href = snapUrl.replace('if_/', '/');
         },
 
         wbSearchLibrary: async () => {
@@ -599,14 +621,14 @@
                 const data = await res.json();
                 const docs = data?.response?.docs || [];
                 if (!docs.length) {
-                    list.innerHTML = `<div class="text-gray-500 p-4">No public-domain items matched "${esc(q)}".</div>`;
+                    list.innerHTML = `<div class="text-gray-500 p-4">No archive items matched "${esc(q)}".</div>`;
                     return;
                 }
                 list.innerHTML = docs.map((d) => `
                     <button type="button" onclick="os.wbPlayArchiveItem('${esc(d.identifier)}')"
                         class="w-full text-left p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/[0.07] transition hover-target cursor-none">
                         <div class="font-semibold text-white truncate">${esc(d.title || d.identifier)}</div>
-                        <div class="text-[10px] font-mono text-sky-300 mt-0.5">${esc((d.mediatype || 'item').toUpperCase())} · ${esc(d.year || 'Archive')} · ${esc(d.creator || 'Public Domain')}</div>
+                        <div class="text-[10px] font-mono text-sky-300 mt-0.5">${esc((d.mediatype || 'item').toUpperCase())} · ${esc(d.year || 'Archive')} · ${esc(d.creator || 'Creator not supplied')}</div>
                     </button>
                 `).join('');
                 os.wbPlayArchiveItem(docs[0].identifier);

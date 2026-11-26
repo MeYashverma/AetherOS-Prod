@@ -39,8 +39,8 @@
       "label": "WikiBoard",
       "mode": "hybrid",
       "file": "src/modules/workspace-apps.js",
-      "mechanism": "WikiBoardEngine DOM/SVG research canvas with Wikipedia requests",
-      "limitations": "External content can fail; verify graph persistence and large-board performance."
+      "mechanism": "WikiBoardEngine DOM/SVG research canvas, validated HTTP(S)/YouTube additions and editable v2 JSON board export",
+      "limitations": "Browser storage is not a backup; failed saves are reported. Remote card content may be blocked and imported board content should be trusted."
     },
     {
       "id": "browser",
@@ -71,8 +71,8 @@
       "label": "World Radio",
       "mode": "network",
       "file": "src/modules/radio-and-youtube.js",
-      "mechanism": "Radio Browser station directory and HTML audio streams",
-      "limitations": "Station counts are not guaranteed; browser codec, HTTPS, CORS and autoplay restrictions apply."
+      "mechanism": "Radio Browser directory, latest-search-wins filtering, browser favorites/export and validated HTTP(S) audio streams",
+      "limitations": "Unknown bitrates remain unknown. Stream URLs may be blocked, unavailable or insecure. Browser storage failures are reported; a flat visualizer means audio analysis is unavailable, not simulated audio."
     },
     {
       "id": "weather",
@@ -135,32 +135,32 @@
       "label": "Photo Booth",
       "mode": "local",
       "file": "src/modules/native-media-studios.js",
-      "mechanism": "getUserMedia capture, real canvas filters and exports",
-      "limitations": "Camera permission and a secure context are required. Procedural preview is a demo, not camera input. Pending camera requests are invalidated on close and their tracks are stopped."
+      "mechanism": "Opt-in video capture, local image import, nine canvas effects, cancellable countdown/strips, session gallery, PNG download and awaited Files saves",
+      "limitations": "Camera requires permission and a secure context; physical webcam not certified. Clearly labelled procedural demo is not camera input. Creative filters are not thermal or medical imaging. Last 12 captures are session-only until downloaded or durably saved; import is limited to 10 MiB/16 MP (pixel check after decoding). Close invalidates requests and stops camera tracks."
     },
     {
       "id": "synthstudio",
       "label": "SynthPad Studio",
       "mode": "local",
       "file": "src/modules/native-media-studios.js",
-      "mechanism": "WebAudio synthesis, sequencer and oscillator display",
-      "limitations": "Procedural audio is intentional, not a recording; timing may drift when backgrounded."
+      "mechanism": "Local Web Audio one-shot instruments, live output waveform, editable 16-step drum grid, look-ahead audio clock, master gain, validated pattern save/import/export",
+      "limitations": "Synthesised tones/noise, not sampled instruments or a DAW. Starts with an empty pattern; named grooves are examples. Patterns are session-only until saved in browser or exported as JSON, not audio. No recording, MIDI or held-note envelopes. Playback stops on close or hidden tab; browser audio and background policies apply. Headless output verified, not real-device listening/latency certification."
     },
     {
       "id": "photopea",
       "label": "Photopea Studio",
       "mode": "embed",
       "file": "src/modules/opensource-webapps-suite.js",
-      "mechanism": "Official Photopea iframe and postMessage file bridge",
-      "limitations": "Third-party editor, not a native implementation. Uploaded content goes to the iframe; bridge now checks exact origin and source."
+      "mechanism": "Explicit Photopea connection, ready-message-gated canvas presets and bounded local-file bridge, requested PNG/WebP export, awaited Files save and retained download",
+      "limitations": "Third-party editor, not native; opened files are shared with its iframe. Live provider availability unverified. Exact source/origin checks and 25 MiB limits apply. Raster exports do not preserve layers; use provider PSD save. Timeout disables bridge until reload. External links do not transfer unsaved editor state."
     },
     {
       "id": "whiteboard",
       "label": "Whiteboard Studio",
       "mode": "embed",
       "file": "src/modules/opensource-webapps-suite.js",
-      "mechanism": "Excalidraw, diagrams.net and tldraw embeds",
-      "limitations": "Cross-origin persistence and framing policies vary; Draw.io messages require source/origin verification."
+      "mechanism": "Explicit visual selection of Excalidraw, diagrams.net or tldraw; diagrams.net ready handshake, validated editable XML import/download and awaited Files saving",
+      "limitations": "Third-party embeds with their own privacy/storage/framing policies; no live provider certification. Excalidraw/tldraw use provider save/export controls. Only diagrams.net XML is bridged (2 MiB, no DTD/entities). Diagrams remain session-only unless saved/downloaded. Switching/reload may lose provider work. External links do not transfer unsaved state."
     },
     {
       "id": "chiptune",
@@ -175,8 +175,8 @@
       "label": "World Museum Gallery",
       "mode": "network",
       "file": "src/modules/live-world-and-science-apis.js",
-      "mechanism": "Art Institute of Chicago and Met Museum object APIs",
-      "limitations": "Open-access flags vary per object; retain provenance. Failed image fetches are not missing artworks."
+      "mechanism": "Three included real public-domain reproductions, optional Art Institute online search, pinned IIIF images/retries, zoom viewer, 50-reference collection, link export and awaited reference saving",
+      "limitations": "Online API may be unreachable (Failed to fetch); included local works remain usable and are never labelled live search results. Included reproductions are browsing-size, not archival downloads; attribution in assets/museum/SOURCES.md. Collection exports/Files saves contain references, not artwork binaries. Empty valid searches remain empty. Live metadata was checked; full remote image availability is unverified."
     },
     {
       "id": "gutendex",
@@ -191,16 +191,16 @@
       "label": "Earth Monitor",
       "mode": "hybrid",
       "file": "src/modules/api-earth-archive-oss.js",
-      "mechanism": "USGS earthquake and EONET event APIs with Windy embed",
-      "limitations": "Not an emergency alert service; refresh time and network status determine freshness."
+      "mechanism": "USGS earthquake and NASA EONET observations, responsive coordinate map, event selection, JSON observation export and optional Windy embed",
+      "limitations": "No invented fallback events or hazard magnitudes. Failed requests clear observations; provider tsunami flags are not official warnings. Not an emergency alert service."
     },
     {
       "id": "spacexhub",
       "label": "Space Launches",
       "mode": "network",
       "file": "src/modules/api-earth-archive-oss.js",
-      "mechanism": "Launch APIs and astronauts feed",
-      "limitations": "Schedules change and feeds can be stale; countdown is computed from provider dates, not a confirmed launch guarantee."
+      "mechanism": "Launch Library 2 upcoming schedule and in-space crew, selected-mission imagery and NET estimate, local/UTC times, static ICS calendar export, optional real-coordinate Atlas handoff",
+      "limitations": "First 20 provider records per feed, not a complete mission/crew inventory. No fabricated fallback launch or crew. NET is an estimate, not liftoff confirmation; past times say verify status. Refresh failures mark retained real records stale. Calendar files do not update automatically. Live provider availability not certified."
     },
     {
       "id": "stellarium",
@@ -223,24 +223,24 @@
       "label": "World Factbook & FX",
       "mode": "network",
       "file": "src/modules/live-world-and-science-apis.js",
-      "mechanism": "REST Countries, World Bank and currency-rate requests",
-      "limitations": "Country indicators/FX have publication dates; not tick-level financial data."
+      "mechanism": "REST Countries reference browser, World Bank GDP chart with selection-race protection, dated Frankfurter FX and JSON country export",
+      "limitations": "Country and GDP indicators have different reporting dates. Country failures do not substitute sample statistics. FX dates are provider publication dates, not tick-level prices."
     },
     {
       "id": "wayback",
       "label": "Archive & DOS Vault",
       "mode": "hybrid",
       "file": "src/modules/api-earth-archive-oss.js",
-      "mechanism": "Archive.org search, Wayback snapshots and DOS embeds",
-      "limitations": "An archive may have no snapshot or block embeds; preserve the actual snapshot date and original link."
+      "mechanism": "Archive.org search and DOS embeds plus confirmed closest-snapshot Wayback lookup with actual archive dates",
+      "limitations": "No navigation is invented when lookup fails or has no snapshot. Archive media is not automatically public domain. Provider framing, sign-in and availability remain outside this client."
     },
     {
       "id": "winamp",
       "label": "Winamp + SomaFM",
       "mode": "hybrid",
       "file": "src/modules/opensource-webapps-suite.js",
-      "mechanism": "Webamp integration and SomaFM stream metadata",
-      "limitations": "Winamp skin is third-party Webamp, not a rewritten native player; external stream rights and availability vary."
+      "mechanism": "Webamp/SomaFM deck with provider metadata, curated station fallback, stream mirrors and JSON directory export",
+      "limitations": "Curated station names are not proof that streams work. Unknown listener counts/tracks are labelled unknown; Radio Browser votes are not listeners. Webamp is a third-party player."
     },
     {
       "id": "ossradar",
@@ -255,8 +255,8 @@
       "label": "Shader Studio",
       "mode": "hybrid",
       "file": "src/modules/iconic-web-universes.js",
-      "mechanism": "Local WebGL shader compilation plus optional Shadertoy embeds",
-      "limitations": "WebGL and driver support required. Compilation does not guarantee a particular FPS; shader/program/buffer resources are released on recompile and close. External Shadertoy embeds have separate availability."
+      "mechanism": "Local WebGL GLSL ES 1.00 workbench, four built-in scenes, explicit compile with preserved last-good output, time/pointer uniforms, bounded preview buffers, draft/import/export, PNG capture and awaited Files save",
+      "limitations": "Single fragment pass only; no textures, buffers or sound compatibility. Trusted GLSL only: expensive shaders can freeze the GPU/tab; Pause is not isolation. Drafts/imports never auto-run. PNG is preview resolution, not source or guaranteed HD. Optional Shadertoy player needs network/framing permission; no live readiness guarantee. Headless WebGL verified, not physical-device GPU certification."
     },
     {
       "id": "codeplay",
@@ -295,16 +295,16 @@
       "label": "ISS 3D Tracker",
       "mode": "hybrid",
       "file": "src/modules/space-and-weather.js",
-      "mechanism": "WhereTheISS position feed on a procedural Three.js globe",
-      "limitations": "Globe texture/stars are illustrative; coordinates are feed data, not a precision orbital propagator."
+      "mechanism": "WhereTheISS observed position and provider trajectory on a procedural Three.js globe, visible feed timestamps/unavailable states",
+      "limitations": "Globe textures/stars and broad region labels are illustrative. Missing provider trajectories are cleared, never replaced by invented orbital predictions. Not a precision propagator."
     },
     {
       "id": "nasa",
       "label": "NASA Space",
       "mode": "network",
       "file": "src/modules/space-and-weather.js",
-      "mechanism": "NASA APOD, EPIC and related source endpoints",
-      "limitations": "Demo-key limits and per-image copyrights apply; APOD can be video, not always a wallpaper."
+      "mechanism": "NASA APOD, EPIC, Mars and solar-weather viewers with latest-tab-wins rendering and source imagery",
+      "limitations": "DEMO_KEY limits, provider failures and image availability apply. Retrying a failed category keeps that category. Third-party media may restrict embedding."
     },
     {
       "id": "globe",
@@ -319,8 +319,8 @@
       "label": "Crypto Markets",
       "mode": "network",
       "file": "src/modules/radar-and-optics.js",
-      "mechanism": "CoinGecko crypto prices and chart history",
-      "limitations": "Delayed provider data, not executable quotes or investment advice; verify rate-limit and stale states."
+      "mechanism": "Binance Vision historical OHLC and WebSocket candles with Kraken historical fallback, symbol/interval race protection and JSON candle export",
+      "limitations": "History and quotes may be delayed or unavailable. Switching symbols clears previous candles. Not executable quotes or investment advice; different provider quote currencies can differ."
     },
     {
       "id": "games",
@@ -351,16 +351,16 @@
       "label": "Anime",
       "mode": "network",
       "file": "src/modules/anime-and-tv.js",
-      "mechanism": "Anime metadata search, seasons, trailers and external links",
-      "limitations": "Metadata does not grant streaming rights; trailers and episode links may be unavailable."
+      "mechanism": "Jikan/MyAnimeList discovery with latest-query-wins search/details and explicit result selection, trailers and source links",
+      "limitations": "Metadata does not grant streaming rights. Provider limits, trailers and source links may be unavailable. No first-result auto-navigation on a new search."
     },
     {
       "id": "manga",
       "label": "Manga Reader",
       "mode": "network",
       "file": "src/modules/anime-and-tv.js",
-      "mechanism": "Manga discovery, reading list and MangaDex chapter data",
-      "limitations": "Chapters depend on language, availability and region; no promise of licensed access to every title."
+      "mechanism": "Jikan discovery with latest-query-wins search/details, browser reading-list export and MangaDex chapter data",
+      "limitations": "Chapters depend on language, region and provider availability. No promise of licensed access to every title. Reading list is stored in this browser."
     },
     {
       "id": "entityscanner",

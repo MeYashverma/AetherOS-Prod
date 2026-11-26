@@ -108,8 +108,8 @@ Object.assign(WindowContents, {
 
                         <div class="flex items-center gap-2">
                             <i data-lucide="volume-2" class="w-3.5 h-3.5 text-gray-400"></i>
-                            <input id="rb-volume-slider" type="range" min="0" max="1" step="0.01" value="${SystemState.settings.media_tuner_volume || 0.7}" oninput="os.rbAdjustVolume(this.value)" class="flex-1 h-1.5 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
-                            <span id="rb-volume-readout" class="text-[11px] font-mono text-gray-300 w-9 text-right tabular-nums">${Math.round((SystemState.settings.media_tuner_volume || 0.7) * 100)}%</span>
+                            <input id="rb-volume-slider" type="range" min="0" max="1" step="0.01" value="${SystemState.settings.media_tuner_volume ?? 0.7}" oninput="os.rbAdjustVolume(this.value)" class="flex-1 h-1.5 bg-white/10 rounded-lg appearance-none cursor-none hover-target">
+                            <span id="rb-volume-readout" class="text-[11px] font-mono text-gray-300 w-9 text-right tabular-nums">${Math.round((SystemState.settings.media_tuner_volume ?? 0.7) * 100)}%</span>
                         </div>
 
                         <div class="flex gap-2">
@@ -407,6 +407,7 @@ Object.assign(WindowContents, {
                 </span>
                 <button type="button" onclick="os.initISS(true)" class="os-btn hover-target cursor-none"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh Orbit</button>
             </div>
+            <div class="iss-feed-status" role="status"><span id="iss-position-status">Waiting for position feed</span><span id="iss-trajectory-status">Trajectory not loaded</span></div>
             <div id="iss-content" class="flex-1 overflow-hidden relative bg-black">
                 <div class="absolute inset-0 flex items-center justify-center text-gray-400 text-xs z-0" id="iss-loading">Loading 3D Earth &amp; live ISS coordinates...</div>
             </div>
