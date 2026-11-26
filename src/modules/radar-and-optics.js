@@ -611,14 +611,14 @@ window.extendOS({
     _marketTickers: {},
 
     _marketCoins: [
-        { symbol: 'BTCUSDT', kraken: 'XXBTZUSD', code: 'BTC', name: 'Bitcoin', badge: '₿', fallback: 92400 },
-        { symbol: 'ETHUSDT', kraken: 'XETHZUSD', code: 'ETH', name: 'Ethereum', badge: 'Ξ', fallback: 3180 },
-        { symbol: 'SOLUSDT', kraken: 'SOLUSD',   code: 'SOL', name: 'Solana',   badge: '◎', fallback: 194 },
-        { symbol: 'BNBUSDT', kraken: 'BNBUSD',   code: 'BNB', name: 'BNB',      badge: '◆', fallback: 640 },
-        { symbol: 'XRPUSDT', kraken: 'XXRPZUSD', code: 'XRP', name: 'XRP',      badge: '✕', fallback: 2.38 },
-        { symbol: 'ADAUSDT', kraken: 'ADAUSD',   code: 'ADA', name: 'Cardano',  badge: '₳', fallback: 0.94 },
-        { symbol: 'DOGEUSDT',kraken: 'XDGUSD',   code: 'DOGE',name: 'Dogecoin', badge: 'Ð', fallback: 0.34 },
-        { symbol: 'AVAXUSDT',kraken: 'AVAXUSD',  code: 'AVAX',name: 'Avalanche',badge: '▲', fallback: 38.5 }
+        { symbol: 'BTCUSDT', kraken: 'XXBTZUSD', code: 'BTC', name: 'Bitcoin', badge: '₿' },
+        { symbol: 'ETHUSDT', kraken: 'XETHZUSD', code: 'ETH', name: 'Ethereum', badge: 'Ξ' },
+        { symbol: 'SOLUSDT', kraken: 'SOLUSD',   code: 'SOL', name: 'Solana',   badge: '◎' },
+        { symbol: 'BNBUSDT', kraken: 'BNBUSD',   code: 'BNB', name: 'BNB',      badge: '◆' },
+        { symbol: 'XRPUSDT', kraken: 'XXRPZUSD', code: 'XRP', name: 'XRP',      badge: '✕' },
+        { symbol: 'ADAUSDT', kraken: 'ADAUSD',   code: 'ADA', name: 'Cardano',  badge: '₳' },
+        { symbol: 'DOGEUSDT',kraken: 'XDGUSD',   code: 'DOGE',name: 'Dogecoin', badge: 'Ð' },
+        { symbol: 'AVAXUSDT',kraken: 'AVAXUSD',  code: 'AVAX',name: 'Avalanche',badge: '▲' }
     ],
 
     marketFormatPrice: (val) => {
@@ -741,6 +741,8 @@ window.extendOS({
     },
 
     marketSelectSymbol: async (symbol, interval = os._marketInterval) => {
+        const request = os._marketRequest = (os._marketRequest || 0) + 1;
+        os.marketData = [];
         const coin = os._marketCoins.find((c) => c.symbol === symbol) || os._marketCoins[0];
         os._marketSymbol = coin.symbol;
         os._marketInterval = interval || '15m';
@@ -767,16 +769,18 @@ window.extendOS({
             const kRes = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${coin.symbol}&interval=${os._marketInterval}&limit=60`, { signal: AbortSignal.timeout(8000) });
             if (kRes.ok) {
                 const raw = await kRes.json();
+                if (request !== os._marketRequest) return;
                 if (Array.isArray(raw) && raw.length) {
                     os.marketData = raw.map((k) => ({
                         t: k[0], o: parseFloat(k[1]), h: parseFloat(k[2]), l: parseFloat(k[3]), c: parseFloat(k[4])
                     }));
                     loaded = true;
-                    if (statusLbl) statusLbl.textContent = `Live · ${os._marketInterval}`;
+                    if (statusLbl) statusLbl.textContent = `Binance history · ${os._marketInterval}`;
                 }
             }
         } catch (_) {}
 
+        if (request !== os._marketRequest) return;
         // Fallback to Kraken public OHLC if Binance Vision was blocked
         if (!loaded) {
             const krakenTf = { '1m': 1, '15m': 15, '1h': 60, '4h': 240, '1d': 1440 }[os._marketInterval] || 15;
@@ -784,6 +788,7 @@ window.extendOS({
                 const kr = await fetch(`https://api.kraken.com/0/public/OHLC?pair=${coin.kraken}&interval=${krakenTf}`, { signal: AbortSignal.timeout(8000) });
                 if (kr.ok) {
                     const kj = await kr.json();
+                    if (request !== os._marketRequest) return;
                     const key = Object.keys(kj?.result || {}).find((k) => k !== 'last');
                     const rows = key ? kj.result[key] : null;
                     if (Array.isArray(rows) && rows.length) {
@@ -797,8 +802,9 @@ window.extendOS({
             } catch (_) {}
         }
 
+        if (request !== os._marketRequest) return;
         if (!loaded && !os.marketData.length) {
-            if (statusLbl) statusLbl.textContent = 'Offline';
+            if (statusLbl) statusLbl.textContent = 'History unavailable';
         }
 
         os.marketSyncHeaderPrice();
@@ -808,18 +814,20 @@ window.extendOS({
         // Connect live WebSocket stream (Binance Vision global stream -> fallback stream.binance.com)
         const streamPath = `${coin.symbol.toLowerCase()}@kline_${os._marketInterval}`;
         const connectWs = (wsBase, isFallback = false) => {
-            if (os._marketSymbol !== coin.symbol) return;
+            if (request !== os._marketRequest || os._marketSymbol !== coin.symbol) return;
             try {
                 const ws = new WebSocket(`${wsBase}/${streamPath}`);
                 os.marketWs = ws;
                 ws.onopen = () => {
+                    if (request !== os._marketRequest) { ws.close(); return; }
                     if (statusLbl) statusLbl.textContent = `Live WS · ${os._marketInterval}`;
                 };
                 ws.onmessage = (event) => {
+                    if (request !== os._marketRequest) return;
                     try {
                         const msg = JSON.parse(event.data);
                         const k = msg.k;
-                        if (!k) return;
+                        if (!k || ![k.t,k.o,k.h,k.l,k.c].every(v=>Number.isFinite(Number(v)))) return;
                         const candle = { t: k.t, o: parseFloat(k.o), h: parseFloat(k.h), l: parseFloat(k.l), c: parseFloat(k.c) };
                         if (!os.marketData.length || os.marketData[os.marketData.length - 1].t !== candle.t) {
                             os.marketData.push(candle);
@@ -836,6 +844,7 @@ window.extendOS({
                     } catch (_) {}
                 };
                 ws.onerror = () => {
+                    if (request !== os._marketRequest) return;
                     if (!isFallback) {
                         try { ws.close(); } catch (_) {}
                         connectWs('wss://stream.binance.com:9443/ws', true);
@@ -1005,6 +1014,7 @@ window.extendOS({
     },
 
     killMarket: () => {
+        os._marketRequest = (os._marketRequest || 0) + 1;
         if (os.marketWs) {
             try { os.marketWs.onclose = null; os.marketWs.close(); } catch (_) {}
             os.marketWs = null;

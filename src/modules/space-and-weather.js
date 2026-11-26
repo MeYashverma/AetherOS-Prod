@@ -154,6 +154,7 @@ window.extendOS({
         os._nasaSetActiveTab('apod');
         const el = document.getElementById('nasa-content');
         if (!el) return;
+        const request = el._request = (el._request || 0) + 1;
         el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading Astronomy Picture of the Day...</div>';
         try {
             let d;
@@ -164,7 +165,9 @@ window.extendOS({
                 const search = await os.nasaFetchJSON('https://images-api.nasa.gov/search?q=nebula%20galaxy%20james%20webb&media_type=image&page_size=16', 10000);
                 const items = search.collection?.items || [];
                 const item = items[Math.floor(Math.random() * Math.min(12, Math.max(1, items.length)))];
+                if (!item?.links?.[0]?.href) throw new Error('APOD and archive imagery are unavailable.');
                 d = {
+                    archiveFallback: true,
                     title: item?.data?.[0]?.title || 'NASA Deep Space Archive',
                     date: item?.data?.[0]?.date_created?.split('T')[0] || '',
                     explanation: item?.data?.[0]?.description || 'Loaded from the NASA Image and Video Library archive.',
@@ -174,13 +177,16 @@ window.extendOS({
                     copyright: 'NASA Image Library'
                 };
             }
+            if (request !== el._request || !el.isConnected) return;
             os._lastNasaApod = d;
             const dateInput = document.getElementById('nasa-apod-date');
             if (dateInput && d.date) dateInput.value = d.date;
             const media = d.media_type === 'video'
                 ? `<iframe src="${os._html(d.url)}" class="w-full h-72 border-0" allowfullscreen></iframe>`
                 : `<img src="${os._html(d.hdurl || d.url)}" class="w-full max-h-80 object-cover" alt="${os._html(d.title)}" loading="lazy">`;
+            if (request !== el._request || !el.isConnected) return;
             el.innerHTML = `
+                ${d.archiveFallback ? '<p class="text-amber-300 text-xs mb-2">APOD unavailable · showing a NASA archive image, not the requested day’s Astronomy Picture of the Day.</p>' : ''}
                 <div class="rounded-2xl overflow-hidden border border-white/10 mb-3.5 relative bg-black shadow-lg">${media}</div>
                 <div class="flex items-start justify-between gap-4 flex-wrap">
                     <div>
@@ -195,12 +201,13 @@ window.extendOS({
                 </div>
                 <div class="text-xs text-gray-300 leading-relaxed select-text">${os._html(d.explanation || '').slice(0, 1400)}</div>
                 <a href="${os._html(d.hdurl || d.url)}" target="_blank" rel="noopener" class="inline-block mt-2 text-xs text-sky-300 hover:underline">Open Full Resolution ↗</a>`;
-        } catch (e) { os.nasaRenderError(el, 'APOD', e); }
+        } catch (e) { if (request !== el._request || !el.isConnected) return; os.nasaRenderError(el, 'APOD', e); }
     },
 
     nasaLoadEPIC: async () => {
         os._nasaSetActiveTab('epic');
         const el = document.getElementById('nasa-content'); if (!el) return;
+        const request = el._request = (el._request || 0) + 1;
         el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading DSCOVR Earth EPIC imagery...</div>';
         try {
             let imgs = [];
@@ -208,18 +215,20 @@ window.extendOS({
             catch (e) { imgs = await os.nasaFetchJSON('https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY', 10000); }
             const latest = (imgs || []).slice(0, 9);
             if (!latest.length) throw new Error('No EPIC images returned');
+            if (request !== el._request || !el.isConnected) return;
             el.innerHTML = `<div class="text-xs text-gray-300 font-semibold mb-2.5">DSCOVR Earth Polychromatic Camera — <span class="text-sky-300 font-mono">${os._html(latest[0]?.date?.split(' ')[0] || '')}</span></div>
             <div class="grid grid-cols-3 gap-3">${latest.map((img) => {
                 const [y, m, d] = img.date.split(' ')[0].split('-');
                 const url = `https://epic.gsfc.nasa.gov/archive/natural/${y}/${m}/${d}/png/${img.image}.png`;
                 return `<div class="rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] cursor-none hover-target hover:border-white/25 transition" onclick="window.open('${url}','_blank')"><img src="${url}" class="w-full h-28 object-cover bg-black" loading="lazy" alt="${os._html(img.image)}"><div class="text-[11px] text-gray-400 p-2 truncate">${os._html(img.caption || img.image)}</div></div>`;
             }).join('')}</div>`;
-        } catch (e) { os.nasaRenderError(el, 'Earth EPIC', e, 'os.nasaLoadAPOD()'); }
+        } catch (e) { if (request !== el._request || !el.isConnected) return; os.nasaRenderError(el, 'Earth EPIC', e, 'os.nasaLoadEPIC()'); }
     },
 
     nasaLoadMars: async () => {
         os._nasaSetActiveTab('mars');
         const el = document.getElementById('nasa-content'); if (!el) return;
+        const request = el._request = (el._request || 0) + 1;
         el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading Mars Rover surface photography...</div>';
         try {
             let photos = [];
@@ -239,13 +248,15 @@ window.extendOS({
                 subtitle = 'Perseverance & Curiosity Archive · NASA Image Library';
             }
             if (!photos.length) throw new Error('No rover photos returned');
+            if (request !== el._request || !el.isConnected) return;
             el.innerHTML = `<div class="text-xs text-gray-300 font-semibold mb-2.5">${os._html(subtitle)}</div><div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">${photos.map((p) => `<div class="rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] cursor-none hover-target hover:border-white/25 transition" onclick="window.open('${os._html(p.url)}','_blank')"><img src="${os._html(p.url)}" class="w-full h-24 object-cover bg-black" loading="lazy" alt="${os._html(p.title)}"><div class="text-[11px] text-gray-400 p-1.5 truncate">${os._html(p.label)}</div></div>`).join('')}</div>`;
-        } catch (e) { os.nasaRenderError(el, 'Mars Rover', e, 'os.nasaLoadAPOD()'); }
+        } catch (e) { if (request !== el._request || !el.isConnected) return; os.nasaRenderError(el, 'Mars Rover', e, 'os.nasaLoadMars()'); }
     },
 
     nasaLoadDONKI: async () => {
         os._nasaSetActiveTab('donki');
         const el = document.getElementById('nasa-content'); if (!el) return;
+        const request = el._request = (el._request || 0) + 1;
         el.innerHTML = '<div class="text-center text-gray-400 text-xs mt-10">Loading NOAA &amp; NASA space weather...</div>';
         try {
             const end = new Date().toISOString().split('T')[0];
@@ -262,6 +273,7 @@ window.extendOS({
                 cme = [];
             }
             const classColor = (cls) => String(cls || '').includes('X') ? 'text-rose-400' : String(cls || '').includes('M') ? 'text-amber-400' : 'text-sky-300';
+            if (request !== el._request || !el.isConnected) return;
             el.innerHTML = `
                 <div class="grid grid-cols-2 gap-3 mb-3 text-xs">
                     <div class="os-card p-3.5">
@@ -276,7 +288,7 @@ window.extendOS({
                 <div class="text-xs text-gray-300 font-semibold mb-2">Recent Solar Events</div>
                 <div class="space-y-1.5 max-h-72 overflow-y-auto">${(flares.slice(-14).reverse()).map((f) => `<div class="flex items-center justify-between px-3 py-2 os-card text-xs"><span class="${classColor(f.classType)} font-mono font-semibold">${os._html(f.classType || '--')}</span><span class="text-gray-400 font-mono">${os._html((f.peakTime || '').split('T')[0] || '--')}</span><span class="text-gray-400 truncate max-w-[200px]">${os._html(f.sourceLocation || 'Solar Disk')}</span></div>`).join('')}</div>`;
             if (window.lucide) lucide.createIcons({ root: el });
-        } catch (e) { os.nasaRenderError(el, 'Solar Weather', e, 'os.nasaLoadAPOD()'); }
+        } catch (e) { if (request !== el._request || !el.isConnected) return; os.nasaRenderError(el, 'Solar Weather', e, 'os.nasaLoadDONKI()'); }
     },
 
     _gameCatalog: [],
@@ -473,7 +485,7 @@ window.extendOS({
                         // Live indicator (top-left)
                         + '<div class="absolute top-4 left-4 flex items-center gap-2 z-20 pointer-events-none">'
                         +   '<span class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse"></span>'
-                        +   '<span class="text-white/50 text-[9px] font-mono uppercase tracking-[0.15em]">LIVE</span>'
+                        +   '<span class="text-white/50 text-[9px] font-mono uppercase tracking-[0.15em]">OBSERVATIONS</span>'
                         +   '<span class="text-white/25 text-[8px] font-mono" id="t-engine">Three.js</span>'
                         + '</div>'
                         // 2D Minimap (bottom-right)
@@ -494,8 +506,11 @@ window.extendOS({
                     try {
                         var pos = await os._fetchJson('https://api.wheretheiss.at/v1/satellites/25544', 8000);
                         if (!pos) return;
+                        const status = document.getElementById('iss-position-status');
+                        if (status) status.textContent = 'Position observed ' + (Number.isFinite(Number(pos.timestamp)) ? new Date(Number(pos.timestamp)*1000).toLocaleString() : '(provider time unavailable)');
                         var lat = Number(pos.latitude), lon = Number(pos.longitude),
                             alt = Number(pos.altitude), vel = Number(pos.velocity);
+                        if (![lat,lon,alt,vel].every(Number.isFinite) || Math.abs(lat)>90 || Math.abs(lon)>180) throw new Error('Invalid position');
                         var d = os._iss3d;
                         if (d) {
                             d.tarLat = lat; d.tarLon = lon; d.tarAlt = alt; d.tarVel = vel;
@@ -522,8 +537,10 @@ window.extendOS({
                         else if (lon>-100&&lon<20) loc='Atlantic Ocean';
                         else if (lon>-180&&lon<-100) loc='Pacific Ocean';
                         else if (lon>20&&lon<130) loc='Indian Ocean';
-                        set('t-loc', loc);
+                        set('t-loc', 'Approx. ' + loc);
                     } catch(e) {
+                        const status = document.getElementById('iss-position-status');
+                        if (status) status.textContent = 'Position feed unavailable · displayed coordinates, if any, are stale';
                         var locEl = document.getElementById('t-loc');
                         if (locEl && locEl.textContent === 'Acquiring...') locEl.textContent = 'Uplink Offline';
                     }
@@ -1087,22 +1104,6 @@ window.extendOS({
                 }
             },
 
-    _issFallTraj: function(t0) {
-                var d = os._iss3d || {};
-                var bl = Number(d.curLat || 0), bL = Number(d.curLon || 0), alt = Number(d.curAlt || 420);
-                var inc = 51.64 * Math.PI / 180, per = 92.68, out = [];
-                for (var m = -46; m <= 46; m += 2) {
-                    var a = (m / per) * Math.PI * 2;
-                    var sl = Math.sin(bl * Math.PI/180), si = Math.sin(inc);
-                    var anom = a + Math.asin(sl / si);
-                    var lat = Math.asin(si * Math.sin(anom)) * 180/Math.PI;
-                    var lon = bL + (m * 360 / per) * 1.06;
-                    lon = ((lon + 540) % 360) - 180;
-                    out.push({ latitude: lat, longitude: lon, altitude: alt, timestamp: t0 + m*60, _fallback: true });
-                }
-                return out;
-            },
-
     _issUpdateTraj: async function(ct) {
                 var d = os._iss3d;
                 if (!d || !ct) return;
@@ -1121,8 +1122,13 @@ window.extendOS({
                         .sort(function(a, b) { return (a.timestamp||0) - (b.timestamp||0); });
                     if (valid.length < 10) throw new Error('Too few points');
                 } catch(e) {
-                    src = 'FALLBACK'; valid = os._issFallTraj(t0);
+                    src = 'UNAVAILABLE'; valid = [];
+                    d.trajectoryStatus = 'Trajectory unavailable; no synthetic prediction substituted.';
                 }
+                if (os._iss3d !== d) return;
+                d.trajectoryStatus = valid.length ? 'Provider trajectory · ' + new Date(now).toISOString() : 'Trajectory unavailable; no synthetic prediction substituted.';
+                const status = document.getElementById('iss-trajectory-status');
+                if (status) status.textContent = d.trajectoryStatus;
                 var past = valid.filter(function(p) { return (p.timestamp||t0) <= t0; });
                 var fut = valid.filter(function(p) { return (p.timestamp||t0) >= t0; });
 

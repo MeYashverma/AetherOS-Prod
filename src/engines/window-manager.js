@@ -175,6 +175,7 @@ class WindowManager {
                 `;
 
                 this.canvas.appendChild(el);
+                window.AetherFleetWorkspaces?.mount(el, winData.id);
                 window.AetherWindowSurfaces?.mount(el);
                 this.DOMWindows[winData.id] = el;
                 if (winData.pinned) el.style.zIndex = 5000 + (winData.zIndex || 1);
@@ -531,10 +532,13 @@ class WindowManager {
                 if (id === 'wikiboard' && os.killWikiBoard) os.killWikiBoard();
                 if (id === 'photobooth' && os.killPhotoBooth) os.killPhotoBooth();
                 if (id === 'synthstudio' && os.killSynthStudio) os.killSynthStudio();
+                if (id === 'photopea' && os.killPhotopea) os.killPhotopea();
+                if (id === 'whiteboard' && os.killWhiteboard) os.killWhiteboard();
                 if (id === 'earthpulse' && os.killEarthPulse) os.killEarthPulse();
                 if (id === 'wayback' && os.killWayback) os.killWayback();
                 if (id === 'winamp' && os.killWinamp) os.killWinamp();
                 if (id === 'spacexhub' && os.killSpaceXHub) os.killSpaceXHub();
+                if (id === 'worldmuseums' && os.killWorldMuseums) os.killWorldMuseums();
                 if (id === 'shadertoy' && os.killShadertoy) os.killShadertoy();
                 if (id === 'stellarium' && os.killStellarium) os.killStellarium();
                 if (id === 'chiptune' && os.killChiptune) os.killChiptune();

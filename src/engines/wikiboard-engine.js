@@ -760,6 +760,7 @@ class WikiBoardEngine {
             async addUrlCard() {
                 const url = prompt('Enter URL to preview:');
                 if (!url) return;
+                try { const u = new URL(url); if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password) throw new Error(); } catch { this.setStatus('Enter a valid HTTP or HTTPS URL.'); return; }
                 const r = this.viewport.getBoundingClientRect();
                 const c = this.screenToCanvas(r.left + r.width / 2, r.top + r.height / 2);
                 let host = url;
@@ -772,6 +773,7 @@ class WikiBoardEngine {
                 if (!url) return;
                 let vid = url;
                 try { const u = new URL(url); vid = u.searchParams.get('v') || u.pathname.split('/').pop(); } catch (e) {}
+                if (!/^[A-Za-z0-9_-]{11}$/.test(vid)) { this.setStatus('Enter a valid YouTube video URL or 11-character ID.'); return; }
                 const r = this.viewport.getBoundingClientRect();
                 const c = this.screenToCanvas(r.left + r.width / 2, r.top + r.height / 2);
                 this.createCard({ type: 'youtube', x: c.x - 240, y: c.y - 180, width: 480, height: 360, title: 'YouTube: ' + vid, data: { embedUrl: 'https://www.youtube.com/embed/' + vid } });
@@ -780,6 +782,7 @@ class WikiBoardEngine {
             addImageFromUrl() {
                 const url = prompt('Enter image URL:');
                 if (!url) return;
+                try { const u = new URL(url); if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password) throw new Error(); } catch { this.setStatus('Enter a valid HTTP or HTTPS URL.'); return; }
                 const r = this.viewport.getBoundingClientRect();
                 const c = this.screenToCanvas(r.left + r.width / 2, r.top + r.height / 2);
                 this.createCard({ type: 'image', x: c.x - 160, y: c.y - 140, width: 340, height: 300, title: 'Image', data: { url } });
@@ -814,7 +817,7 @@ class WikiBoardEngine {
                         });
                     });
                     localStorage.setItem('AetherOS_WikiBoard', JSON.stringify(data));
-                } catch(e) { console.warn('WikiBoard save failed', e); }
+                } catch(e) { this.setStatus('Board not saved: browser storage is full or blocked. Export a backup.'); console.warn('WikiBoard save failed', e); }
             }
 
             loadState() {

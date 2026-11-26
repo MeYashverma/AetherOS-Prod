@@ -52,3 +52,14 @@ html:root .glass-icon-tile>.native-app-art[data-icon-tone=glass]{width:64%!impor
 @media(max-width:600px){html:root .finder-app-icon.app-icon-tile:has(>.glass-icon-tile),html:root .finder-app-icon>.glass-icon-tile{width:48px!important;height:48px!important;border-radius:13px!important}}
 /* Window titles and menu-bar identities use bare glyphs, never app tiles. */
 .app-identity-plain>.native-app-art[data-icon-plain=true]{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;width:100%!important;height:100%!important}
+/* The portrait is ink on the system material, not a separate photo card. */
+.creator-intro .creator-portrait{position:relative;width:100%;max-width:300px;justify-self:center;gap:8px;align-self:end}
+.creator-portrait-frame{position:relative;padding:0;border:0;background:none;box-shadow:none;mask-image:linear-gradient(to bottom,#000 0%,#000 76%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 76%,transparent 100%)}
+.creator-intro .creator-portrait img{display:block;width:100%;height:auto;max-height:none;aspect-ratio:720/964;object-fit:contain;object-position:center;filter:none;border-radius:0;background:transparent}
+.creator-intro .creator-portrait figcaption{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;padding:0;font:7px/1.7 ui-monospace,monospace;letter-spacing:.09em;color:var(--material-muted,#a7b3c0)}
+.creator-portrait figcaption span:first-child{color:var(--material-ink,#e9edf3)}
+html[data-system-mode=day] .creator-portrait img{filter:brightness(.44) saturate(.75)}
+@media(max-width:640px){.creator-intro .creator-portrait{max-width:210px}.creator-intro .creator-portrait figcaption{font-size:6px;letter-spacing:.03em}}
+@media(max-width:420px){.creator-intro:has(.creator-portrait){grid-template-columns:1fr}.creator-intro .creator-portrait{max-width:235px;justify-self:center}}
+@media(prefers-reduced-transparency:reduce){.creator-portrait-frame{mask-image:none;-webkit-mask-image:none}}
+@media(forced-colors:active){.creator-portrait-frame{mask-image:none;-webkit-mask-image:none}.creator-intro .creator-portrait img{background:#0b0c10;filter:none}}

@@ -12,7 +12,7 @@
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return null;
         if (!window._aetherStudioCtx) window._aetherStudioCtx = new AC();
-        if (window._aetherStudioCtx.state === 'suspended') window._aetherStudioCtx.resume();
+        if (window._aetherStudioCtx.state === 'suspended') window._aetherStudioCtx.resume().catch(()=>{if(window.os?.synthStatus)os.synthStatus('Audio blocked · interact with the app to enable playback');});
         return window._aetherStudioCtx;
     }
 
@@ -49,70 +49,24 @@
     // ═══════════════════════════════════════════════════════════════════════
     const PB_EFFECTS = [
         { id: 'normal',  label: 'Normal' },
-        { id: 'thermal', label: 'Thermal' },
+        { id: 'thermal', label: 'Thermal look' },
         { id: 'popart',  label: 'Pop Art' },
         { id: 'mirror',  label: 'Mirror' },
-        { id: 'xray',    label: 'X-Ray' },
+        { id: 'xray',    label: 'X-ray look' },
         { id: 'noir',    label: 'Film Noir' },
         { id: 'sepia',   label: 'Vintage' },
         { id: 'neon',    label: 'Cyber Glow' },
-        { id: 'emerald', label: 'Night Vision' }
+        { id: 'emerald', label: 'Green glow' }
     ];
 
     window.WindowContents.photobooth = `
-        <div class="h-full flex flex-col bg-[#111216] text-white text-xs select-none overflow-hidden relative" id="pb-root">
-            <!-- Flash Overlay & Countdown -->
-            <div id="pb-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0 transition-opacity duration-150 z-30"></div>
-            <div id="pb-countdown" class="hidden pointer-events-none absolute inset-0 z-20 flex items-center justify-center text-8xl font-bold text-white drop-shadow-[0_6px_30px_rgba(0,0,0,0.85)]">3</div>
-
-            <!-- Top Camera Bar -->
-            <div class="px-4 py-2 bg-black/55 border-b border-white/[0.08] flex items-center justify-between gap-2 z-10">
-                <div class="flex items-center gap-2">
-                    <span id="pb-cam-dot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-                    <span id="pb-cam-status" class="text-[11px] text-gray-300 font-medium">Live Shader Preview (Click Enable Webcam for Real Camera)</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" id="pb-cam-btn" onclick="os.pbToggleWebcam()" class="px-3 py-1 rounded-full bg-white/12 hover:bg-white/20 border border-white/15 text-[11px] font-medium text-white transition hover-target cursor-none flex items-center gap-1.5">
-                        <i data-lucide="camera" class="w-3.5 h-3.5 text-emerald-400"></i><span>Enable Webcam</span>
-                    </button>
-                    <label class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.06] text-[10.5px] text-gray-300">
-                        <input id="pb-timer-chk" type="checkbox" checked class="accent-rose-500"> 3s Timer
-                    </label>
-                </div>
-            </div>
-
-            <!-- Main Viewfinder / 3x3 Effects Grid -->
-            <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden min-h-0">
-                <video id="pb-video" playsinline muted class="hidden"></video>
-                <canvas id="pb-canvas" width="720" height="460" onclick="os.pbCanvasClick(event)" class="max-w-full max-h-full object-contain cursor-pointer"></canvas>
-            </div>
-
-            <!-- Filmstrip Tray -->
-            <div id="pb-strip-tray" class="h-20 px-3 py-1.5 bg-[#18191f] border-t border-white/[0.07] flex items-center gap-2 overflow-x-auto shrink-0">
-                <div class="text-[11px] text-gray-500 italic px-2">Captured photos &amp; 4-pose strips appear here...</div>
-            </div>
-
-            <!-- Authentic macOS Photo Booth Bottom Control Bar -->
-            <div class="px-5 py-2.5 bg-[#202127] border-t border-white/[0.09] flex items-center justify-between z-10 shrink-0">
-                <div class="os-segmented">
-                    <button type="button" data-pb-mode="single" onclick="os.pbSetShotMode('single')" class="os-seg-btn active hover-target cursor-none" title="Single Photo">1-Shot</button>
-                    <button type="button" data-pb-mode="strip" onclick="os.pbSetShotMode('strip')" class="os-seg-btn hover-target cursor-none" title="4-Pose Photo Strip">4-Strip</button>
-                </div>
-
-                <!-- Iconic Red Shutter Button -->
-                <button type="button" id="pb-shutter-btn" onclick="os.pbTriggerCapture()"
-                    class="w-13 h-13 p-1 rounded-full bg-white/90 shadow-xl hover:scale-105 active:scale-95 transition hover-target cursor-none flex items-center justify-center" style="width:52px;height:52px" title="Take Photo">
-                    <span class="w-full h-full rounded-full bg-[#ff3b30] flex items-center justify-center">
-                        <i data-lucide="camera" class="w-5 h-5 text-white"></i>
-                    </span>
-                </button>
-
-                <button type="button" id="pb-grid-btn" onclick="os.pbToggleGrid()"
-                    class="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/18 border border-white/15 font-medium text-xs text-white transition hover-target cursor-none">
-                    Effects (9)
-                </button>
-            </div>
-        </div>
+      <div class="pb-studio" id="pb-root">
+        <header class="studio-app-heading"><div><span class="studio-eyebrow">LIGHT / COLOUR / A MOMENT</span><h2>Make it a keeper.</h2><p>Local camera, your image, or a clearly labelled demo. Nothing is uploaded.</p></div><span id="pb-status" role="status">Captures stay in this tab until downloaded or saved to Files</span></header>
+        <div class="pb-toolbar"><span id="pb-cam-dot" data-source="demo"></span><strong id="pb-cam-status">Procedural demo · camera off</strong><button type="button" id="pb-cam-btn" class="os-btn" onclick="os.pbToggleWebcam()">Enable camera</button><label class="pb-import os-btn">Open image<input type="file" accept="image/png,image/jpeg,image/webp" aria-label="Open local image" onchange="os.pbImportImage(this.files[0]);this.value=''"></label><button type="button" class="os-btn" onclick="os.pbUseDemo()">Demo scene</button></div>
+        <div class="pb-workspace"><div class="pb-viewfinder" data-preserve-surface><video id="pb-video" playsinline muted hidden></video><canvas id="pb-canvas" width="720" height="460" onclick="os.pbCanvasClick(event)" aria-label="Photo preview. Choose effects using the buttons beside it."></canvas><span id="pb-source-label" class="pb-source-label">DEMO / NOT A CAMERA</span><div id="pb-flash" class="pb-flash" aria-hidden="true"></div><div id="pb-countdown" class="pb-countdown hidden" aria-live="polite"></div></div><aside class="pb-effects"><span class="pb-eyebrow">COLOUR LAB</span><h3>Find your look.</h3><p>Creative filters, not thermal, medical X-ray or night-vision imaging.</p><div class="pb-effect-list">${PB_EFFECTS.map(fx=>`<button type="button" data-pb-effect="${fx.id}" class="pb-effect-btn" aria-pressed="${fx.id==='normal'}" onclick="os.pbSetEffect('${fx.id}')"><span class="pb-effect-swatch pb-swatch-${fx.id}" aria-hidden="true"></span>${fx.label}</button>`).join('')}</div><label class="pb-mirror"><input id="pb-mirror" type="checkbox" checked onchange="os.pbState.mirror=this.checked"> Mirror camera / image</label><button type="button" id="pb-grid-btn" class="os-btn" aria-pressed="false" onclick="os.pbToggleGrid()">Compare all effects</button></aside></div>
+        <div class="pb-capture-bar"><div class="os-segmented"><button type="button" data-pb-mode="single" aria-pressed="true" class="os-seg-btn active" onclick="os.pbSetShotMode('single')">Single</button><button type="button" data-pb-mode="strip" aria-pressed="false" class="os-seg-btn" onclick="os.pbSetShotMode('strip')">Four-pose strip</button></div><button type="button" id="pb-shutter-btn" class="pb-shutter" aria-label="Capture photo" onclick="os.pbTriggerCapture()"><i data-lucide="camera" aria-hidden="true"></i></button><label>Timer <select id="pb-timer" aria-label="Capture countdown"><option value="3">3 seconds</option><option value="0">Off</option></select></label><button type="button" id="pb-cancel" class="os-btn" disabled onclick="os.pbCancelCapture()">Cancel</button></div>
+        <div class="pb-tray-heading"><span>SESSION GALLERY / LAST 12</span><span>Download or save before reloading · removing a thumbnail does not delete Files copies</span></div><div id="pb-strip-tray" class="pb-strip-tray" tabindex="0" aria-label="Captured photos, scroll horizontally"></div>
+      </div>
     `;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -169,61 +123,14 @@
     };
 
     window.WindowContents.synthstudio = `
-        <div class="h-full flex flex-col bg-[#0d0f17] text-white text-xs select-none overflow-hidden" id="synth-root">
-            <!-- Top Synth Rack Header -->
-            <div class="px-4 py-2.5 bg-black/55 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2.5">
-                <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">Instrument</span>
-                    <select id="synth-patch" onchange="os.synthState.patch=this.value" class="px-3 py-1.5 rounded-xl bg-white/[0.08] border border-white/15 text-xs text-white outline-none">
-                        <option value="rhodes">Electric Rhodes Piano</option>
-                        <option value="pad">Warm Analog Synth Pad</option>
-                        <option value="pluck">Crystal Pluck Harp</option>
-                        <option value="bass">808 Sub Synth</option>
-                        <option value="bell">Glass FM Bell</option>
-                    </select>
-                    <div class="flex items-center gap-1 ml-1">
-                        <button type="button" onclick="os.synthShiftOctave(-1)" class="px-2 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 font-mono text-[11px] hover-target cursor-none">Oct −</button>
-                        <span id="synth-oct-lbl" class="px-2 font-mono text-[11px] text-sky-300">C4</span>
-                        <button type="button" onclick="os.synthShiftOctave(1)" class="px-2 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 font-mono text-[11px] hover-target cursor-none">Oct +</button>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <label class="flex items-center gap-1.5 text-[11px] text-gray-300">
-                        <span>Cutoff</span>
-                        <input type="range" min="300" max="7500" value="3800" oninput="os.synthState.cutoff=Number(this.value)" class="w-20 accent-amber-400">
-                    </label>
-                    <canvas id="synth-scope" width="150" height="34" class="rounded-lg bg-black/70 border border-white/10"></canvas>
-                </div>
-            </div>
-
-            <!-- Middle: 16-Step Beat Machine -->
-            <div class="p-4 border-b border-white/[0.08] bg-[#121521] flex flex-col gap-2.5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div class="flex items-center gap-2">
-                        <button type="button" id="synth-seq-btn" onclick="os.synthToggleSequencer()"
-                            class="px-4 py-1.5 rounded-full bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 transition hover-target cursor-none">▶ Play Beat</button>
-                        <button type="button" onclick="os.synthLoadGroove('lofi')" class="px-2.5 py-1 rounded-full bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">Lo-Fi</button>
-                        <button type="button" onclick="os.synthLoadGroove('house')" class="px-2.5 py-1 rounded-full bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">House</button>
-                        <button type="button" onclick="os.synthLoadGroove('trap')" class="px-2.5 py-1 rounded-full bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">Trap 808</button>
-                    </div>
-                    <label class="flex items-center gap-2 font-mono text-[11px] text-gray-300">
-                        <span id="synth-bpm-lbl">96 BPM</span>
-                        <input type="range" min="68" max="156" value="96" oninput="os.synthSetBpm(Number(this.value))" class="w-24 accent-emerald-400">
-                    </label>
-                </div>
-                <div id="synth-seq-grid" class="space-y-1.5"></div>
-            </div>
-
-            <!-- Bottom: Playable Polyphonic Piano Keyboard -->
-            <div class="flex-1 p-4 flex flex-col justify-between bg-gradient-to-b from-[#0b0d14] to-[#06070b] min-h-[190px]">
-                <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1">
-                    <span>Play chords with mouse or keyboard keys <code class="text-sky-300 font-mono">A W S E D F T G Y H U J K O L</code></span>
-                    <button type="button" onclick="os.synthPlayChordDemo()" class="px-3 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/30 text-amber-200 text-[11px] hover-target cursor-none">♪ Play Lush Chord</button>
-                </div>
-                <div id="synth-keys-host" class="relative flex-1 flex select-none rounded-xl overflow-hidden border border-white/15 shadow-2xl min-h-[135px]"></div>
-            </div>
-        </div>
+      <div id="synth-root" class="synth-studio">
+        <header class="studio-app-heading"><div><span class="studio-eyebrow">OSCILLATE / SEQUENCE / EXPLORE</span><h2>A little room for sound.</h2><p>Browser-synthesised instruments. Start at a low volume.</p></div><span id="synth-status" role="status">Audio starts only when you play · pattern stays in this tab until saved</span></header>
+        <div class="synth-rack"><label>Instrument<select id="synth-patch" onchange="os.synthSetPatch(this.value)">${Object.entries(SYNTH_PATCHES).map(([id,p])=>`<option value="${id}">${p.label}</option>`).join('')}</select></label><label>Low-pass cutoff <output id="synth-cutoff-lbl">3800 Hz</output><input id="synth-cutoff" aria-label="Low-pass cutoff" type="range" min="300" max="7500" value="3800" oninput="os.synthSetCutoff(this.value)"></label><label>Output <output id="synth-volume-lbl">35%</output><input id="synth-volume" aria-label="Output volume" type="range" min="0" max="80" value="35" oninput="os.synthSetVolume(this.value)"></label><button class="os-btn" type="button" onclick="os.synthPanic()">All sound off</button></div>
+        <div class="synth-signal"><div><span class="synth-eyebrow">LIVE OUTPUT / TIME DOMAIN</span><p id="synth-signal-label">Silence is a perfectly good starting point.</p></div><canvas id="synth-scope" data-preserve-surface width="680" height="100" aria-label="Actual synthesiser output waveform"></canvas></div>
+        <section class="synth-machine" aria-label="Sixteen step drum sequencer"><div class="synth-transport"><button type="button" id="synth-seq-btn" class="os-btn" aria-pressed="false" onclick="os.synthToggleSequencer()">Play beat</button><label><output id="synth-bpm-lbl">96 BPM</output><input id="synth-bpm" aria-label="Tempo" type="range" min="40" max="200" value="96" oninput="os.synthSetBpm(this.value)"></label><span id="synth-step-label">16 STEPS / 4 BEATS</span><div class="synth-presets"><span>Try a pattern</span>${['lofi','house','trap'].map(id=>`<button type="button" class="os-btn" onclick="os.synthLoadGroove('${id}')">${id==='lofi'?'Lo-Fi':id==='house'?'House':'Trap'}</button>`).join('')}<button type="button" class="os-btn" onclick="os.synthClearPattern()">Clear</button></div></div><div class="synth-grid-scroll" tabindex="0" aria-label="Scroll the drum sequencer horizontally"><div id="synth-seq-grid"></div></div></section>
+        <section class="synth-piano"><div class="synth-piano-heading"><div><span class="synth-eyebrow">PLAY / MUSICAL TYPING</span><p>Use A W S E D F T G Y H U J K O L, or tap the keys. Notes are short one-shots.</p></div><div class="synth-octave"><button type="button" class="os-btn" aria-label="Lower octave" onclick="os.synthShiftOctave(-1)">−</button><span id="synth-oct-lbl">C4</span><button type="button" class="os-btn" aria-label="Higher octave" onclick="os.synthShiftOctave(1)">+</button><button type="button" class="os-btn" onclick="os.synthPlayChordDemo()">Play chord</button></div></div><div class="synth-key-scroll"><div id="synth-keys-host" data-preserve-surface></div></div></section>
+        <footer class="synth-project"><button type="button" class="os-btn" onclick="os.synthSavePattern()">Save in browser</button><button type="button" class="os-btn" onclick="os.synthRestorePattern()">Load saved</button><button type="button" class="os-btn" onclick="os.synthExportPattern()">Export pattern</button><label class="synth-import os-btn">Import pattern<input type="file" accept=".json,application/json" aria-label="Import SynthPad pattern" onchange="os.synthImportPattern(this.files[0]);this.value=''"></label><span>Pattern JSON, not an audio recording · closing stops playback</span></footer>
+      </div>
     `;
 
     // Apply Photo Booth filter on 2D context / pixel buffer
@@ -280,66 +187,79 @@
             raf: null,
             offscreen: null,
             photos: [],
-            busy: false
+            busy: false, mirror:true, captureID:0, image:null, requesting:false
         },
 
         initPhotoBooth: () => {
             if (!os.pbState.offscreen) {
                 const c = document.createElement('canvas');
-                c.width = 640; c.height = 420;
+                c.width = 720; c.height = 460;
                 os.pbState.offscreen = c;
             }
+            os.pbState.busy=false;os.pbState.requesting=false;os.pbState.frameSource=null;os.pbSourceUI();os.pbSetEffect(os.pbState.effect);os.pbSetShotMode(os.pbState.shotMode);
+            const mirror=document.getElementById('pb-mirror');if(mirror)mirror.checked=os.pbState.mirror;
             os.pbRenderTray();
             os.pbStartLoop();
             const root = document.getElementById('pb-root');
             if (root && window.lucide) lucide.createIcons({ root });
         },
 
-        killPhotoBooth: () => {
-            os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
-            const video=document.getElementById('pb-video');if(video){video.pause();video.srcObject=null;}
-            if (os.pbState.raf) { cancelAnimationFrame(os.pbState.raf); os.pbState.raf = null; }
-            if (os.pbState.webcamStream) {
-                os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
-                const video=document.getElementById('pb-video');if(video){video.pause();video.srcObject=null;}
-                os.pbState.webcamStream.getTracks().forEach((t) => t.stop());
-                os.pbState.webcamStream = null;
-            }
+        pbStatus: message => {const el=document.getElementById('pb-status');if(el)el.textContent=message;},
+        pbSourceUI: () => {
+            const state=os.pbState,source=state.webcamStream?'camera':state.image?'image':'demo',status=document.getElementById('pb-cam-status'),button=document.getElementById('pb-cam-btn'),dot=document.getElementById('pb-cam-dot'),label=document.getElementById('pb-source-label');
+            if(status)status.textContent=state.requesting?'Waiting for camera permission…':source==='camera'?'Camera active · local preview':source==='image'?'Local image · camera off':'Procedural demo · camera off';
+            if(button)button.textContent=state.requesting?'Cancel camera request':source==='camera'?'Stop camera':'Enable camera';
+            if(dot)dot.dataset.source=state.requesting?'pending':source;if(label)label.textContent=source==='camera'?'LOCAL CAMERA':source==='image'?'LOCAL IMAGE / NOT LIVE':'DEMO / NOT A CAMERA';
+            const shutter=document.getElementById('pb-shutter-btn');if(shutter)shutter.disabled=state.requesting||state.busy;
         },
-
+        pbCancelCapture: (report=true) => {
+            os.pbState.captureID++;clearTimeout(os.pbState.waitTimer);os.pbState.waitResolve?.(false);os.pbState.waitResolve=null;os.pbState.busy=false;
+            const countdown=document.getElementById('pb-countdown');if(countdown)countdown.classList.add('hidden');const cancel=document.getElementById('pb-cancel');if(cancel)cancel.disabled=true;
+            os.pbSourceUI();if(report)os.pbStatus('Capture cancelled · no new photo saved');
+        },
+        pbStopCamera: () => {
+            os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;os.pbState.requesting=false;
+            os.pbState.webcamStream?.getTracks().forEach(track=>track.stop());os.pbState.webcamStream=null;os.pbState.frameSource=null;
+            const video=document.getElementById('pb-video');if(video){video.pause();video.srcObject=null;}os.pbSourceUI();
+        },
+        killPhotoBooth: () => {
+            os.pbCancelCapture(false);os.pbStopCamera();if(os.pbState.raf)cancelAnimationFrame(os.pbState.raf);os.pbState.raf=null;
+            os.pbState.imageRequest=(os.pbState.imageRequest||0)+1;
+        },
         pbToggleWebcam: async () => {
-            if (os.pbState.webcamStream) {
-                os.pbState.webcamStream.getTracks().forEach((t) => t.stop());
-                os.pbState.webcamStream = null;
-                const st = document.getElementById('pb-cam-status');
-                const btn = document.getElementById('pb-cam-btn');
-                if (st) st.textContent = 'Live Shader Preview';
-                if (btn) btn.innerHTML = `<i data-lucide="camera" class="w-3.5 h-3.5 text-emerald-400"></i><span>Enable Webcam</span>`;
-                if (window.lucide) lucide.createIcons();
-                return;
-            }
-            if (!navigator.mediaDevices?.getUserMedia) {
-                window.Notifications && window.Notifications.push('PHOTO BOOTH', 'Camera API unavailable in this browser; using Live Shader scene.');
-                return;
-            }
-            const request=os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
-                if(request!==os.pbState.cameraRequest || !document.getElementById('pb-video') || !SystemState.windows.photobooth?.isOpen){stream.getTracks().forEach(t=>t.stop());return;}
-                os.pbState.webcamStream = stream;
-                const v = document.getElementById('pb-video');
-                if (v) { v.srcObject = stream; await v.play(); }
-                const st = document.getElementById('pb-cam-status');
-                const btn = document.getElementById('pb-cam-btn');
-                if (st) st.textContent = 'Camera active · local preview';
-                if (btn) btn.innerHTML = `<i data-lucide="video-off" class="w-3.5 h-3.5 text-rose-400"></i><span>Stop Webcam</span>`;
-                if (window.lucide) lucide.createIcons();
-            } catch (error) {
-                if(request!==os.pbState.cameraRequest)return;
-                if(os.pbState.webcamStream){os.pbState.webcamStream.getTracks().forEach(t=>t.stop());os.pbState.webcamStream=null;}
-                const video=document.getElementById('pb-video');if(video)video.srcObject=null;
-                window.Notifications && window.Notifications.push('PHOTO BOOTH', error.name==='NotAllowedError'?'Camera permission denied. No camera is active. The preview is a procedural demo.':'Camera could not start. No camera is active. The preview is a procedural demo.');
-            }
+            os.pbState.imageRequest=(os.pbState.imageRequest||0)+1;os.pbCancelCapture(false);
+            if(os.pbState.webcamStream||os.pbState.requesting){os.pbStopCamera();return;}
+            if(!navigator.mediaDevices?.getUserMedia){os.pbStatus('Camera unavailable · use an image or the labelled demo');return;}
+            const request=os.pbState.cameraRequest=(os.pbState.cameraRequest||0)+1;os.pbState.requesting=true;os.pbSourceUI();
+            try{
+                const stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720}},audio:false});
+                if(request!==os.pbState.cameraRequest||!document.getElementById('pb-video')||!SystemState.windows.photobooth?.isOpen){stream.getTracks().forEach(t=>t.stop());return;}
+                os.pbState.webcamStream=stream;const video=document.getElementById('pb-video');video.srcObject=stream;await video.play();
+                if(request!==os.pbState.cameraRequest){stream.getTracks().forEach(t=>t.stop());return;}
+                os.pbState.requesting=false;os.pbSourceUI();os.pbStatus('Camera frames stay local · microphone is never requested');
+            }catch(error){if(request!==os.pbState.cameraRequest)return;os.pbStopCamera();os.pbStatus(error.name==='NotAllowedError'?'Camera permission denied · no camera is active':'Camera could not start · no camera is active');}
+        },
+        pbUseDemo: () => {os.pbCancelCapture(false);os.pbStopCamera();os.pbState.imageRequest=(os.pbState.imageRequest||0)+1;os.pbState.image?.close?.();os.pbState.image=null;os.pbSourceUI();os.pbStatus('Procedural demo selected · captures are not camera photographs');},
+        pbImportImage: async file => {
+            if(!file)return;os.pbCancelCapture(false);const token=os.pbState.imageRequest=(os.pbState.imageRequest||0)+1;
+            try{
+                if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10485760)throw Error('Choose a PNG, JPEG or WebP up to 10 MiB');
+                if(!window.createImageBitmap)throw Error('Image import is unavailable in this browser');
+                const image=await createImageBitmap(file);
+                if(token!==os.pbState.imageRequest||!document.getElementById('pb-canvas')){image.close();return;}
+                if(image.width*image.height>16000000){image.close();throw Error('Image exceeds 16 megapixels');}
+                os.pbStopCamera();os.pbState.image?.close?.();os.pbState.image=image;os.pbSourceUI();os.pbStatus('Local image loaded · centre-cropped to the capture frame · nothing uploaded');
+            }catch(error){if(token===os.pbState.imageRequest)os.pbStatus('Image not opened: '+error.message);}
+        },
+        pbDrawSource: (ctx,source,width,height) => {
+            const sw=source.videoWidth||source.width,sh=source.videoHeight||source.height,scale=Math.max(width/sw,height/sh),cropW=width/scale,cropH=height/scale;
+            ctx.save();if(os.pbState.mirror){ctx.translate(width,0);ctx.scale(-1,1);}ctx.drawImage(source,(sw-cropW)/2,(sh-cropH)/2,cropW,cropH,0,0,width,height);ctx.restore();
+        },
+        pbSetEffect: id => {
+            if(os.pbState.busy)return;
+            if(!PB_EFFECTS.some(effect=>effect.id===id))return;os.pbState.effect=id;os.pbState.gridMode=false;
+            for(const button of document.querySelectorAll('[data-pb-effect]'))button.setAttribute('aria-pressed',String(button.dataset.pbEffect===id));
+            const compare=document.getElementById('pb-grid-btn');if(compare)compare.setAttribute('aria-pressed','false');
         },
 
         pbStartLoop: () => {
@@ -352,14 +272,12 @@
                 const video = document.getElementById('pb-video');
 
                 if (os.pbState.webcamStream && video && video.readyState >= 2) {
-                    octx.save();
-                    octx.translate(off.width, 0);
-                    octx.scale(-1, 1); // Mirror natural selfie camera
-                    octx.drawImage(video, 0, 0, off.width, off.height);
-                    octx.restore();
+                    os.pbDrawSource(octx,video,off.width,off.height);
+                } else if(os.pbState.image) {
+                    os.pbDrawSource(octx,os.pbState.image,off.width,off.height);
                 } else {
                     // Vivid animated procedural scene so all 9 Photo Booth filters shine immediately!
-                    const t = (ts || performance.now()) * 0.0014;
+                    const t = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?0:(ts || performance.now()) * 0.0014;
                     const g = octx.createLinearGradient(0, 0, off.width, off.height);
                     g.addColorStop(0, '#0f172a');
                     g.addColorStop(0.5, '#311042');
@@ -385,6 +303,7 @@
                     octx.fill();
                 }
 
+                os.pbState.frameSource=os.pbState.webcamStream&&video?.readyState>=2?'camera':os.pbState.image?'image':'demo';
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -411,8 +330,10 @@
         },
 
         pbToggleGrid: () => {
+            if(os.pbState.busy)return;
             os.pbState.gridMode = !os.pbState.gridMode;
             const btn = document.getElementById('pb-grid-btn');
+            if(btn)btn.setAttribute('aria-pressed',String(os.pbState.gridMode));
             if (btn) btn.classList.toggle('bg-[#ff9f0a]', os.pbState.gridMode);
             if (btn) btn.classList.toggle('text-black', os.pbState.gridMode);
         },
@@ -425,22 +346,24 @@
             const col = Math.min(2, Math.max(0, Math.floor(((e.clientX - r.left) / (r.width || 1)) * 3)));
             const row = Math.min(2, Math.max(0, Math.floor(((e.clientY - r.top) / (r.height || 1)) * 3)));
             const picked = PB_EFFECTS[row * 3 + col];
-            if (picked) {
-                os.pbState.effect = picked.id;
-                os.pbState.gridMode = false;
-                const btn = document.getElementById('pb-grid-btn');
-                if (btn) { btn.classList.remove('bg-[#ff9f0a]', 'text-black'); btn.textContent = `FX: ${picked.label}`; }
-            }
+            if(picked)os.pbSetEffect(picked.id);
         },
 
         pbSetShotMode: (mode) => {
+            if(os.pbState.busy)return;
             os.pbState.shotMode = mode === 'strip' ? 'strip' : 'single';
             document.querySelectorAll('[data-pb-mode]').forEach((b) => {
                 b.classList.toggle('active', b.getAttribute('data-pb-mode') === os.pbState.shotMode);
+                b.setAttribute('aria-pressed',String(b.getAttribute('data-pb-mode')===os.pbState.shotMode));
             });
         },
 
-        pbSnapFrame: () => {
+        pbSnapFrame: (effect=os.pbState.effect) => {
+            const state=os.pbState,video=document.getElementById('pb-video');
+            if(state.webcamStream){
+                if(!video||video.readyState<2||state.webcamStream.getTracks().some(track=>track.readyState==='ended'))throw Error('Camera frame unavailable; no demo was captured in its place');
+                os.pbDrawSource(state.offscreen.getContext('2d'),video,720,460);
+            }else if(state.image){os.pbDrawSource(state.offscreen.getContext('2d'),state.image,720,460);}
             const flash = document.getElementById('pb-flash');
             if (flash) {
                 flash.style.opacity = '1';
@@ -449,77 +372,46 @@
             playShutterSound('shutter');
             const out = document.createElement('canvas');
             out.width = 720; out.height = 460;
-            drawPbEffectTile(out.getContext('2d'), os.pbState.offscreen, os.pbState.effect, 0, 0, 720, 460);
+            drawPbEffectTile(out.getContext('2d'), os.pbState.offscreen, effect, 0, 0, 720, 460);
             return out;
         },
 
+        pbWait: (ms,token) => new Promise(resolve=>{os.pbState.waitResolve=resolve;os.pbState.waitTimer=setTimeout(()=>{os.pbState.waitResolve=null;resolve(token===os.pbState.captureID);},ms);}),
         pbTriggerCapture: async () => {
-            if (os.pbState.busy) return;
-            os.pbState.busy = true;
-            os.pbState.gridMode = false;
-
-            const useTimer = document.getElementById('pb-timer-chk')?.checked;
-            const cdEl = document.getElementById('pb-countdown');
-            const waitCount = async () => {
-                if (!useTimer || !cdEl) return;
-                cdEl.classList.remove('hidden');
-                for (let n = 3; n >= 1; n--) {
-                    cdEl.textContent = String(n);
-                    playShutterSound('beep');
-                    await new Promise((r) => setTimeout(r, 550));
-                }
-                cdEl.classList.add('hidden');
-            };
-
-            let dataUrl = '';
-            if (os.pbState.shotMode === 'strip') {
-                const strip = document.createElement('canvas');
-                strip.width = 380; strip.height = 980;
-                const sctx = strip.getContext('2d');
-                sctx.fillStyle = '#ffffff';
-                sctx.fillRect(0, 0, strip.width, strip.height);
-                for (let i = 0; i < 4; i++) {
-                    await waitCount();
-                    const shot = os.pbSnapFrame();
-                    sctx.drawImage(shot, 20, 20 + i * 235, 340, 220);
-                }
-                dataUrl = strip.toDataURL('image/png');
-            } else {
-                await waitCount();
-                dataUrl = os.pbSnapFrame().toDataURL('image/png');
-            }
-
-            const item = { id: 'pb-' + Date.now(), dataUrl, effect: os.pbState.effect, time: new Date().toLocaleTimeString() };
-            os.pbState.photos.unshift(item);
-            if (window.AetherVFS) {
-                await AetherVFS.putFile({
-                    name: `PhotoBooth-${Date.now()}.png`,
-                    mime: 'image/png',
-                    kind: 'image',
-                    icon: 'aperture',
-                    folder: 'User Uploads',
-                    dataUrl,
-                    imageUrl: dataUrl,
-                    content: `Captured in Photo Booth (${os.pbState.effect})`,
-                    tags: ['photobooth', os.pbState.effect]
-                });
-            }
-            os.pbRenderTray();
-            os.pbState.busy = false;
+            const state=os.pbState;if(state.busy||state.requesting||!state.offscreen)return;
+            const expected=state.webcamStream?'camera':state.image?'image':'demo';if(state.frameSource!==expected){os.pbStatus('Waiting for a fresh '+expected+' preview frame');return;}
+            const video=document.getElementById('pb-video');if(state.webcamStream&&(!video||video.readyState<2)){os.pbStatus('Camera is not ready · wait for the live preview');return;}
+            const token=++state.captureID,effect=state.effect,mode=state.shotMode,source=state.webcamStream?'camera':state.image?'image':'demo';state.busy=true;state.gridMode=false;os.pbSourceUI();
+            const cancel=document.getElementById('pb-cancel');if(cancel)cancel.disabled=false;
+            const countdown=document.getElementById('pb-countdown'),useTimer=document.getElementById('pb-timer')?.value!=='0';
+            const count=async()=>{if(!useTimer)return true;if(countdown)countdown.classList.remove('hidden');for(let n=3;n>0;n--){if(countdown)countdown.textContent=String(n);if(!await os.pbWait(1000,token))return false;}if(countdown)countdown.classList.add('hidden');return token===state.captureID;};
+            try{
+                let output;
+                if(mode==='strip'){
+                    output=document.createElement('canvas');output.width=380;output.height=980;const ctx=output.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,380,980);
+                    for(let i=0;i<4;i++){os.pbStatus('Pose '+(i+1)+' / 4 · '+source);if(!await count())return;if(i>0&&!useTimer&&!await os.pbWait(800,token))return;if(token!==state.captureID)return;ctx.drawImage(os.pbSnapFrame(effect),20,20+i*235,340,220);}
+                }else{if(!await count()||token!==state.captureID)return;output=os.pbSnapFrame(effect);}
+                if(token!==state.captureID)return;
+                const item={id:'pb-'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)),dataUrl:output.toDataURL('image/png'),effect,source,mode,time:new Date().toLocaleTimeString()};
+                state.photos.unshift(item);state.photos=state.photos.slice(0,12);os.pbRenderTray();os.pbStatus((source==='demo'?'Demo image captured':source==='image'?'Image effect captured':'Photo captured')+' · download or save to Files · gallery holds the last 12');
+            }catch(error){if(token===state.captureID)os.pbStatus('Capture failed: '+error.message);}
+            finally{if(token===state.captureID){state.busy=false;if(cancel)cancel.disabled=true;if(countdown)countdown.classList.add('hidden');os.pbSourceUI();}}
         },
-
+        pbSavePhoto: async id => {
+            const item=os.pbState.photos.find(photo=>photo.id===id);if(!item||item.saving||item.saved)return;item.saving=true;os.pbRenderTray();
+            try{if(!window.AetherVFS)throw Error('Files service unavailable');const record=await AetherVFS.putFile({name:item.id+'.png',mime:'image/png',kind:'image',icon:'aperture',folder:'User Uploads',dataUrl:item.dataUrl,imageUrl:item.dataUrl,content:'Photo Booth '+item.source+' capture · '+item.effect,tags:['photobooth',item.source,item.effect]});if(!record)throw Error('No file record returned');item.saved=record.persistence==='indexeddb';os.pbStatus(item.saved?'Image saved to Files':'Session-only file copy · download a backup');}
+            catch(error){os.pbStatus('Save failed: '+error.message+' · the capture is still available to download');}
+            finally{item.saving=false;os.pbRenderTray();}
+        },
         pbRenderTray: () => {
-            const tray = document.getElementById('pb-strip-tray');
-            if (!tray) return;
-            if (!os.pbState.photos.length) return;
-            tray.innerHTML = os.pbState.photos.map((p) => `
-                <div class="relative group shrink-0 h-16 w-24 rounded-lg overflow-hidden border border-white/20 bg-black">
-                    <img src="${p.dataUrl}" alt="Snap" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5">
-                        <a href="${p.dataUrl}" download="photobooth-${esc(p.id)}.png" class="px-2 py-0.5 rounded bg-white text-black text-[10px] font-semibold hover-target cursor-none">Save</a>
-                    </div>
-                </div>
-            `).join('');
+            const tray=document.getElementById('pb-strip-tray');if(!tray)return;const left=tray.scrollLeft;tray.replaceChildren();
+            if(!os.pbState.photos.length){const empty=document.createElement('p');empty.className='pb-gallery-empty';empty.textContent='Your session gallery is empty. Capture a photo, an imported image effect, or the labelled demo.';tray.append(empty);return;}
+            for(const photo of os.pbState.photos){
+                const card=document.createElement('article');card.className='pb-photo-card';const image=document.createElement('img');image.src=photo.dataUrl;image.alt=photo.source+' · '+photo.effect+' · '+photo.mode;const caption=document.createElement('p');caption.textContent=photo.source+' / '+photo.effect+' · '+photo.time;const actions=document.createElement('div');
+                const download=document.createElement('a');download.href=photo.dataUrl;download.download=photo.id+'.png';download.textContent='Download';download.className='os-btn';
+                const save=document.createElement('button');save.type='button';save.className='os-btn';save.textContent=photo.saving?'Saving…':photo.saved?'Saved':'Save to Files';save.disabled=!!(photo.saving||photo.saved);save.addEventListener('click',()=>os.pbSavePhoto(photo.id));
+                const remove=document.createElement('button');remove.type='button';remove.className='os-btn';remove.textContent='Remove';remove.setAttribute('aria-label','Remove '+photo.source+' capture from session gallery');remove.addEventListener('click',()=>{os.pbState.photos=os.pbState.photos.filter(item=>item.id!==photo.id);os.pbRenderTray();});actions.append(download,save,remove);card.append(image,caption,actions);tray.append(card);
+            }tray.scrollLeft=left;
         },
 
         // ── GaragePad Synth & 16-Step Beat Studio Methods ──
@@ -533,34 +425,54 @@
             seqTimer: null,
             scopeRaf: null,
             analyser: null,
-            grid: DRUM_GROOVES.lofi.map((row) => [...row])
+            volume: .35, sources: new Set(), timers: new Set(), nextTime:0,
+            grid: Array.from({length:4},()=>Array(16).fill(0))
         },
 
-        initSynthStudio: () => {
-            os.synthRenderKeys();
-            os.synthRenderSequencer();
-            os.synthStartScope();
+        synthStatus: message => {const el=document.getElementById('synth-status');if(el)el.textContent=message;},
+        initSynthStudio: () => {os.synthSyncControls();os.synthRenderKeys();os.synthRenderSequencer();os.synthStartScope();},
+        synthSyncControls: () => {
+            const s=os.synthState;for(const [id,value] of Object.entries({'synth-patch':s.patch,'synth-cutoff':s.cutoff,'synth-volume':Math.round(s.volume*100),'synth-bpm':s.bpm})){const el=document.getElementById(id);if(el)el.value=value;}
+            for(const [id,text] of Object.entries({'synth-cutoff-lbl':s.cutoff+' Hz','synth-volume-lbl':Math.round(s.volume*100)+'%','synth-bpm-lbl':s.bpm+' BPM','synth-oct-lbl':'C'+(4+s.octaveOffset)})){const el=document.getElementById(id);if(el)el.textContent=text;}
         },
-
-        killSynthStudio: () => {
-            if (os.synthState.seqTimer) { clearInterval(os.synthState.seqTimer); os.synthState.seqTimer = null; }
-            os.synthState.playing = false;
-            if (os.synthState.scopeRaf) { cancelAnimationFrame(os.synthState.scopeRaf); os.synthState.scopeRaf = null; }
+        killSynthStudio: () => {os.synthState.importToken=(os.synthState.importToken||0)+1;os.synthPanic(false);if(os.synthState.scopeRaf)cancelAnimationFrame(os.synthState.scopeRaf);os.synthState.scopeRaf=null;},
+        synthStopBeat: () => {
+            const s=os.synthState;clearInterval(s.seqTimer);s.seqTimer=null;s.playing=false;s.step=0;
+            for(const timer of s.timers)clearTimeout(timer);s.timers.clear();
+            const button=document.getElementById('synth-seq-btn');if(button){button.textContent='Play beat';button.setAttribute('aria-pressed','false');}
+            document.querySelectorAll('[data-seq-cell]').forEach(el=>el.classList.remove('is-current'));
+            const label=document.getElementById('synth-step-label');if(label)label.textContent='16 STEPS / 4 BEATS';
         },
-
+        synthPanic: (report=true) => {
+            os.synthStopBeat();for(const source of os.synthState.sources){try{source.stop();}catch{}}os.synthState.sources.clear();
+            if(report)os.synthStatus('All sound stopped · pattern kept');
+        },
+        synthTrackSource: (source,nodes=[]) => {const s=os.synthState;s.sources.add(source);source.onended=()=>{s.sources.delete(source);try{source.disconnect();nodes.forEach(node=>node.disconnect());}catch{}};},
         _synthEnsureMaster: () => {
-            const ctx = getAudioCtx();
-            if (!ctx) return null;
-            if (!os.synthState.analyser) {
-                const an = ctx.createAnalyser();
-                an.fftSize = 256;
-                an.connect(ctx.destination);
-                os.synthState.analyser = an;
-            }
-            return { ctx, out: os.synthState.analyser };
+            try{
+                const ctx=getAudioCtx();if(!ctx)throw Error('Web Audio is unavailable');
+                if(!os.synthState.analyser){const an=ctx.createAnalyser(),gain=ctx.createGain(),limiter=ctx.createDynamicsCompressor();an.fftSize=256;gain.gain.value=os.synthState.volume;gain.connect(limiter);limiter.connect(an);an.connect(ctx.destination);os.synthState.analyser=an;os.synthState.master=gain;}
+                if(ctx.state==='suspended')os.synthStatus('Audio is resuming · press play again if it stays silent');
+                return {ctx,out:os.synthState.master};
+            }catch(error){os.synthStatus('Audio unavailable: '+error.message);return null;}
         },
+        synthSetPatch: value => {if(Object.hasOwn(SYNTH_PATCHES,value))os.synthState.patch=value;},
+        synthSetCutoff: value => {const n=Number(value);if(!Number.isFinite(n))return;os.synthState.cutoff=Math.max(300,Math.min(7500,n));os.synthSyncControls();},
+        synthSetVolume: value => {const n=Number(value);if(!Number.isFinite(n))return;os.synthState.volume=Math.max(0,Math.min(.8,n/100));if(os.synthState.master)os.synthState.master.gain.setTargetAtTime(os.synthState.volume,getAudioCtx().currentTime,.015);os.synthSyncControls();},
+        synthPattern: () => {const s=os.synthState;return {format:'aether-synth-pattern',version:1,patch:s.patch,bpm:s.bpm,cutoff:s.cutoff,octaveOffset:s.octaveOffset,grid:s.grid.map(row=>[...row])};},
+        synthApplyPattern: data => {
+            if(data?.format!=='aether-synth-pattern'||data.version!==1||!Object.hasOwn(SYNTH_PATCHES,data.patch)||!Number.isFinite(data.bpm)||data.bpm<40||data.bpm>200||!Number.isFinite(data.cutoff)||data.cutoff<300||data.cutoff>7500||!Number.isInteger(data.octaveOffset)||Math.abs(data.octaveOffset)>2||!Array.isArray(data.grid)||data.grid.length!==4||!data.grid.every(row=>Array.isArray(row)&&row.length===16&&row.every(n=>n===0||n===1)))throw Error('Not a valid SynthPad v1 pattern');
+            os.synthState.importToken=(os.synthState.importToken||0)+1;os.synthPanic(false);Object.assign(os.synthState,{patch:data.patch,bpm:data.bpm,cutoff:data.cutoff,octaveOffset:data.octaveOffset,grid:data.grid.map(row=>[...row])});os.synthSyncControls();os.synthRenderSequencer();os.synthStatus('Pattern loaded · playback stopped');
+        },
+        synthSavePattern: () => {try{localStorage.setItem('aether-synth-pattern-v1',JSON.stringify(os.synthPattern()));os.synthStatus('Pattern saved in this browser · export a backup');}catch{os.synthStatus('Storage unavailable · pattern is session-only; export a backup');}},
+        synthRestorePattern: () => {try{const raw=localStorage.getItem('aether-synth-pattern-v1');if(!raw)throw Error('No saved pattern in this browser');os.synthApplyPattern(JSON.parse(raw));}catch(error){os.synthStatus('Pattern not loaded: '+error.message);}},
+        synthExportPattern: () => {const url=URL.createObjectURL(new Blob([JSON.stringify(os.synthPattern(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='synthpad-pattern.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);os.synthStatus('Pattern exported as JSON · this is not an audio recording');},
+        synthImportPattern: async file => {if(!file)return;const token=os.synthState.importToken=(os.synthState.importToken||0)+1;try{if(file.size>32768)throw Error('Pattern must be under 32 KiB');const data=JSON.parse(await file.text());if(token!==os.synthState.importToken||!document.getElementById('synth-root'))return;os.synthApplyPattern(data);}catch(error){if(token===os.synthState.importToken)os.synthStatus('Import failed: '+error.message);}},
+        synthClearPattern: () => {os.synthState.importToken=(os.synthState.importToken||0)+1;os.synthState.grid=Array.from({length:4},()=>Array(16).fill(0));os.synthRenderSequencer();os.synthStatus('Pattern cleared · export before closing if needed');},
 
         synthPlayNote: (midi) => {
+            if(!Number.isInteger(midi)||midi<0||midi>127)return;
+            if(os.synthState.sources.size>40)return;
             const m = os._synthEnsureMaster();
             if (!m) return;
             const { ctx, out } = m;
@@ -588,6 +500,7 @@
 
             o1.connect(flt); o2.connect(flt);
             flt.connect(gain); gain.connect(out);
+            os.synthTrackSource(o1);os.synthTrackSource(o2,[flt,gain]);
             o1.start(now); o2.start(now);
             o1.stop(now + patch.attack + patch.release + 0.04);
             o2.stop(now + patch.attack + patch.release + 0.04);
@@ -600,20 +513,22 @@
         },
 
         synthPlayChordDemo: () => {
-            [60, 64, 67, 71, 74].forEach((m, i) => setTimeout(() => os.synthPlayNote(m), i * 55));
+            [60,64,67,71,74].forEach(m=>os.synthPlayNote(m));
         },
 
         synthShiftOctave: (delta) => {
+            if(!Number.isInteger(delta))return;
             os.synthState.octaveOffset = Math.max(-2, Math.min(2, os.synthState.octaveOffset + delta));
             const lbl = document.getElementById('synth-oct-lbl');
             if (lbl) lbl.textContent = `C${4 + os.synthState.octaveOffset}`;
         },
 
-        synthPlayDrum: (row) => {
+        synthPlayDrum: (row,when) => {
+            if(!Number.isInteger(row)||row<0||row>3)return;
             const m = os._synthEnsureMaster();
             if (!m) return;
             const { ctx, out } = m;
-            const now = ctx.currentTime;
+            const now = when??ctx.currentTime;
             if (row === 0) {
                 // Punchy 808 Kick
                 const o = ctx.createOscillator(), g = ctx.createGain();
@@ -622,7 +537,7 @@
                 g.gain.setValueAtTime(0.45, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
                 o.connect(g); g.connect(out);
-                o.start(now); o.stop(now + 0.25);
+                os.synthTrackSource(o,[g]);o.start(now); o.stop(now + 0.25);
             } else {
                 // Snare / Hi-Hat / Clap filtered noise burst
                 const dur = row === 2 ? 0.045 : 0.14;
@@ -637,7 +552,7 @@
                 flt.frequency.value = row === 2 ? 6800 : row === 1 ? 1600 : 2400;
                 g.gain.value = row === 2 ? 0.16 : 0.28;
                 src.connect(flt); flt.connect(g); g.connect(out);
-                src.start(now);
+                os.synthTrackSource(src,[flt,g]);src.start(now);
             }
         },
 
@@ -646,7 +561,7 @@
             if (!host) return;
             const whites = PIANO_NOTES.filter((n) => !n.black);
             let html = whites.map((w) => `
-                <button type="button" data-piano-midi="${w.midi}" onmousedown="os.synthPlayNote(${w.midi})"
+                <button type="button" data-piano-midi="${w.midi}" onclick="os.synthPlayNote(${w.midi})" aria-label="Play ${w.note}"
                     class="flex-1 bg-gradient-to-b from-white to-gray-200 border-r border-gray-300 text-gray-800 flex flex-col items-center justify-end pb-2.5 transition hover:from-sky-50 hover-target cursor-none">
                     <span class="text-[10px] font-bold">${w.note}</span>
                     <span class="text-[9px] font-mono text-gray-400 uppercase">${w.key}</span>
@@ -659,7 +574,7 @@
                 if (!n.black) { whiteIdx++; return; }
                 const leftPct = ((whiteIdx + 0.68) / whites.length) * 100;
                 html += `
-                    <button type="button" data-piano-midi="${n.midi}" onmousedown="event.stopPropagation();os.synthPlayNote(${n.midi})"
+                    <button type="button" data-piano-midi="${n.midi}" onclick="os.synthPlayNote(${n.midi})" aria-label="Play ${n.note}"
                         style="left:${leftPct}%;width:${(0.62 / whites.length) * 100}%;height:60%"
                         class="absolute top-0 z-10 rounded-b-lg bg-gradient-to-b from-[#1f2430] to-black border border-white/15 shadow-xl text-[9px] font-mono text-gray-400 flex items-end justify-center pb-2 hover-target cursor-none">
                         ${n.key.toUpperCase()}
@@ -670,68 +585,34 @@
         },
 
         synthRenderSequencer: () => {
-            const host = document.getElementById('synth-seq-grid');
-            if (!host) return;
-            const labels = ['808 Kick', 'Snare', 'Hi-Hat', 'Clap'];
-            const colors = ['bg-amber-400', 'bg-rose-400', 'bg-sky-400', 'bg-emerald-400'];
-            host.innerHTML = os.synthState.grid.map((row, rIdx) => `
-                <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="os.synthPlayDrum(${rIdx})" class="w-16 text-left text-[10.5px] font-mono text-gray-300 hover:text-white shrink-0 hover-target cursor-none">${labels[rIdx]}</button>
-                    <div class="flex-1 grid grid-cols-16 gap-1" style="grid-template-columns:repeat(16,minmax(0,1fr))">
-                        ${row.map((on, cIdx) => `
-                            <button type="button" data-seq-cell="${rIdx}-${cIdx}" onclick="os.synthToggleCell(${rIdx},${cIdx})"
-                                class="h-6 rounded-md border transition hover-target cursor-none ${on ? colors[rIdx] + ' border-white/40 shadow' : (cIdx % 4 === 0 ? 'bg-white/[0.08] border-white/10' : 'bg-white/[0.03] border-white/[0.05]')}"></button>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
+            const host=document.getElementById('synth-seq-grid');if(!host)return;
+            const labels=['Kick','Snare','Hi-hat','Clap'];
+            host.innerHTML='<div class="synth-step-numbers"><span>DRUMS</span>'+Array.from({length:16},(_,i)=>'<span>'+(i+1)+'</span>').join('')+'</div>'+os.synthState.grid.map((row,r)=>`<div class="synth-drum-row" data-drum="${r}"><button type="button" class="synth-drum-label" onclick="os.synthPlayDrum(${r})" aria-label="Preview ${labels[r]}">${labels[r]}</button>${row.map((on,c)=>`<button type="button" data-seq-cell="${r}-${c}" aria-label="${labels[r]} step ${c+1}" aria-pressed="${!!on}" class="synth-cell ${c%4===0?'beat-start':''}" onclick="os.synthToggleCell(${r},${c})"></button>`).join('')}</div>`).join('');
         },
-
-        synthToggleCell: (r, c) => {
-            os.synthState.grid[r][c] = os.synthState.grid[r][c] ? 0 : 1;
-            os.synthRenderSequencer();
+        synthToggleCell: (r,c) => {
+            if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||r>3||c<0||c>15)return;
+            const s=os.synthState;s.grid[r][c]=s.grid[r][c]?0:1;
+            const cell=document.querySelector(`[data-seq-cell="${r}-${c}"]`);if(cell)cell.setAttribute('aria-pressed',String(!!s.grid[r][c]));
         },
-
-        synthLoadGroove: (name) => {
-            if (!DRUM_GROOVES[name]) return;
-            os.synthState.grid = DRUM_GROOVES[name].map((r) => [...r]);
-            os.synthRenderSequencer();
-        },
-
-        synthSetBpm: (bpm) => {
-            os.synthState.bpm = bpm;
-            const lbl = document.getElementById('synth-bpm-lbl');
-            if (lbl) lbl.textContent = `${bpm} BPM`;
-            if (os.synthState.playing) {
-                os.synthToggleSequencer();
-                os.synthToggleSequencer();
+        synthLoadGroove: name => {if(!Object.hasOwn(DRUM_GROOVES,name))return;os.synthState.importToken=(os.synthState.importToken||0)+1;os.synthState.grid=DRUM_GROOVES[name].map(row=>[...row]);os.synthRenderSequencer();os.synthStatus('Example '+name+' pattern loaded · edit any step');},
+        synthSetBpm: value => {const n=Number(value);if(!Number.isFinite(n))return;os.synthState.bpm=Math.max(40,Math.min(200,Math.round(n)));os.synthSyncControls();},
+        synthSchedule: () => {
+            const s=os.synthState;if(!s.playing)return;const ctx=getAudioCtx();if(!ctx)return;
+            // Do not replay missed beats after a background-tab timer stall.
+            if(s.nextTime<ctx.currentTime-.1)s.nextTime=ctx.currentTime;
+            while(s.nextTime<ctx.currentTime+.1){
+                const col=s.step,time=s.nextTime;
+                for(let r=0;r<4;r++)if(s.grid[r][col])os.synthPlayDrum(r,time);
+                const timer=setTimeout(()=>{s.timers.delete(timer);if(!s.playing)return;document.querySelectorAll('[data-seq-cell]').forEach(el=>el.classList.toggle('is-current',el.dataset.seqCell.endsWith('-'+col)));const label=document.getElementById('synth-step-label');if(label)label.textContent='STEP '+String(col+1).padStart(2,'0')+' / 16';},Math.max(0,(time-ctx.currentTime)*1000));s.timers.add(timer);
+                s.step=(col+1)%16;s.nextTime+=60/s.bpm/4;
             }
         },
-
         synthToggleSequencer: () => {
-            const st = os.synthState;
-            const btn = document.getElementById('synth-seq-btn');
-            if (st.playing) {
-                clearInterval(st.seqTimer);
-                st.seqTimer = null;
-                st.playing = false;
-                if (btn) { btn.textContent = '▶ Play Beat'; btn.className = 'px-4 py-1.5 rounded-full bg-emerald-500 text-black font-bold text-xs hover-target cursor-none'; }
-                return;
-            }
-            st.playing = true;
-            if (btn) { btn.textContent = '■ Stop Beat'; btn.className = 'px-4 py-1.5 rounded-full bg-rose-500 text-white font-bold text-xs hover-target cursor-none'; }
-            const stepMs = (60 / st.bpm / 4) * 1000;
-            st.seqTimer = setInterval(() => {
-                const col = st.step % 16;
-                for (let r = 0; r < 4; r++) {
-                    if (st.grid[r][col]) os.synthPlayDrum(r);
-                }
-                document.querySelectorAll('[data-seq-cell]').forEach((el) => {
-                    el.classList.toggle('ring-1', el.getAttribute('data-seq-cell').endsWith(`-${col}`));
-                    el.classList.toggle('ring-white', el.getAttribute('data-seq-cell').endsWith(`-${col}`));
-                });
-                st.step = (st.step + 1) % 16;
-            }, stepMs);
+            const s=os.synthState;if(s.playing){os.synthPanic(false);os.synthStatus('Playback stopped · pattern kept');return;}
+            const master=os._synthEnsureMaster();if(!master)return;
+            s.playing=true;s.step=0;s.nextTime=master.ctx.currentTime+.02;
+            const button=document.getElementById('synth-seq-btn');if(button){button.textContent='Stop beat';button.setAttribute('aria-pressed','true');}
+            os.synthSchedule();s.seqTimer=setInterval(os.synthSchedule,25);os.synthStatus('Playing · Web Audio look-ahead clock · may pause in background tabs');
         },
 
         synthStartScope: () => {
@@ -742,11 +623,12 @@
                 if (!c) return;
                 const ctx = c.getContext('2d');
                 ctx.clearRect(0, 0, c.width, c.height);
-                ctx.strokeStyle = '#38bdf8';
+                ctx.strokeStyle = '#b4decf';
                 ctx.lineWidth = 1.6;
                 ctx.beginPath();
                 if (os.synthState.analyser) {
                     os.synthState.analyser.getByteTimeDomainData(buf);
+                    const label=document.getElementById('synth-signal-label');if(label){const peak=Math.max(...buf.map(n=>Math.abs(n-128)));label.textContent=peak>1?'Your sound, drawn in real time.':'Output is quiet · play a key or start a pattern.';}
                     for (let i = 0; i < buf.length; i++) {
                         const x = (i / (buf.length - 1)) * c.width;
                         const y = (buf[i] / 255) * c.height;
@@ -815,6 +697,8 @@
         }
     });
 
+    document.addEventListener('visibilitychange',()=>{if(document.hidden&&window.os?.synthState?.playing){os.synthPanic(false);os.synthStatus('Playback stopped while tab is hidden · press Play to resume');}});
+
     // Global keyboard bindings for GaragePad Piano + File Explorer Spacebar Quick Look
     const KEY_TO_MIDI = {};
     PIANO_NOTES.forEach((n) => { KEY_TO_MIDI[n.key] = n.midi; });
@@ -822,7 +706,7 @@
     document.addEventListener('keydown', (e) => {
         if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
         const tag = (e.target?.tagName || '').toLowerCase();
-        if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) return;
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || e.target?.isContentEditable) return;
 
         // Spacebar Quick Look toggle when File Explorer is frontmost (or Quick Look is already open)
         if (e.key === ' ' && window.os) {

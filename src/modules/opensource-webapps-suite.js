@@ -1,6 +1,6 @@
 // AetherOS — Open-Source Projects & Native WebApp Desktop Integrations:
 // 1. Photopea Studio (Official window.postMessage ArrayBuffer VFS Load/Save Bridge)
-// 2. OpenCanvas Board (Excalidraw + Official Draw.io Dark JSON VFS Sync + tldraw)
+// 2. Whiteboard Studio (explicit Excalidraw / diagrams.net / tldraw connections; editable XML bridge)
 // 3. Webamp + SomaFM Deck (CORS-Enabled SomaFM Live API + Multi-Mirror Stream Engine + Hybrid Webamp 2.9 Desktop Deck)
 (function () {
     const esc = (v) => String(v ?? '')
@@ -19,42 +19,25 @@
     // ═══════════════════════════════════════════════════════════════════════
     //  1. PHOTOPEA STUDIO (photopea — Official postMessage VFS Integration)
     // ═══════════════════════════════════════════════════════════════════════
+    const OC_ENGINES={
+        excalidraw:{name:'Excalidraw',url:'https://excalidraw.com',description:'Sketch an idea',detail:'Freehand diagrams and hand-drawn shapes. Save and export using the editor’s own controls.',symbol:'sketch'},
+        drawio:{name:'diagrams.net',url:'https://embed.diagrams.net/?embed=1&ui=dark&spin=1&proto=json',description:'Connect the dots',detail:'Structured diagrams. Import, download or save editable diagram XML through this workspace.',symbol:'nodes'},
+        tldraw:{name:'tldraw',url:'https://www.tldraw.com',description:'Think without edges',detail:'A spatial canvas for notes and shapes. Account and collaboration features belong to the provider.',symbol:'canvas'}
+    };
+    const EMPTY_DIAGRAM='<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>';
     window.WindowContents.photopea = `
-        <div class="h-full flex flex-col bg-[#131419] text-white text-xs select-none overflow-hidden" id="pp-root">
-            <div class="px-3.5 py-2 bg-black/60 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/30 font-mono text-[10px] text-emerald-300">PSD · XCF · Sketch · RAW</span>
-                    <button type="button" onclick="os.ppNewDoc(1920,1080,'AetherOS_Wallpaper_FHD')" class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">+ 1080p Canvas</button>
-                    <button type="button" onclick="os.ppNewDoc(1280,720,'Thumbnail_HD')" class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">+ Thumbnail</button>
-                    <button type="button" onclick="os.ppNewDoc(1024,1024,'App_Icon')" class="px-2.5 py-1 rounded-lg bg-white/[0.07] hover:bg-white/14 text-[11px] text-gray-200 hover-target cursor-none">+ 1024² Icon</button>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="os.ppExportToVFS('png')" class="px-3 py-1 rounded-lg bg-sky-400 text-black font-semibold text-[11px] hover:bg-sky-300 transition hover-target cursor-none">Save PNG to AetherOS Files</button>
-                    <button type="button" onclick="os.ppExportToVFS('webp')" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/16 border border-white/15 text-[11px] text-white hover-target cursor-none">Save WebP</button>
-                </div>
-            </div>
-            <iframe id="pp-frame" title="Photopea Layer Studio" src="about:blank" class="flex-1 w-full border-0 bg-[#1e1e1e]" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-        </div>
+      <div id="pp-root" class="creative-studio">
+        <div class="creative-toolbar" aria-label="Photopea controls"><button type="button" class="os-btn" onclick="os.ppStart()">Load / reload</button><label class="creative-import os-btn">Open file<input type="file" accept="image/*,.psd,.xcf,.sketch" aria-label="Open file in Photopea" onchange="os.ppImportFile(this.files[0]);this.value=''"></label><select class="creative-preset-select os-btn" aria-label="New canvas" data-pp-ready disabled onchange="const p=this.selectedOptions[0];if(p.dataset.width)os.ppNewDoc(Number(p.dataset.width),Number(p.dataset.height),p.dataset.name);this.value=''"><option value="">New canvas…</option>${[[1920,1080,'Wallpaper'],[1280,720,'Thumbnail'],[1024,1024,'Icon']].map(([w,h,n])=>`<option value="${n}" data-width="${w}" data-height="${h}" data-name="${n}">${n} · ${w} × ${h}</option>`).join('')}</select><a class="os-btn creative-external" href="https://www.photopea.com" target="_blank" rel="noopener noreferrer">Open Photopea ↗</a></div>
+        <div class="creative-editor-space"><div class="creative-empty" id="pp-empty"><span class="creative-empty-mark" aria-hidden="true">↗</span><h3>Photopea Studio</h3><p>Third-party image editor. Files you open are shared with Photopea and follow its terms and privacy policy. AetherOS cannot inspect its canvas or guarantee availability.</p><button type="button" class="os-btn" onclick="os.ppStart()">Load Photopea</button></div><iframe id="pp-frame" title="Photopea third-party image editor" src="about:blank" hidden referrerpolicy="no-referrer" allow="clipboard-read; clipboard-write; fullscreen" data-preserve-surface></iframe></div>
+        <footer class="creative-footer"><button type="button" class="os-btn" data-pp-ready disabled onclick="os.ppExportToVFS('png')">Export PNG to Files</button><button type="button" class="os-btn" data-pp-ready disabled onclick="os.ppExportToVFS('webp')">Export WebP to Files</button><a id="pp-download" class="os-btn" hidden>Download last export</a><span id="pp-status" role="status">Third-party editor not loaded · no files shared</span></footer>
+      </div>
     `;
-
-    // ═══════════════════════════════════════════════════════════════════════
-    //  2. OPENCANVAS BOARD (whiteboard — Excalidraw + Draw.io JSON Sync + tldraw)
-    // ═══════════════════════════════════════════════════════════════════════
     window.WindowContents.whiteboard = `
-        <div class="h-full flex flex-col bg-[#0d0f15] text-white text-xs select-none overflow-hidden" id="wb-canvas-root">
-            <div class="px-4 py-2 bg-black/55 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
-                <div class="os-segmented">
-                    <button type="button" data-oc-eng="excalidraw" onclick="os.ocSetEngine('excalidraw')" class="os-seg-btn active hover-target cursor-none">Excalidraw</button>
-                    <button type="button" data-oc-eng="drawio" onclick="os.ocSetEngine('drawio')" class="os-seg-btn hover-target cursor-none">Draw.io (VFS Sync)</button>
-                    <button type="button" data-oc-eng="tldraw" onclick="os.ocSetEngine('tldraw')" class="os-seg-btn hover-target cursor-none">tldraw Canvas</button>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="oc-status" class="text-[10.5px] font-mono text-gray-400">Open-Source Infinite Canvas</span>
-                    <button type="button" id="oc-drawio-save" onclick="os.ocExportDrawioSvg()" class="hidden px-3 py-1 rounded-lg bg-emerald-400 text-black font-semibold text-[11px] hover-target cursor-none">Save Diagram to Files</button>
-                </div>
-            </div>
-            <iframe id="oc-frame" title="OpenCanvas Whiteboard" src="about:blank" class="flex-1 w-full border-0 bg-[#121212]" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-        </div>
+      <div id="wb-canvas-root" class="creative-studio">
+        <div class="creative-toolbar" aria-label="Whiteboard controls"><div class="creative-engine-tabs" aria-label="Choose a third-party editor">${Object.entries(OC_ENGINES).map(([id,e])=>`<button type="button" class="creative-engine os-btn" data-oc-eng="${id}" aria-pressed="false" title="${e.description}" onclick="os.ocSetEngine('${id}')">${e.name}</button>`).join('')}</div><button type="button" class="os-btn" onclick="os.ocReload()">Reload</button><a id="oc-external" class="os-btn creative-external" href="https://excalidraw.com" target="_blank" rel="noopener noreferrer">Open Excalidraw ↗</a></div>
+        <div class="creative-editor-space"><div class="creative-empty" id="oc-empty"><span class="creative-empty-mark" aria-hidden="true">✳</span><h3>Whiteboard Studio</h3><p id="oc-provider-note">Select an editor above to connect to its site. Switching or reloading can discard unsaved work. Excalidraw and tldraw use their own save/export controls.</p></div><iframe id="oc-frame" title="Third-party whiteboard editor" src="about:blank" hidden referrerpolicy="no-referrer" allow="clipboard-read; clipboard-write; fullscreen" data-preserve-surface></iframe></div>
+        <footer class="creative-footer" id="oc-diagram-tools"><label class="creative-import os-btn">Import diagram XML<input type="file" accept=".drawio,.xml" aria-label="Import diagrams.net XML" onchange="os.ocImportDiagram(this.files[0]);this.value=''"></label><button type="button" class="os-btn" id="oc-drawio-save" disabled onclick="os.ocSaveDiagram()">Save diagram to Files</button><button type="button" class="os-btn" id="oc-download" disabled onclick="os.ocDownloadDiagram()">Download diagram</button><span id="oc-status" role="status">Choose an editor · XML tools are diagrams.net only</span></footer>
+      </div>
     `;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -93,20 +76,20 @@
     }
 
     const SOMAFM_FALLBACK = [
-        { id: 'groovesalad',  title: 'Groove Salad',       genre: 'ambient / downtempo',     listeners: 1840, lastPlaying: 'Boards of Canada — Olson',             description: 'A nicely chilled plate of ambient/downtempo beats and grooves.', image: 'https://api.somafm.com/img/groovesalad120.png' },
-        { id: 'dronezone',    title: 'Drone Zone',         genre: 'ambient / space',         listeners: 1420, lastPlaying: 'Stars of the Lid — Requiem for Dying Mothers', description: 'Served best chilled, safe with most medications. Atmospheric textures.', image: 'https://api.somafm.com/img/dronezone120.png' },
-        { id: 'defcon',       title: 'DEF CON Radio',      genre: 'electronic / hacker',     listeners: 780,  lastPlaying: 'Perturbator — Future Club',            description: 'Music for Hacking. The DEF CON Year-Round Channel.', image: 'https://api.somafm.com/img/defcon120.png' },
-        { id: 'vaporwaves',   title: 'Vaporwaves',         genre: 'vaporwave / future funk', listeners: 530,  lastPlaying: 'SAINT PEPSI — Enjoy Yourself',         description: 'All Vaporwave. All the time. Aesthetic mallsoft & future funk.', image: 'https://api.somafm.com/img/vaporwaves120.png' },
-        { id: 'deepspaceone', title: 'Deep Space One',     genre: 'ambient / deep space',    listeners: 810,  lastPlaying: 'Stellardrone — Red Giant',             description: 'Deep ambient electronic, experimental and space music.', image: 'https://api.somafm.com/img/deepspaceone120.png' },
-        { id: 'secretagent',  title: 'Secret Agent',       genre: 'lounge / spy jazz',       listeners: 640,  lastPlaying: 'Lalo Schifrin — Mission Impossible',   description: 'The soundtrack for your stylish, mysterious, dangerous life.', image: 'https://api.somafm.com/img/secretagent120.png' },
-        { id: 'u80s',         title: 'Underground 80s',    genre: '80s synthpop / new wave', listeners: 690,  lastPlaying: 'New Order — Blue Monday',              description: 'Early 80s UK Synthpop and a bit of New Wave.', image: 'https://api.somafm.com/img/u80s120.png' },
-        { id: 'synphaera',    title: 'Synphaera Radio',    genre: 'electronic / ambient',    listeners: 470,  lastPlaying: 'Carbon Based Lifeforms — Interloper',  description: 'Featuring the music from an independent electronic record label.', image: 'https://api.somafm.com/img/synphaera120.png' },
-        { id: 'lush',         title: 'Lush',               genre: 'electronica / vocals',    listeners: 610,  lastPlaying: 'Zero 7 — Destiny',                     description: 'Sensuous and mellow female vocals, mostly with an electronic influence.', image: 'https://api.somafm.com/img/lush120.png' },
-        { id: 'spacestation', title: 'Space Station Soma', genre: 'electronica / mid-tempo', listeners: 520,  lastPlaying: ' Ulrich Schnauss — Far Away Trains',   description: 'Tune in, turn on, space out. Spaced-out ambient and mid-tempo electronica.', image: 'https://api.somafm.com/img/sss.gif' },
-        { id: 'thetrip',      title: 'The Trip',           genre: 'electronic / prog house', listeners: 390,  lastPlaying: 'Sasha — Xpander',                      description: 'Progressive house / trance. Tip top tunes.', image: 'https://api.somafm.com/img/thetrip120.jpg' },
-        { id: 'beatblender',  title: 'Beat Blender',       genre: 'deep house / chill',      listeners: 410,  lastPlaying: 'Bonobo — Kerala',                      description: 'A late night blend of deep-house and downtempo chill.', image: 'https://api.somafm.com/img/blender120.png' },
-        { id: 'indiepop',     title: 'Indie Pop Rocks!',   genre: 'indie / alternative',     listeners: 560,  lastPlaying: 'Alvvays — Archie, Marry Me',           description: 'New and classic favorite indie pop tracks.', image: 'https://api.somafm.com/img/indychick.jpg' },
-        { id: 'sonicuniverse',title: 'Sonic Universe',     genre: 'jazz / avant-garde',      listeners: 360,  lastPlaying: 'Kamasi Washington — Clair de Lune',    description: 'Transcending the world of jazz with eclectic, avant-garde takes.', image: 'https://api.somafm.com/img/sonicuniverse120.jpg' }
+        { id: 'groovesalad',  title: 'Groove Salad',       genre: 'ambient / downtempo',     listeners: null, lastPlaying: 'Track metadata unavailable',             description: 'A nicely chilled plate of ambient/downtempo beats and grooves.', image: 'https://api.somafm.com/img/groovesalad120.png' },
+        { id: 'dronezone',    title: 'Drone Zone',         genre: 'ambient / space',         listeners: null, lastPlaying: 'Track metadata unavailable', description: 'Served best chilled, safe with most medications. Atmospheric textures.', image: 'https://api.somafm.com/img/dronezone120.png' },
+        { id: 'defcon',       title: 'DEF CON Radio',      genre: 'electronic / hacker',     listeners: null, lastPlaying: 'Track metadata unavailable',            description: 'Music for Hacking. The DEF CON Year-Round Channel.', image: 'https://api.somafm.com/img/defcon120.png' },
+        { id: 'vaporwaves',   title: 'Vaporwaves',         genre: 'vaporwave / future funk', listeners: null, lastPlaying: 'Track metadata unavailable',         description: 'All Vaporwave. All the time. Aesthetic mallsoft & future funk.', image: 'https://api.somafm.com/img/vaporwaves120.png' },
+        { id: 'deepspaceone', title: 'Deep Space One',     genre: 'ambient / deep space',    listeners: null, lastPlaying: 'Track metadata unavailable',             description: 'Deep ambient electronic, experimental and space music.', image: 'https://api.somafm.com/img/deepspaceone120.png' },
+        { id: 'secretagent',  title: 'Secret Agent',       genre: 'lounge / spy jazz',       listeners: null, lastPlaying: 'Track metadata unavailable',   description: 'The soundtrack for your stylish, mysterious, dangerous life.', image: 'https://api.somafm.com/img/secretagent120.png' },
+        { id: 'u80s',         title: 'Underground 80s',    genre: '80s synthpop / new wave', listeners: null, lastPlaying: 'Track metadata unavailable',              description: 'Early 80s UK Synthpop and a bit of New Wave.', image: 'https://api.somafm.com/img/u80s120.png' },
+        { id: 'synphaera',    title: 'Synphaera Radio',    genre: 'electronic / ambient',    listeners: null, lastPlaying: 'Track metadata unavailable',  description: 'Featuring the music from an independent electronic record label.', image: 'https://api.somafm.com/img/synphaera120.png' },
+        { id: 'lush',         title: 'Lush',               genre: 'electronica / vocals',    listeners: null, lastPlaying: 'Track metadata unavailable',                     description: 'Sensuous and mellow female vocals, mostly with an electronic influence.', image: 'https://api.somafm.com/img/lush120.png' },
+        { id: 'spacestation', title: 'Space Station Soma', genre: 'electronica / mid-tempo', listeners: null, lastPlaying: 'Track metadata unavailable',   description: 'Tune in, turn on, space out. Spaced-out ambient and mid-tempo electronica.', image: 'https://api.somafm.com/img/sss.gif' },
+        { id: 'thetrip',      title: 'The Trip',           genre: 'electronic / prog house', listeners: null, lastPlaying: 'Track metadata unavailable',                      description: 'Progressive house / trance. Tip top tunes.', image: 'https://api.somafm.com/img/thetrip120.jpg' },
+        { id: 'beatblender',  title: 'Beat Blender',       genre: 'deep house / chill',      listeners: null, lastPlaying: 'Track metadata unavailable',                      description: 'A late night blend of deep-house and downtempo chill.', image: 'https://api.somafm.com/img/blender120.png' },
+        { id: 'indiepop',     title: 'Indie Pop Rocks!',   genre: 'indie / alternative',     listeners: null, lastPlaying: 'Track metadata unavailable',           description: 'New and classic favorite indie pop tracks.', image: 'https://api.somafm.com/img/indychick.jpg' },
+        { id: 'sonicuniverse',title: 'Sonic Universe',     genre: 'jazz / avant-garde',      listeners: null, lastPlaying: 'Track metadata unavailable',    description: 'Transcending the world of jazz with eclectic, avant-garde takes.', image: 'https://api.somafm.com/img/sonicuniverse120.jpg' }
     ].map((c) => ({
         ...c,
         mirrors: buildSomafmMirrors(c.id),
@@ -818,95 +801,107 @@
     }
 
     window.extendOS({
-        // ── Photopea Studio Methods ──
-        ppState: {
-            pendingFormat: 'png',
-            awaitingExport: false
+        // ── Explicit third-party editor connections and bounded file bridges ──
+        ppState: {ready:false,loading:false,busy:false,awaitingExport:false,token:0,pending:null},
+        ppStatus: text => {const el=document.getElementById('pp-status');if(el)el.textContent=text;},
+        ppControls: () => {document.querySelectorAll('[data-pp-ready]').forEach(el=>el.disabled=!os.ppState.ready||os.ppState.busy);},
+        initPhotopea: () => {os.ppControls();},
+        ppStart: () => {
+            const frame=document.getElementById('pp-frame');if(!frame)return;
+            if((os.ppState.ready||os.ppState.loading)&&!window.confirm('Reload Photopea? Unsaved editor work may be lost.'))return;
+            os.killPhotopea(false);const state=os.ppState;state.loading=true;frame.hidden=false;document.getElementById('pp-empty').hidden=true;
+            const cfg={environment:{theme:2,vmode:0}};frame.src='https://www.photopea.com#'+encodeURIComponent(JSON.stringify(cfg));
+            os.ppControls();os.ppStatus('Connecting to Photopea · waiting for its ready message');
+            state.loadTimer=setTimeout(()=>{if(state.loading)os.ppStatus('No ready response from Photopea · it may be slow or blocked; try its external link');},20000);
+        },
+        killPhotopea: (unload=true) => {
+            const s=os.ppState;s.token++;clearTimeout(s.loadTimer);clearTimeout(s.exportTimer);s.ready=false;s.loading=false;s.busy=false;s.awaitingExport=false;s.pending=null;
+            if(s.downloadURL){URL.revokeObjectURL(s.downloadURL);s.downloadURL=null;}const download=document.getElementById('pp-download');if(download){download.hidden=true;download.removeAttribute('href');}
+            const frame=document.getElementById('pp-frame');if(frame&&unload){frame.src='about:blank';frame.hidden=true;}os.ppControls();
+        },
+        ppSend: data => {const frame=document.getElementById('pp-frame');if(!frame?.contentWindow||!os.ppState.ready||os.ppState.busy)return false;frame.contentWindow.postMessage(data,'https://www.photopea.com');return true;},
+        ppNewDoc: (width,height,name) => {
+            const w=Number(width),h=Number(height);if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w*h>16000000){os.ppStatus('Canvas must be positive whole pixels and at most 16 megapixels');return;}
+            if(os.ppSend('app.documents.add('+w+','+h+',72,'+JSON.stringify(String(name||'Untitled').slice(0,120))+');'))os.ppStatus('Canvas request sent · confirm it in Photopea');else os.ppStatus('Wait for Photopea to be ready before creating a canvas');
+        },
+        ppQueueBuffer: buffer => {
+            if(!(buffer instanceof ArrayBuffer)||!buffer.byteLength||buffer.byteLength>25*1024*1024)throw Error('Choose a non-empty file up to 25 MiB');
+            if(os.ppState.busy)throw Error('Wait for the current export before opening a file');
+            if(os.ppState.ready){os.ppSend(buffer);os.ppStatus('File sent to Photopea · use its own save controls to preserve layers');}
+            else if(os.ppState.loading){os.ppState.pending=buffer;os.ppStatus('File queued in this tab · it will be shared once Photopea is ready');}
+            else throw Error('Load Photopea before opening a file');
+        },
+        ppImportFile: async file => {
+            if(!file)return;const token=os.ppState.token;
+            try{if(!os.ppState.ready&&!os.ppState.loading)throw Error('Load Photopea first, then choose your file');if(file.size>25*1024*1024||!file.size)throw Error('Choose a non-empty file up to 25 MiB');const buffer=await file.arrayBuffer();if(token!==os.ppState.token)return;os.ppQueueBuffer(buffer);}catch(error){if(token===os.ppState.token)os.ppStatus('File not opened: '+error.message);}
+        },
+        ppOpenVfsImage: async id => {
+            os.openWindow('photopea');const file=window.AetherVFS?.getCachedFile(id)||os.fmFindById?.(id);const url=file?.dataUrl;
+            if(typeof url!=='string'||!/^data:image\/(png|jpeg|webp);base64,/i.test(url)||url.length>35*1024*1024){os.ppStatus('Open a local PNG, JPEG or WebP from Files, or download the remote image and use Open local file');return;}
+            if(!os.ppState.ready&&!os.ppState.loading)os.ppStart();
+            try{const bytes=atob(url.slice(url.indexOf(',')+1)),buffer=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)buffer[i]=bytes.charCodeAt(i);os.ppQueueBuffer(buffer.buffer);}catch(error){os.ppStatus('File not opened: '+error.message);}
+        },
+        ppExportToVFS: (fmt='png') => {
+            const state=os.ppState;if(!['png','webp'].includes(fmt))return;if(!state.ready||state.busy){os.ppStatus('Wait for Photopea to be ready and finish its current export');return;}
+            state.pendingFormat=fmt;state.awaitingExport=true;
+            os.ppSend('app.activeDocument.saveToOE('+JSON.stringify(fmt)+');');state.busy=true;os.ppControls();os.ppStatus('Waiting for '+fmt.toUpperCase()+' export · an active document is required');
+            state.exportTimer=setTimeout(()=>{state.awaitingExport=false;state.busy=false;state.ready=false;os.ppControls();os.ppStatus('No export received · preserve work using Photopea’s controls, then reload the editor before retrying');},20000);
+        },
+        ppReceive: async event => {
+            const s=os.ppState,frame=document.getElementById('pp-frame');if(event.origin!=='https://www.photopea.com'||event.source!==frame?.contentWindow)return;
+            if(event.data==='done'&&s.loading){s.loading=false;s.ready=true;clearTimeout(s.loadTimer);os.ppControls();os.ppStatus('Photopea ready · files opened here are shared with its editor');if(s.pending){const buffer=s.pending;s.pending=null;os.ppQueueBuffer(buffer);}return;}
+            if(!(event.data instanceof ArrayBuffer)||!s.awaitingExport)return;
+            s.awaitingExport=false;clearTimeout(s.exportTimer);const token=s.token;
+            try{
+                if(!event.data.byteLength||event.data.byteLength>25*1024*1024)throw Error('Export exceeds the 25 MiB limit or is empty');
+                const fmt=s.pendingFormat,mime='image/'+fmt,bytes=new Uint8Array(event.data);
+                if(fmt==='png'&&!(bytes.length>=8&&bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71&&bytes[4]===13&&bytes[5]===10&&bytes[6]===26&&bytes[7]===10)||fmt==='webp'&&!(String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP'))throw Error('Export did not match the requested image format');
+                if(s.downloadURL)URL.revokeObjectURL(s.downloadURL);s.downloadURL=URL.createObjectURL(new Blob([event.data],{type:mime}));const name='Photopea-'+Date.now()+'.'+fmt,download=document.getElementById('pp-download');if(download){download.href=s.downloadURL;download.download=name;download.hidden=false;}
+                if(!window.AetherVFS)throw Error('Files service unavailable');const dataUrl=arrayBufferToBase64DataUrl(event.data,mime);
+                const rec=await AetherVFS.putFile({name,mime,sizeBytes:event.data.byteLength,kind:'image',icon:'layers',folder:'User Uploads',dataUrl,imageUrl:dataUrl,content:'Exported from Photopea',tags:['photopea',fmt]});
+                if(token===s.token)os.ppStatus(rec?.persistence==='indexeddb'?'Export saved to Files · PNG/WebP does not preserve editable layers':'Session-only file copy · download the export as a backup');
+            }catch(error){if(token===s.token)os.ppStatus('Export not saved: '+error.message+(s.downloadURL?' · Download last export is still available':''));}
+            finally{if(token===s.token){s.busy=false;os.ppControls();}}
         },
 
-        initPhotopea: () => {
-            const frame = document.getElementById('pp-frame');
-            if (!frame || frame.src !== 'about:blank') return;
-            const cfg = {
-                environment: {
-                    theme: 2,
-                    vmode: 0,
-                    menus: [1, 1, 1, 1, 1, 1, 1, 1, 1]
-                }
-            };
-            frame.src = `https://www.photopea.com#${encodeURIComponent(JSON.stringify(cfg))}`;
+        ocState: {engine:null,ready:false,drawioXml:'',token:0},
+        ocStatus: text => {const el=document.getElementById('oc-status');if(el)el.textContent=text;},
+        initWhiteboard: () => {os.ocControls();},
+        ocControls: () => {for(const id of ['oc-drawio-save','oc-download']){const el=document.getElementById(id);if(el)el.disabled=os.ocState.engine!=='drawio'||!os.ocState.drawioXml||os.ocState.saving;}},
+        killWhiteboard: () => {const s=os.ocState;s.token++;s.importToken=(s.importToken||0)+1;s.ready=false;s.engine=null;s.saving=false;clearTimeout(s.timer);const frame=document.getElementById('oc-frame');if(frame){frame.onload=null;frame.src='about:blank';frame.hidden=true;}},
+        ocSetEngine: (engine,reload=false) => {
+            if(!Object.hasOwn(OC_ENGINES,engine))return;const s=os.ocState;if(s.engine===engine&&!reload)return;
+            if(s.engine&&!window.confirm('Switch or reload editor? Unsaved work inside the editor may be lost. Download or export it first.'))return;
+            const frame=document.getElementById('oc-frame');if(!frame)return;clearTimeout(s.timer);s.token++;s.saving=false;s.importToken=(s.importToken||0)+1;s.ready=false;s.engine=engine;const turn=s.token,e=OC_ENGINES[engine];
+            document.querySelectorAll('[data-oc-eng]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.ocEng===engine)));
+            document.getElementById('oc-external').href=e.url;document.getElementById('oc-external').textContent='Open '+e.name+' ↗';document.getElementById('oc-provider-note').textContent=e.detail;
+            document.getElementById('oc-empty').hidden=true;frame.hidden=false;frame.onload=()=>{if(turn===s.token&&!s.ready)os.ocStatus(e.name+' frame loaded · editor readiness and saving are not verified');};frame.src=e.url;os.ocControls();os.ocStatus('Connecting to '+e.name+' · third-party editor');
+            s.timer=setTimeout(()=>{if(turn===s.token&&!s.ready)os.ocStatus('Cannot confirm '+e.name+' is ready · use Open selected editor if blank or blocked');},20000);
         },
-
-        ppNewDoc: (w, h, name) => {
-            const frame = document.getElementById('pp-frame');
-            if (!frame || !frame.contentWindow) return;
-            frame.contentWindow.postMessage(`app.documents.add(${Math.max(1,Math.min(16000,Number(w)||1024))}, ${Math.max(1,Math.min(16000,Number(h)||768))}, 72, ${JSON.stringify(String(name||'Untitled').slice(0,160))});`, 'https://www.photopea.com');
+        ocReload: () => {if(os.ocState.engine)os.ocSetEngine(os.ocState.engine,true);else os.ocStatus('Choose an editor first');},
+        ocValidateXml: xml => {
+            if(typeof xml!=='string'||!xml.trim()||xml.length>2*1024*1024||/<!DOCTYPE|<!ENTITY/i.test(xml))throw Error('Use diagram XML up to 2 MiB, without a document type or external entities');
+            const doc=new DOMParser().parseFromString(xml,'application/xml');if(doc.querySelector('parsererror')||!['mxfile','mxGraphModel'].includes(doc.documentElement.nodeName))throw Error('Expected a diagrams.net mxfile or mxGraphModel document');return xml;
         },
-
-        ppOpenVfsImage: async (fileId) => {
-            const f = (window.AetherVFS && AetherVFS.getCachedFile(fileId)) || (os.fmFindById && os.fmFindById(fileId));
-            const url = f && (f.dataUrl || f.imageUrl);
-            if (!url) return;
-            os.openWindow('photopea');
-            setTimeout(async () => {
-                const frame = document.getElementById('pp-frame');
-                if (!frame || !frame.contentWindow) return;
-                try {
-                    const res = await fetch(url);
-                    const buf = await res.arrayBuffer();
-                    setTimeout(() => frame.contentWindow.postMessage(buf, 'https://www.photopea.com'), 1800);
-                } catch (_) {
-                    frame.contentWindow.postMessage(`app.open(${JSON.stringify(url)}, null, false);`, 'https://www.photopea.com');
-                }
-            }, 350);
+        ocImportDiagram: async file => {
+            if(!file)return;const s=os.ocState,turn=s.token,request=s.importToken=(s.importToken||0)+1;
+            try{if(s.engine!=='drawio')throw Error('Select diagrams.net before importing');if(file.size>2*1024*1024)throw Error('Diagram must be at most 2 MiB');const xml=os.ocValidateXml(await file.text());if(turn!==s.token||request!==s.importToken)return;
+                if(s.drawioXml&&!window.confirm('Replace the current diagram with this file?'))return;s.drawioXml=xml;if(s.ready)document.getElementById('oc-frame').contentWindow.postMessage(JSON.stringify({action:'load',autosave:1,xml}),'https://embed.diagrams.net');os.ocControls();os.ocStatus(s.ready?'Diagram sent to editor · download or save a backup':'Diagram queued in this tab · waiting for diagrams.net');
+            }catch(error){if(turn===s.token&&request===s.importToken)os.ocStatus('Diagram not imported: '+error.message);}
         },
-
-        ppExportToVFS: (fmt = 'png') => {
-            const frame = document.getElementById('pp-frame');
-            if (!frame || !frame.contentWindow) return;
-            os.ppState.pendingFormat = fmt;
-            os.ppState.awaitingExport = true;
-            frame.contentWindow.postMessage(`app.activeDocument.saveToOE(${JSON.stringify(['png','jpg','webp','psd'].includes(fmt)?fmt:'png')});`, 'https://www.photopea.com');
-            window.Notifications && window.Notifications.push('PHOTOPEA BRIDGE', `Requesting ${fmt.toUpperCase()} export from Photopea...`);
+        ocDownloadDiagram: () => {
+            try{const xml=os.ocValidateXml(os.ocState.drawioXml),url=URL.createObjectURL(new Blob([xml],{type:'application/xml'}));const a=document.createElement('a');a.href=url;a.download='AetherOS-diagram.drawio';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);os.ocStatus('Diagram XML downloaded · keep this editable backup');}catch(error){os.ocStatus(error.message);}
         },
-
-        // ── OpenCanvas (Excalidraw / Draw.io / tldraw) Methods ──
-        ocState: {
-            engine: 'excalidraw',
-            drawioXml: ''
+        ocSaveDiagram: async () => {
+            const s=os.ocState;if(s.engine!=='drawio'||s.saving)return;const turn=s.token;
+            try{const xml=os.ocValidateXml(s.drawioXml);s.saving=true;os.ocControls();if(!window.AetherVFS)throw Error('Files service unavailable');const rec=await AetherVFS.putFile({name:'Diagram-'+Date.now()+'.drawio',mime:'application/xml',kind:'note',icon:'pen-tool',folder:'User Uploads',content:xml,tags:['diagram','drawio']});if(turn===s.token)os.ocStatus(rec?.persistence==='indexeddb'?(s.drawioXml===xml?'Editable diagram saved to Files':'Earlier diagram snapshot saved · newer edits still need saving'):'Session-only file copy · download XML as a backup');}catch(error){if(turn===s.token)os.ocStatus('Save failed: '+error.message+' · diagram remains downloadable');}finally{if(turn===s.token){s.saving=false;os.ocControls();}}
         },
-
-        initWhiteboard: () => {
-            os.ocSetEngine(os.ocState.engine || 'excalidraw');
-        },
-
-        ocSetEngine: (eng) => {
-            os.ocState.engine = eng;
-            document.querySelectorAll('[data-oc-eng]').forEach((b) => {
-                b.classList.toggle('active', b.getAttribute('data-oc-eng') === eng);
-            });
-            const frame = document.getElementById('oc-frame');
-            const saveBtn = document.getElementById('oc-drawio-save');
-            const status = document.getElementById('oc-status');
-            if (saveBtn) saveBtn.classList.toggle('hidden', eng !== 'drawio');
-            if (!frame) return;
-
-            if (eng === 'excalidraw') {
-                frame.src = 'https://excalidraw.com';
-                if (status) status.textContent = 'Excalidraw · Hand-drawn architecture & infinite sketchpad';
-            } else if (eng === 'drawio') {
-                frame.src = 'https://embed.diagrams.net/?embed=1&ui=dark&spin=1&modified=unsavedChanges&proto=json';
-                if (status) status.textContent = 'Draw.io Dark · Bidirectional JSON sync with File Explorer';
-            } else {
-                frame.src = 'https://www.tldraw.com';
-                if (status) status.textContent = 'tldraw · Collaborative infinite vector canvas';
-            }
-        },
-
-        ocExportDrawioSvg: () => {
-            const frame = document.getElementById('oc-frame');
-            if (!frame || !frame.contentWindow) return;
-            frame.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'xmlsvg', spinKey: 'saving' }), 'https://embed.diagrams.net');
+        ocExportDrawioSvg: () => os.ocSaveDiagram(),
+        ocReceive: async event => {
+            const s=os.ocState,frame=document.getElementById('oc-frame');if(s.engine!=='drawio'||event.origin!=='https://embed.diagrams.net'||event.source!==frame?.contentWindow||typeof event.data!=='string'||event.data.length>2*1024*1024+65536)return;
+            try{const msg=JSON.parse(event.data);if(msg.event==='init'){s.ready=true;clearTimeout(s.timer);frame.contentWindow.postMessage(JSON.stringify({action:'load',autosave:1,xml:s.drawioXml||EMPTY_DIAGRAM}),'https://embed.diagrams.net');os.ocStatus('diagrams.net connected · edits are session-only until saved or downloaded');}
+                else if((msg.event==='autosave'||msg.event==='save')&&s.ready){s.drawioXml=os.ocValidateXml(msg.xml);s.importToken=(s.importToken||0)+1;os.ocControls();os.ocStatus('Diagram updated in session · save or download a backup');if(msg.event==='save')await os.ocSaveDiagram();}
+            }catch(error){os.ocStatus('Diagram update rejected: '+error.message);}
         },
 
         // ── SomaFM Live API + Hybrid Open-Source Webamp 2.9 Engine ──
@@ -1046,8 +1041,8 @@
                                 id: cid,
                                 title: String(s.name || cid).replace(/^somafm\s*[-:]?\s*/i, '').trim() || cid,
                                 genre: (s.tags || 'ambient / electronic').split(',').slice(0, 2).join(' / '),
-                                listeners: Number(s.votes || 120),
-                                lastPlaying: 'Live Stream Ready',
+                                listeners: null,
+                                lastPlaying: 'Track metadata unavailable',
                                 description: s.homepage || '',
                                 image: s.favicon || '',
                                 mirrors: buildSomafmMirrors(cid, s.url_resolved || s.url),
@@ -1128,7 +1123,7 @@
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
                                     <span class="font-semibold text-[13px] text-white truncate">${esc(ch.title)}</span>
-                                    <span class="px-1.5 py-0.5 rounded-full bg-black/50 border border-white/10 font-mono text-[9.5px] text-emerald-300 shrink-0">${Number(ch.listeners || 0).toLocaleString()}</span>
+                                    <span class="px-1.5 py-0.5 rounded-full bg-black/50 border border-white/10 font-mono text-[9.5px] text-emerald-300 shrink-0">${Number.isFinite(ch.listeners) ? ch.listeners.toLocaleString() + ' listeners' : 'Listeners unknown'}</span>
                                 </div>
                                 <div class="text-[10px] text-amber-300 font-mono truncate mt-0.5">${esc(ch.genre)}</div>
                                 <div class="text-[11px] text-gray-300 truncate mt-1">♪ ${esc(ch.lastPlaying || 'Live Broadcast')}</div>
@@ -1599,61 +1594,6 @@
         }
     });
 
-    // Global postMessage Bridge for Photopea ArrayBuffer Exports & Draw.io Official JSON Protocol
-    window.addEventListener('message', async (e) => {
-        // 1. Photopea binary image export -> Save straight into AetherOS File Explorer!
-        if (e.origin === 'https://www.photopea.com' && e.source === document.getElementById('pp-frame')?.contentWindow && e.data instanceof ArrayBuffer && e.data.byteLength <= 25*1024*1024 && os.ppState?.awaitingExport) {
-            os.ppState.awaitingExport = false;
-            const fmt = os.ppState.pendingFormat || 'png';
-            const mime = fmt === 'webp' ? 'image/webp' : 'image/png';
-            const dataUrl = arrayBufferToBase64DataUrl(e.data, mime);
-            if (window.AetherVFS) {
-                const rec = await AetherVFS.putFile({
-                    name: `Photopea-Export-${Date.now()}.${fmt}`,
-                    mime,
-                    kind: 'image',
-                    icon: 'layers',
-                    folder: 'User Uploads',
-                    dataUrl,
-                    imageUrl: dataUrl,
-                    content: 'Exported from Photopea Studio',
-                    tags: ['photopea', fmt]
-                });
-                window.Notifications && window.Notifications.push('PHOTOPEA SAVED', `Saved "${rec.name}" to File Explorer!`);
-            }
-            return;
-        }
-
-        // 2. Draw.io (diagrams.net) JSON embed protocol -> Bidirectional VFS Diagram Sync!
-        if (typeof e.data === 'string' && e.data.length <= 5*1024*1024 && e.origin === 'https://embed.diagrams.net' && e.source === document.getElementById('oc-frame')?.contentWindow) {
-            try {
-                const msg = JSON.parse(e.data);
-                const frame = document.getElementById('oc-frame');
-                if (!frame || !frame.contentWindow) return;
-                if (msg.event === 'init') {
-                    frame.contentWindow.postMessage(JSON.stringify({
-                        action: 'load',
-                        autosave: 1,
-                        xml: os.ocState.drawioXml || '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" value="AetherOS Architecture" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e293b;strokeColor=#38bdf8;fontColor=#ffffff;" vertex="1" parent="1"><mxGeometry x="220" y="160" width="180" height="60" as="geometry"/></mxCell></root></mxGraphModel>'
-                    }), 'https://embed.diagrams.net');
-                } else if (msg.event === 'autosave' || msg.event === 'save') {
-                    os.ocState.drawioXml = msg.xml || os.ocState.drawioXml;
-                    if (msg.event === 'save') os.ocExportDrawioSvg();
-                } else if (msg.event === 'export' && msg.data && window.AetherVFS) {
-                    const rec = await AetherVFS.putFile({
-                        name: `Diagram-${Date.now()}.drawio.svg`,
-                        mime: 'image/svg+xml',
-                        kind: 'image',
-                        icon: 'pen-tool',
-                        folder: 'User Uploads',
-                        dataUrl: msg.data,
-                        imageUrl: msg.data,
-                        content: os.ocState.drawioXml || '',
-                        tags: ['diagram', 'drawio']
-                    });
-                    window.Notifications && window.Notifications.push('DIAGRAM SAVED', `Saved "${rec.name}" to File Explorer!`);
-                }
-            } catch (_) {}
-        }
-    });
+    // Only expected source windows and exact origins are accepted by each bridge.
+    window.addEventListener('message',event=>{os.ppReceive(event);os.ocReceive(event);});
 })();
