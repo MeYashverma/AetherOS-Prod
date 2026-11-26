@@ -123,163 +123,15 @@ window.extendOS({
             },
 
     initTopBarTelemetry: () => {
-                if (os._topBarTelemetryActive) return;
-                os._topBarTelemetryActive = true;
-                const HISTORY = 40;
-                const data = { fps: Array(HISTORY).fill(60), cpu: Array(HISTORY).fill(5), ram: Array(HISTORY).fill(5) };
-                let lastFrame = performance.now();
-                let frameCount = 0;
-                let fps = 60;
-                let cpuLoad = 5;
-                let ramLoad = 5;
-
-                const drawLineChart = (canvasId, labelId, arr, color, maxVal, suffix, isFps) => {
-                    const canvas = document.getElementById(canvasId);
-                    const label = document.getElementById(labelId);
-                    if (!canvas) return;
-                    const ctx = canvas.getContext('2d');
-                    const w = canvas.width;
-                    const h = canvas.height;
-                    const pad = 3;
-                    const gw = w - pad * 2;
-                    const gh = h - pad * 2;
-
-                    ctx.clearRect(0, 0, w, h);
-
-                    // Dark glass background
-                    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-                    ctx.fillRect(0, 0, w, h);
-
-                    // Subtle grid lines
-                    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-                    ctx.lineWidth = 0.5;
-                    ctx.beginPath();
-                    for (let i = 1; i < 4; i++) {
-                        const y = pad + (gh / 4) * i;
-                        ctx.moveTo(pad, y);
-                        ctx.lineTo(w - pad, y);
-                    }
-                    ctx.stroke();
-
-                    // Grid vertical
-                    ctx.beginPath();
-                    for (let i = 1; i < 6; i++) {
-                        const x = pad + (gw / 6) * i;
-                        ctx.moveTo(x, pad);
-                        ctx.lineTo(x, h - pad);
-                    }
-                    ctx.stroke();
-
-                    // Build path points
-                    const points = arr.map((val, i) => {
-                        const x = pad + (i / (arr.length - 1)) * gw;
-                        const y = pad + gh - (val / maxVal) * gh;
-                        return { x, y };
-                    });
-
-                    // Fill area under curve with gradient
-                    const gradient = ctx.createLinearGradient(0, pad, 0, h - pad);
-                    gradient.addColorStop(0, color.replace(')', ', 0.45)').replace('rgb', 'rgba'));
-                    gradient.addColorStop(1, color.replace(')', ', 0.02)').replace('rgb', 'rgba'));
-
-                    ctx.beginPath();
-                    ctx.moveTo(points[0].x, h - pad);
-                    for (let i = 0; i < points.length; i++) {
-                        ctx.lineTo(points[i].x, points[i].y);
-                    }
-                    ctx.lineTo(points[points.length - 1].x, h - pad);
-                    ctx.closePath();
-                    ctx.fillStyle = gradient;
-                    ctx.fill();
-
-                    // Smooth line stroke
-                    ctx.beginPath();
-                    ctx.moveTo(points[0].x, points[0].y);
-                    for (let i = 1; i < points.length; i++) {
-                        const prev = points[i - 1];
-                        const curr = points[i];
-                        const cpX = (prev.x + curr.x) / 2;
-                        ctx.quadraticCurveTo(prev.x, prev.y, cpX, (prev.y + curr.y) / 2);
-                    }
-                    ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 1.5;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.stroke();
-
-                    // Glow dot at latest point
-                    const last = points[points.length - 1];
-                    ctx.beginPath();
-                    ctx.arc(last.x, last.y, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
-                    ctx.fillStyle = color.replace(')', ', 0.2)').replace('rgb', 'rgba');
-                    ctx.fill();
-
-                    // Update text label
-                    if (label) {
-                        const current = arr[arr.length - 1];
-                        const display = isFps ? Math.round(current) + suffix : Math.round(current) + suffix;
-                        label.textContent = display;
-                        label.style.color = color;
-                    }
-                };
-
-                let cachedDomNodes = document.getElementsByTagName('*').length;
-                let lastDomCountAt = performance.now();
-
-                const tick = (now) => {
-                    if (!os._topBarTelemetryActive) return;
-                    if (document.hidden) {
-                        setTimeout(() => requestAnimationFrame(tick), 500);
-                        return;
-                    }
-                    const dt = now - lastFrame;
-                    lastFrame = now;
-                    frameCount++;
-                    if (dt > 0) {
-                        const instantFps = 1000 / dt;
-                        fps = fps * 0.85 + Math.min(144, instantFps) * 0.15;
-                    }
-                    if (now - lastDomCountAt > 2000) {
-                        cachedDomNodes = document.getElementsByTagName('*').length;
-                        lastDomCountAt = now;
-                    }
-                    const frameLag = Math.max(0, dt - 16.67);
-                    const openWins = Object.values(SystemState.windows || {}).filter(w => w && w.isOpen).length;
-                    const cpuRaw = Math.min(100, frameLag * 2.2 + openWins * 4.5 + cachedDomNodes / 220);
-                    cpuLoad = cpuLoad * 0.85 + cpuRaw * 0.15;
-                    let ramRaw = 32;
-                    if (performance.memory && performance.memory.jsHeapSizeLimit > 0) {
-                        ramRaw = Math.min(100, (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100);
-                    } else {
-                        ramRaw = Math.min(100, openWins * 6 + cachedDomNodes / 120);
-                    }
-                    ramLoad = ramLoad * 0.85 + ramRaw * 0.15;
-
-                    const sampleEvery = SystemState.settings.performance_mode === 'eco' ? 12 : 6;
-                    if (frameCount % sampleEvery === 0) {
-                        data.fps.push(Math.max(0, Math.min(144, fps))); data.fps.shift();
-                        data.cpu.push(Math.max(0, Math.min(100, cpuLoad))); data.cpu.shift();
-                        data.ram.push(Math.max(0, Math.min(100, ramLoad))); data.ram.shift();
-
-                        drawLineChart('top-fps-canvas', 'top-fps-label', data.fps, 'rgb(52,211,153)', 144, '', true);
-                        drawLineChart('top-cpu-canvas', 'top-cpu-label', data.cpu, 'rgb(251,191,36)', 100, '%', false);
-                        drawLineChart('top-ram-canvas', 'top-ram-label', data.ram, 'rgb(96,165,250)', 100, '%', false);
-                        const sysLoad = document.getElementById('sys-load');
-                        if (sysLoad) sysLoad.textContent = `${Math.round(cpuLoad)}%`;
-                    }
-                    requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
+                // The island status module owns one measured page sampler.
+                window.AetherIsland?.startMetrics();
             },
 
     _lastTopWeatherFetch: 0,
 
     updateSystemIndicators: async (forceWeather = false) => {
+                const batteryItem = document.getElementById('top-battery');
+                if (batteryItem && !navigator.getBattery) batteryItem.style.display = 'none';
                 // Battery - real API (register listeners once)
                 if (navigator.getBattery && !os._batteryBound) {
                     try {
@@ -326,7 +178,7 @@ window.extendOS({
                             wifiSsid.textContent = etype + (dl ? ' ' + dl + 'M' : '');
                             wifiSsid.className = wifiSsid.className.replace('text-red-400', 'text-green-400');
                         } else {
-                            wifiSsid.textContent = 'WiFi';
+                            wifiSsid.textContent = 'Online';
                             wifiSsid.className = wifiSsid.className.replace('text-red-400', 'text-green-400');
                         }
                     }
@@ -335,32 +187,9 @@ window.extendOS({
                         const dl = conn.downlink != null ? conn.downlink + ' Mbps downlink' : '';
                         wifiWrap.title = [conn.effectiveType || 'WiFi', dl, rtt].filter(Boolean).join(' \u2022 ');
                     } else {
-                        wifiWrap.title = online ? 'Connected' : 'Offline';
+                        wifiWrap.title = online ? 'Browser reports online · service reachability is not verified' : 'Browser reports offline';
                     }
                     if (window.lucide) lucide.createIcons({root: wifiWrap});
-                }
-
-                // Bluetooth - check availability and show status
-                const btWrap = document.getElementById('top-bluetooth');
-                const btIcon = document.getElementById('top-bt-icon');
-                const btName = document.getElementById('top-bt-name');
-                if (btWrap) {
-                    const btAvailable = !!navigator.bluetooth;
-                    if (btIcon) {
-                        btIcon.setAttribute('data-lucide', 'bluetooth');
-                        btIcon.className = 'w-3.5 h-3.5 ' + (btAvailable ? 'text-blue-400' : 'text-gray-600');
-                    }
-                    if (btName) {
-                        if (btAvailable) {
-                            btName.textContent = 'BT';
-                            btName.className = 'text-[9px] font-mono hidden md:inline text-blue-400';
-                        } else {
-                            btName.textContent = 'BT';
-                            btName.className = 'text-[9px] font-mono hidden md:inline text-gray-600';
-                        }
-                    }
-                    btWrap.title = btAvailable ? 'Bluetooth: Available' : 'Bluetooth: Not available';
-                    if (window.lucide) lucide.createIcons({root: btWrap});
                 }
 
                 // NoSleep / Screen Awake status in top bar

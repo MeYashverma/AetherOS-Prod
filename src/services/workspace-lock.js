@@ -79,6 +79,7 @@
     lockScreen:()=>{
       const el=document.getElementById('lock-screen-overlay');if(!el||os.isScreenLocked)return;
       window.AetherAppDetails?.close();
+      window.AetherIsland?.close();window.AetherIsland?.clear();
       previousFocus=document.activeElement;
       os.closeTopBarMenus?.();os.toggleMissionControl?.(false);os.toggleMobileUtilityPanel?.(false);
       const finder=document.getElementById('finder-overlay');if(finder?.classList.contains('finder-open'))os.toggleFinder();

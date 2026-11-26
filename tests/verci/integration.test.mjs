@@ -103,6 +103,7 @@ P.audio.currentTime = 42;
 assert.equal(P.time,42); P.pause(); assert.equal(P.playing,false);
 P.seek(73); assert.equal(P.time,73); P.setVolume(.3); assert.equal(P.audio.volume,.3);
 P.stop(); assert.equal(P.mode,null);
+dom.window.AetherMusic.state.browse = false;
 dom.window.AetherMusic.state.lyrics = E;
 dom.window.AetherMusic.state.song = {title:'Hello',artist:'World'};
 dom.window.os.renderMediaDashboard();

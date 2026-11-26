@@ -207,8 +207,8 @@
                         <div class="settings-row-main">
                             <div class="settings-row-icon"><i data-lucide="panel-right" class="w-3.5 h-3.5 text-indigo-400"></i></div>
                             <div>
-                                <div class="settings-row-title">Desktop Telemetry &amp; AI Sidebar</div>
-                                <div class="settings-row-desc">Pin the right-hand network, media, and local AI chat rail on wide screens.</div>
+                                <div class="settings-row-title">Desktop control shelf</div>
+                                <div class="settings-row-desc">Pin media summaries and workspace shortcuts on wide screens. The assistant lives in the top island.</div>
                             </div>
                         </div>
                         <button type="button" role="switch" aria-checked="${sidebarOn}" onclick="os.setOption('desktop_sidebar', SystemState.settings.desktop_sidebar === 'on' ? 'off' : 'on')"

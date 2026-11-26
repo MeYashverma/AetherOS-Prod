@@ -1,6 +1,24 @@
 // AetherOS — Offline-Capable Service Worker (Network-First Shell + Offline Cache Fallback)
-const CACHE_NAME = 'aetheros-shell-v89';
+const CACHE_NAME = 'aetheros-shell-v103';
 const CORE_ASSETS = [
+  './styles/music-glass.css?v=music-glass-1',
+  './src/modules/music-entry.js?v=discovery-6',
+  './src/services/video-frame.js?v=discovery-6',
+  './src/services/music-activity.js?v=discovery-6',
+  './src/modules/music-theater.js?v=discovery-6',
+  './src/services/music-discovery.js?v=discovery-6',
+  './src/ui/companion-experience.js?v=companion-3',
+  './src/modules/media-and-lyrics.js?v=discovery-6',
+  './assets/fonts/manrope-latin-wght-normal.woff2',
+  './src/ui/settings-tabs.js?v=island-2',
+  './src/modules/voice-and-companion.js?v=island-2',
+  './styles/dynamic-island.css?v=island-8',
+  './src/ui/dynamic-island.js?v=island-8',
+  './src/modules/shell-and-theme.js?v=island-1',
+  './src/core/primitives.js?v=island-1',
+  './src/services/ai-assistant.js?v=island-8',
+  './src/boot/main.js?v=island-1',
+
   './src/modules/radar-and-optics.js?v=fleet-1',
   './src/modules/radio-and-youtube.js?v=fleet-1',
   './src/modules/anime-and-tv.js?v=fleet-1',
@@ -14,7 +32,7 @@ const CORE_ASSETS = [
   './assets/museum/renoir-two-sisters.webp',
   './assets/museum/hokusai-great-wave.webp',
   './styles/discovery-studios.css?v=museum-images-2',
-  './src/engines/window-manager.js?v=fleet-1',
+  './src/engines/window-manager.js?v=island-2',
   './styles/creative-studios.css?v=creative-compact-2',
   './src/modules/opensource-webapps-suite.js?v=fleet-1',
   './styles/synth-studio.css?v=synth-1',
@@ -149,7 +167,7 @@ const CORE_ASSETS = [
   './styles/project-and-lock.css?v=portrait-6',
   './src/ui/about-system.js?v=portrait-4',
   './src/ui/app-details.js?v=audit-2',
-  './src/services/workspace-lock.js?v=audit-2',
+  './src/services/workspace-lock.js?v=island-1',
   './assets/app-audit.json',
   './assets/project-metadata.json',
   './styles/core.css',
@@ -215,7 +233,7 @@ const CORE_ASSETS = [
   './assets/wallpapers/ocean.svg',
   './assets/wallpapers/iris.svg',
   './styles/verci-stage.css?v=native-map-7',
-  './styles/music-theater.css?v=stickersapi-31',
+  './styles/music-theater.css?v=discovery-6',
   './assets/whatsapp-chat-doodles.svg'
 ];
 
@@ -254,6 +272,10 @@ self.addEventListener('fetch', (event) => {
         }
         return res;
       })
-      .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+      .catch(() => caches.match(req).then(async cached => {
+        if(cached)return cached;
+        if(req.mode==='navigate')return (await caches.match('./index.html')) || new Response('Offline',{status:503});
+        return new Response('Asset unavailable offline',{status:503,headers:{'Content-Type':'text/plain'}});
+      }))
   );
 });

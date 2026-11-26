@@ -863,6 +863,22 @@ class WindowManager {
                     rotationY: 0,
                     skewX: 0
                 });
+                const islandOrigin = window.AetherIsland?.consumeLaunchRect?.(id);
+                const reduced = SystemState.settings.motion_intensity === 'off' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                if (islandOrigin && !reduced) {
+                    // Animate the real glass window from the companion bar;
+                    // avoid cloned strip meshes and their extra layout work.
+                    this._cancelGenie(id);
+                    gsap.set(el, {visibility:'visible',transformOrigin:'50% 0%'});
+                    return gsap.fromTo(el, {
+                        x:islandOrigin.x+islandOrigin.width/2-b.width/2,
+                        y:islandOrigin.y,
+                        scaleX:Math.max(.08,islandOrigin.width/b.width),
+                        scaleY:Math.max(.04,islandOrigin.height/b.height),
+                        opacity:.2,borderRadius:30
+                    }, {x:b.x,y:b.y,scaleX:1,scaleY:1,opacity:1,borderRadius:22,
+                        duration:.46,ease:'power3.out',onComplete:()=>gsap.set(el,{clearProps:'borderRadius,transformOrigin'})});
+                }
                 return this._animateGenie(el, id, 'in', {
                     target: this._genieTargetRect(id),
                     duration: 380

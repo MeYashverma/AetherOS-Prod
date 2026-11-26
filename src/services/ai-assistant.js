@@ -3,6 +3,10 @@
 (function(){
   const AETHER_MODEL_PRESETS = [
     { key:'auto', label:'Auto · Best local fit', approxSize:'--', approxVRAM:'--', ctx:2048, matcher:/.*/i, preferredIds: [] },
+    { key:'qwen35_08b', label:'Qwen 3.5 · 0.8B · balanced', approxSize:'Device-dependent', approxVRAM:'See runtime', ctx:2048, matcher:/qwen3\.5-0\.8b/i, preferredIds:['Qwen3.5-0.8B-q4f16_1-MLC'] },
+    { key:'qwen3_06b', label:'Qwen 3 · 0.6B · compact', approxSize:'Device-dependent', approxVRAM:'See runtime', ctx:2048, matcher:/qwen3-0\.6b/i, preferredIds:['Qwen3-0.6B-q4f16_1-MLC'] },
+    { key:'smol_135m', label:'SmolLM2 · 135M · smallest / basic', approxSize:'Device-dependent', approxVRAM:'See runtime', ctx:2048, matcher:/smollm2-135m/i, preferredIds:['SmolLM2-135M-Instruct-q0f16-MLC'] },
+    { key:'smol_360m', label:'SmolLM2 · 360M · lightweight', approxSize:'Device-dependent', approxVRAM:'See runtime', ctx:2048, matcher:/smollm2-360m/i, preferredIds:['SmolLM2-360M-Instruct-q4f16_1-MLC'] },
     { key:'llama32_1b', label:'Llama 3.2 1B Instruct', approxSize:'~0.8 GB', approxVRAM:'~2.2 GB', ctx:2048, matcher:/llama[-_ ]?3(?:\.|_)?2.*1b.*instruct/i, preferredIds:['Llama-3.2-1B-Instruct-q4f16_1-MLC','Llama-3.2-1B-Instruct-q4f32_1-MLC'] },
     { key:'phi3_mini', label:'Phi-3 Mini', approxSize:'~2.6-3.6 GB', approxVRAM:'~3.6-4.5 GB', ctx:4096, matcher:/phi[-_ ]?3.*mini.*instruct/i, preferredIds:['Phi-3-mini-4k-instruct-q4f16_1-MLC','Phi-3-mini-4k-instruct-q4f32_1-MLC','Phi-3.5-mini-instruct-q4f16_1-MLC'] },
     { key:'gemma_2b', label:'Gemma 2B', approxSize:'~1.5 GB', approxVRAM:'~3.0 GB', ctx:2048, matcher:/gemma.*2b.*(it|instruct)/i, preferredIds:['gemma-2b-it-q4f16_1-MLC','gemma-2b-it-q4f32_1-MLC','gemma-2-2b-it-q4f16_1-MLC'] },
@@ -157,7 +161,7 @@
     state: {
       status: 'idle',
       progress: 0,
-      progressText: 'Local model idle. First use will download and cache the model in your browser.',
+      progressText: 'Commands are ready. Use Model → Load local model for optional free-form AI.',
       selectedModelKey: 'auto',
       activeModelKey: '',
       activeModelId: '',
@@ -217,7 +221,7 @@
       if (log && !log.dataset.aetherLocalBoot) {
         log.dataset.aetherLocalBoot = '1';
         if (!this.conversation.length) {
-          log.innerHTML = '<div class="text-gray-500 leading-relaxed"><span class="text-os-accent">AETHER:</span> Local AI standby. Ask about AetherOS, open modules, switch themes, search local notes, or use voice / command mode.</div>';
+          log.innerHTML = '<div class="text-gray-500 leading-relaxed"><span class="text-os-accent">AETHER:</span> What would you like to do? Try “open weather” or “help”.</div>';
         }
       }
     },
@@ -397,10 +401,11 @@
 
     clearConversation: async function(){
       this.conversation = [];
-      try { await this.dbClear('messages'); } catch(_) {}
+      const cleared = this.dbClear('messages').catch(() => {});
       const log = document.getElementById('companion-chat-log');
       if (log) log.innerHTML = '<div class="text-gray-500 leading-relaxed"><span class="text-os-accent">AETHER:</span> Conversation archive cleared. Long-term local memory remains intact.</div>';
       this.renderStatus();
+      await cleared;
     },
 
     restoreConversationIntoLog: function(){
@@ -587,27 +592,25 @@
       await this.persistKV('selectedModelKey', this.state.selectedModelKey);
       const entry = this.getSelectedModelEntry();
       this.state.progressText = entry && entry.key !== 'auto'
-        ? `${entry.label} selected. Model will load lazily on first request.`
+        ? `${entry.label} selected. Choose Load local model to download and run it.`
         : 'Auto model selected. Aether will pick the best available local model.';
       this.renderStatus();
-      if (this.engine && !this.state.busy) {
-        try { await this.ensureEngine(true); } catch(e) { this.handleError(e); }
-      }
+      // Changing the selection does not download or reload anything implicitly.
     },
 
     loadWebLLMModule: async function(){
       if (this.module) return this.module;
       if (window.__AETHER_WEBLLM) {
         this.module = window.__AETHER_WEBLLM;
-        this.moduleURL = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm';
+        this.moduleURL = 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.89/+esm';
         this.buildModelCatalog();
         this.renderModelSelect();
         return this.module;
       }
       const urls = [
-        'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm',
-        'https://esm.run/@mlc-ai/web-llm',
-        'https://esm.sh/@mlc-ai/web-llm'
+        'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.89/+esm',
+        'https://esm.run/@mlc-ai/web-llm@0.2.89',
+        'https://esm.sh/@mlc-ai/web-llm@0.2.89'
       ];
       let lastErr = null;
       for (const url of urls) {
@@ -978,10 +981,48 @@
         || /\b(open|close|minimize|restore|switch theme|set theme|enable|disable|toggle)\b/.test(q);
     },
 
+    quickLocalReply: function(text){
+      if(this.state.modelLoading) return 'The local model is still loading. You can use app commands now, or wait for the download to finish.';
+      const retrieved = /\b(aether|workspace|module|settings|theme|notes|app)\b/i.test(text) ? this.buildRetrievedContext(text) : {hits:[]};
+      const hit = retrieved.hits?.[0];
+      if (hit && hit.score > 0.75) return `Local reference — ${hit.title}: ${aetherEllipsize(hit.text, 300)}`;
+      return 'I can open apps, change themes, find local notes, or check your workspace. Try “open weather” or “help”. For free-form AI answers, choose Model → Load local model. No model is running yet.';
+    },
+
+    loadModel: function(){
+      if(this._engineLoading) return this._engineLoading;
+      if(this.state.busy) return Promise.resolve();
+      this.state.modelLoading=true;this.renderStatus();
+      this._engineLoading=this.ensureEngine(true).catch(error=>{this.handleError(error);}).finally(()=>{this.state.modelLoading=false;this._engineLoading=null;this.renderStatus();});
+      return this._engineLoading;
+    },
+
     maybeDirectCommand: async function(text){
       const raw = String(text || '').trim();
       const q = aetherNormalize(raw);
       if (!q) return null;
+      const arithmetic=raw.match(/^\s*(-?\d+(?:\.\d+)?)\s*([+*\/−-])\s*(-?\d+(?:\.\d+)?)\s*[=?]?\s*$/);
+      if(arithmetic){const a=Number(arithmetic[1]),b=Number(arithmetic[3]);const value=({'+':()=>a+b,'-':()=>a-b,'−':()=>a-b,'*':()=>a*b,'/':()=>a/b})[arithmetic[2]]();this.state.lastCalculation={a,b,operator:arithmetic[2],value};return {reply:Number.isFinite(value)?String(Number(value.toPrecision(12))):'That calculation is undefined.',actions:[]};}
+      if (/^(why|why is that|explain(?: that)?)[?!. ]*$/i.test(raw)) {
+        const c=this.state.lastCalculation;
+        if(c){const names={'+':'adding','-':'subtracting','−':'subtracting','*':'multiplying','/':'dividing'};return {reply:Number.isFinite(c.value)?`I was ${names[c.operator]} ${c.a} and ${c.b}: ${c.a} ${c.operator} ${c.b} = ${Number(c.value.toPrecision(12))}.`:'Division by zero has no finite result.',actions:[]};}
+        return {reply:'Do you mean my last answer? Tell me which part felt wrong and I’ll clarify. I can explain workspace features locally; general reasoning needs a loaded model.',actions:[]};
+      }
+      this.state.lastCalculation=null;
+      if (/^(what(?:'s| is) playing|what are we listening to|what song is this)[?!. ]*$/i.test(raw)) {
+        const current=window.AetherMusic?.getActivity?.();
+        if(current?.active)return {reply:`${current.playing?'Playing':'Selected'} “${current.title}” by ${current.artist||'an unknown artist'}. ${current.lines.length?'The companion music card follows this player’s lyric timeline.':'No lyrics are loaded for this recording yet.'}`,actions:[]};
+        const track=os._currentTrackAudio;
+        if(track)return {reply:`The player has “${track.track}” by ${track.artist||'an unknown artist'} selected. Open the music card for lyrics; embedded playback may not expose its current position.`,actions:[]};
+        if(os.audioStream?.src&&os._rbNowPlaying)return {reply:`${os.audioStream.paused?'Paused on':'Tuned in to'} ${os._rbNowPlaying.name}. The stream provides a station name, not the current song title, so I can’t identify the song from that alone.`,actions:[]};
+        return {reply:'Nothing is loaded in the connected player. Open Music or Radio and choose something—we can set the mood from there.',actions:[]};
+      }
+      if (/^(vibe with me|let(?:’|')?s vibe|show lyrics)[?!. ]*$/i.test(raw)) return {reply:'Let’s put something on. Choose a track in Music; I’ll bring its available lyrics into my music card. I can browse lyrics without a clock, but won’t pretend they’re synced.',actions:[{action:'openModule',target:'media'}]};
+      if (/^(can you speak|speak to me|talk to me)[?!. ]*$/i.test(raw)) return {reply:'Yes. Turn on Voice beside my face for spoken replies, or press Read reply to hear just this message. Your browser provides the voice; no microphone is needed to listen.',actions:[]};
+      if (/^(what|what do you mean|huh)[?!. ]*$/i.test(raw)) return {reply:'That was unclear—sorry. Basic calculations and workspace commands work offline. General conversation needs a loaded model: open Model, choose a size, then Load local model.',actions:[]};
+      if (/^(hi|hello|hey|hiya|good morning|good evening)[!. ]*$/i.test(raw)) return {reply:'Hi! What would you like to do?',actions:[]};
+      if (/^(thanks|thank you|thx)[!. ]*$/i.test(raw)) return {reply:'You’re welcome.',actions:[]};
+      if (/^(who are you|what can you do)[?!. ]*$/i.test(raw)) return {reply:'I’m Aether, your workspace companion. I can open apps, change themes and find local notes instantly. Free-form AI is optional under Model.',actions:[]};
       const structured = aetherSafeJsonParse(raw);
       if (structured && structured.action) {
         return { reply:'Executing structured local action.', actions:[structured] };
@@ -1085,6 +1126,7 @@
       if (kind === 'openModule') {
         const target = this.resolveModuleTarget(a.target);
         if (target && SystemState.windows[target]) {
+          window.AetherIsland?.prepareLaunch?.(target);
           os.openWindow(target);
           this.bumpModuleUsage(target);
           ok = true; label = `openModule(${target})`;
@@ -1212,6 +1254,7 @@
     },
 
     maybeSpeakResponse: function(text){
+      if(window.AetherIsland?.speakReply){window.AetherIsland.speakReply(text);return;}
       if (this.state.lastUsedVoice) {
         os.speak(text, { force: true, interrupt: true, rate: 0.92, pitch: 0.86, volume: 0.88 });
         return;
@@ -1222,6 +1265,9 @@
     },
 
     renderStatus: function(){
+      window.dispatchEvent(new CustomEvent('aether:assistant-status', {detail:{busy:!!this.state.busy,loading:!!this.state.modelLoading,status:this.state.status,voice:this.state.voiceStatus,progress:this.state.progressText}}));
+      const loadButton = document.getElementById('island-load-model');
+      if(loadButton){loadButton.disabled=!!this.state.modelLoading||!!this.state.busy;loadButton.textContent=this.state.modelLoading?'Loading…':this.engine?'Reload selected model':'Load local model';}
       const entry = this.getSelectedModelEntry() || AETHER_MODEL_PRESETS[0];
       const modelLabel = document.getElementById('aether-ai-model-label');
       const speedLabel = document.getElementById('aether-ai-speed-label');
@@ -1259,6 +1305,7 @@
       if (voiceWrap) voiceWrap.classList.toggle('active', /listening|ptt|speaking/i.test(displayVoiceStatus));
       if (listenBtn) listenBtn.classList.toggle('active', !!this.voice.continuous);
       if (pttBtn) pttBtn.classList.toggle('active', !!this.voice.pushToTalk);
+      for (const button of [pttBtn,listenBtn]) if(button){button.disabled=!this.voice.supported;button.title=this.voice.supported?(button===pttBtn?'Hold to talk':'Toggle continuous listening'):'Speech recognition is not supported in this browser';}
       if (detailsBtn) detailsBtn.classList.toggle('active', !this.state.compactUI);
       this.paintMicMeter(this.state.micLevel || 0);
     },
@@ -1306,7 +1353,7 @@
       this.state.lastUsedVoice = !!(opts && opts.usedVoice);
       this.state.tps = 0;
       os.companionChatAppend('YOU', raw);
-      await this.persistMessage('user', raw, 'good');
+      void this.persistMessage('user', raw, 'good').catch(() => {});
       os.companionSetThinking(true);
       this.state.busy = true;
       this.state.progressText = 'Building live system context and local retrieval set...';
@@ -1317,11 +1364,11 @@
           const results = [];
           if (direct.actions && direct.actions.length) {
             for (const action of direct.actions) results.push(await this.executeAction(action));
-            this.renderExecutionSummary(results);
+            if(results.some(result=>!result.ok)) this.renderExecutionSummary(results);
           }
           if (direct.reply) {
             os.companionChatAppend('AETHER', direct.reply, results.length ? (results.every(r => r.ok) ? 'good' : 'warn') : 'good');
-            await this.persistMessage('assistant', direct.reply, results.length ? (results.every(r => r.ok) ? 'good' : 'warn') : 'good', { actions: results });
+            void this.persistMessage('assistant', direct.reply, results.length ? (results.every(r => r.ok) ? 'good' : 'warn') : 'good', { actions: results }).catch(() => {});
             this.maybeSpeakResponse(direct.reply);
           }
           this.state.progressText = results.length ? 'Direct command executed through local control layer.' : 'Resolved from local context without model download.';
@@ -1329,31 +1376,19 @@
           return;
         }
 
-        let engine = null;
-        try {
-          engine = await this.ensureEngine(false);
-        } catch (engineErr) {
-          // Graceful deterministic local fallback when WebGPU / WebLLM is unavailable
-          let fallbackReply = '';
-          if (typeof os._legacyCompanionChatReply === 'function') {
-            const legacy = await Promise.resolve(os._legacyCompanionChatReply(raw));
-            fallbackReply = typeof legacy === 'string' ? legacy : (legacy && legacy.text ? legacy.text : '');
-          }
-          if (!fallbackReply) {
-            const retrieved = this.buildRetrievedContext(raw);
-            fallbackReply = retrieved.hits.length
-              ? `${retrieved.hits[0].title}: ${aetherEllipsize(retrieved.hits[0].text, 220)}`
-              : `Local WebGPU model unavailable (${engineErr && engineErr.message ? engineErr.message : 'no WebGPU'}). Direct OS commands (e.g. "open weather", "switch to synthwave theme", "status") remain fully active.`;
-          }
-          os.companionChatAppend('AETHER', fallbackReply, 'normal');
-          await this.persistMessage('assistant', fallbackReply, 'normal', { fallback: true });
-          this.maybeSpeakResponse(fallbackReply);
-          this.state.progressText = 'Responded via built-in deterministic local engine (WebGPU idle/unavailable).';
-          this.renderCommandChips();
+        // Never turn a casual message into an implicit model download or wait
+        // for a failed remote import. Model loading is an explicit user action.
+        const engine = this.engine;
+        if (!engine || this.state.modelLoading) {
+          const reply = this.quickLocalReply(raw);
+          os.companionChatAppend('AETHER', reply, 'normal');
+          void this.persistMessage('assistant', reply, 'normal', {mode:'local-help'}).catch(() => {});
+          this.maybeSpeakResponse(reply);
+          this.state.progressText = 'Local help · no model request or download.';
           return;
         }
         const context = this.buildSystemContext();
-        const retrieved = await this.buildRetrievedContextAsync(raw, engine);
+        const retrieved = this.buildRetrievedContext(raw);
         const history = this.buildHistoryForModel(raw);
         let actionResults = [];
         let planner = null;
@@ -1377,11 +1412,12 @@
         const streamRow = this.createStreamingRow();
         const started = performance.now();
         let finalText = '';
+        let lastStatusPaint = 0;
         const stream = await engine.chat.completions.create({
           messages: modelMessages,
           stream: true,
           temperature: 0.45,
-          max_tokens: 320
+          max_tokens: 192
         });
 
         for await (const chunk of stream) {
@@ -1392,7 +1428,7 @@
           const elapsed = Math.max(0.35, (performance.now() - started) / 1000);
           this.state.tps = aetherApproxTokens(finalText) / elapsed;
           this.state.progressText = 'Streaming locally...';
-          this.renderStatus();
+          if (performance.now() - lastStatusPaint > 120) {this.renderStatus();lastStatusPaint=performance.now();}
         }
 
         finalText = String(finalText || planner && planner.reply || '').trim();
@@ -1406,7 +1442,7 @@
           if (streamRow) streamRow.text.textContent = finalText;
         }
 
-        await this.persistMessage('assistant', finalText, actionResults.length ? 'good' : 'normal', { actions: actionResults, retrieved: retrieved.hits.map(h => h.id) });
+        void this.persistMessage('assistant', finalText, actionResults.length ? 'good' : 'normal', { actions: actionResults, retrieved: retrieved.hits.map(h => h.id) }).catch(() => {});
         if (os.companion && os.companion.getEmotionFromText && os.companion.triggerAvatarEmotion) {
           os.companion.triggerAvatarEmotion(os.companion.getEmotionFromText(finalText));
         }
@@ -1434,9 +1470,10 @@
           }
           return { text: direct.reply || 'Done.', tone: results.length ? (results.every(r => r.ok) ? 'good' : 'warn') : 'good' };
         }
-        const engine = await this.ensureEngine(false);
+        if (!this.engine || this.state.modelLoading) return {text:this.quickLocalReply(text),tone:'normal'};
+        const engine = this.engine;
         const context = this.buildSystemContext();
-        const retrieved = await this.buildRetrievedContextAsync(text, engine);
+        const retrieved = this.buildRetrievedContext(text);
         const response = await engine.chat.completions.create({
           messages: [
             { role:'system', content: this.buildAssistantPrompt(context, retrieved.text, text, []) },

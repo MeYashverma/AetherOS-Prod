@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="styles/modules-and-overlays.css">
     <link rel="stylesheet" href="styles/liquid-glass.css?v=desktop-9">
     <link rel="stylesheet" href="styles/verci-stage.css?v=native-map-7">
-    <link rel="stylesheet" href="styles/music-theater.css?v=stickersapi-31">
+    <link rel="stylesheet" href="styles/music-theater.css?v=discovery-6">
     <link rel="stylesheet" href="styles/system-glass.css?v=desktop-9">
     <link rel="stylesheet" href="styles/project-and-lock.css?v=portrait-6">
     <link rel="stylesheet" href="styles/app-studios.css?v=studios-4">
@@ -49,6 +49,8 @@
     <link rel="stylesheet" href="styles/discovery-studios.css?v=museum-images-2">
     <link rel="stylesheet" href="styles/remaining-app-workspaces.css?v=fleet-1">
     <link rel="stylesheet" href="styles/shader-studio.css?v=shader-1">
+    <link rel="stylesheet" href="styles/dynamic-island.css?v=island-8">
+    <link rel="stylesheet" href="styles/music-glass.css?v=music-glass-1">
 </head>
 <body class="bg-[#0a0e1a]">
 
@@ -70,264 +72,54 @@
     <div class="ambient-overlay"></div>
     <div class="scanlines"></div>
 
-    <!-- Dock Tooltip -->
-    <div id="dock-tooltip" class="dock-tooltip"></div>
-    <!-- Dock Window Preview -->
-    <div id="dock-preview" class="dock-preview"></div>
 
-    <!-- Main OS UI Layer -->
-    <div id="os-layer" class="w-full h-full flex flex-col">
-        
-        <!-- Top System Bar -->
-        <header class="w-full z-50 flex items-center justify-between px-2 select-none" style="height:36px" role="banner">
-            <div class="flex items-center h-full gap-0.5 min-w-0">
-                <button type="button" class="topbar-item" onclick="os.toggleAetherMenu(event)" aria-label="Apple System Menu" title="Apple Menu">
-                    <svg class="w-3.5 h-3.5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.35)]" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-                </button>
-                <button type="button" class="topbar-item font-semibold text-white text-[12px] truncate max-w-[140px] sm:max-w-none" id="active-app-name" style="letter-spacing:-0.02em" onclick="os.toggleFinder()" title="Open Module Launcher">AetherOS</button>
-                <div class="topbar-sep hidden sm:block"></div>
-                <div class="hidden md:flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07]" role="group" aria-label="Virtual Spaces">
-                    <button type="button" data-space-btn="1" onclick="os.switchSpace(1)" class="space-pill-btn active hover-target cursor-none" title="Space 01 (Ctrl+1)">1</button>
-                    <button type="button" data-space-btn="2" onclick="os.switchSpace(2)" class="space-pill-btn hover-target cursor-none" title="Space 02 (Ctrl+2)">2</button>
-                    <button type="button" data-space-btn="3" onclick="os.switchSpace(3)" class="space-pill-btn hover-target cursor-none" title="Space 03 (Ctrl+3)">3</button>
-                    <button type="button" onclick="os.toggleMissionControl()" class="space-pill-btn hover-target cursor-none ml-0.5" title="Mission Control (Ctrl+↑)" aria-label="Mission Control"><i data-lucide="layers" class="w-3 h-3"></i></button>
-                </div>
-                <div class="topbar-item text-[11px] hidden lg:flex" style="color:rgba(255,255,255,0.32)" id="window-count">0 Windows</div>
-                <button type="button" id="topbar-focus-pill" onclick="os.openWindow('focus')" style="display:none" class="topbar-item gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-200 text-[10.5px] font-mono hover-target cursor-none" title="Open Focus &amp; Soundscapes">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="topbar-focus-label">25:00</span>
-                </button>
-            </div>
-
-            <div class="hidden xl:flex items-center gap-3 px-2">
-                <div class="flex items-center gap-1.5 hover-target cursor-none" onclick="os.openWindow('sysmon')" style="opacity:0.7" role="button" tabindex="0" aria-label="Open System Diagnostics FPS">
-                    <span class="text-[9px]" style="color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace">FPS</span>
-                    <div id="top-fps-graph" class="topbar-graph-mini"><canvas id="top-fps-canvas" width="112" height="44"></canvas><div class="topbar-graph-label" id="top-fps-label">--</div></div>
-                </div>
-                <div class="flex items-center gap-1.5 hover-target cursor-none" onclick="os.openWindow('sysmon')" style="opacity:0.7" role="button" tabindex="0" aria-label="Open System Diagnostics Activity">
-                    <span class="text-[9px]" style="color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace">REQ</span>
-                    <div id="top-cpu-graph" class="topbar-graph-mini"><canvas id="top-cpu-canvas" width="112" height="44"></canvas><div class="topbar-graph-label" id="top-cpu-label">--%</div></div>
-                </div>
-                <div class="flex items-center gap-1.5 hover-target cursor-none" onclick="os.openWindow('sysmon')" style="opacity:0.7" role="button" tabindex="0" aria-label="Open System Diagnostics Memory">
-                    <span class="text-[9px]" style="color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace">MEM</span>
-                    <div id="top-ram-graph" class="topbar-graph-mini"><canvas id="top-ram-canvas" width="112" height="44"></canvas><div class="topbar-graph-label" id="top-ram-label">--%</div></div>
-                </div>
-                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="box-shadow:0 0 6px rgba(52,211,153,0.8)" title="Assistant Ready"></div>
-            </div>
-
-            <div class="flex items-center h-full gap-0.5">
-                <!-- Weather mini -->
-                <button type="button" class="topbar-item gap-1 hover-target cursor-none" id="top-weather-wrap" title="Weather Station" aria-label="Open Weather Station" onclick="os.openWindow('weather')">
-                    <span class="inline-flex items-center justify-center text-sky-300" id="topbar-weather-icon"><i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i></span>
-                    <span class="text-[11px]" style="font-weight:500;color:rgba(255,255,255,0.82)" id="topbar-weather-temp">--°C</span>
-                    <span class="text-[10px] hidden md:inline" style="color:rgba(255,255,255,0.38)" id="topbar-weather-desc">--</span>
-                </button>
-                <div class="topbar-sep hidden sm:block"></div>
-                <!-- WiFi -->
-                <div class="topbar-item gap-1.5 hidden sm:flex" id="top-wifi" title="Network Status">
-                    <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400" id="top-wifi-icon"></i>
-                    <span class="text-[10px] hidden md:inline" style="color:rgba(52,211,153,0.8)" id="top-wifi-ssid">WiFi</span>
-                </div>
-                <!-- Bluetooth -->
-                <div class="topbar-item gap-1.5 hidden md:flex" id="top-bluetooth" title="Bluetooth">
-                    <i data-lucide="bluetooth" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.3)" id="top-bt-icon"></i>
-                    <span class="text-[10px] hidden lg:inline" style="color:rgba(255,255,255,0.3)" id="top-bt-name">BT</span>
-                </div>
-                <!-- Battery -->
-                <div class="topbar-item gap-1.5 hidden sm:flex" id="top-battery" title="Battery">
-                    <i data-lucide="battery" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.45)" id="top-battery-icon"></i>
-                    <span class="text-[10px] hidden sm:inline" style="color:rgba(255,255,255,0.45)" id="top-battery-val">--%</span>
-                </div>
-                <!-- NoSleep -->
-                <button type="button" class="topbar-item gap-1 hover-target cursor-none hidden sm:flex" id="topbar-awake-widget" style="display:none" title="Screen Awake" aria-label="Toggle Screen Awake" onclick="os.toggleWakeLock()">
-                    <i data-lucide="sun" class="w-3 h-3" style="color:rgba(255,255,255,0.28)" id="top-awake-icon"></i>
-                    <span class="text-[9px] hidden md:inline" style="color:rgba(255,255,255,0.25);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em" id="top-awake-status">SLEEP</span>
-                </button>
-                <div class="topbar-sep hidden md:block" id="topbar-p2p-sep" style="display:none"></div>
-                <!-- Aether Bridge Indicator -->
-                <div id="ab-topbar-indicator" onclick="os.openWindow('aetherbridge')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Bridge">
-                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:indicatorPulse 2s infinite"></div>
-                    <span id="ab-topbar-label">BRIDGE</span>
-                </div>
-                <!-- Aether Link Indicator -->
-                <div id="al-topbar-indicator" onclick="os.openWindow('aetherlink')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Link">
-                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400" style="animation:indicatorPulse 2s infinite"></div>
-                    <span id="al-topbar-label">LINKED</span>
-                </div>
-                <div class="topbar-sep"></div>
-                <!-- Telemetry & Assistant Sidebar Toggle (Desktop & Mobile) -->
-                <button type="button" class="topbar-item" id="mobile-panel-toggle" onclick="os.toggleUtilityPanel()" aria-label="Toggle Telemetry & Assistant Sidebar" title="Telemetry & Assistant Sidebar">
-                    <i data-lucide="panel-right" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.72)"></i>
-                </button>
-                <button type="button" class="topbar-item relative" id="topbar-notif-btn" onclick="os.toggleNotificationCenter(event)" aria-label="Notification Center" title="Notification Center">
-                    <i data-lucide="bell" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.65)"></i>
-                    <span id="notif-unread-dot" class="hidden w-1.5 h-1.5 rounded-full bg-cyan-400 absolute top-1 right-1"></span>
-                </button>
-                <button type="button" class="topbar-item gap-1.5" onclick="os.toggleControlCenter(event)" aria-label="Control Center" title="Control Center">
-                    <i data-lucide="sliders" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.65)"></i>
-                </button>
-                <div class="topbar-sep"></div>
-                <button type="button" class="topbar-item font-medium hover-target cursor-none" id="sys-clock" onclick="os.toggleCalendarPopover && os.toggleCalendarPopover()" title="Calendar, Agenda &amp; World Clocks" aria-label="Open Calendar and World Clocks" style="font-size:12px;letter-spacing:-0.01em;color:rgba(255,255,255,0.88);font-variant-numeric:tabular-nums">00:00:00</button>
-            </div>
-        </header>
-        <div id="mobile-panel-backdrop" onclick="os.toggleMobileUtilityPanel(false)"></div>
-
-
-        <!-- Main Workspace Area -->
-        <div class="flex-1 flex relative overflow-hidden" id="workspace">
-            <!-- Left Navigation Rail removed — modules accessed via Dock Finder -->
-
-            <!-- Window Canvas -->
-            <main class="flex-1 relative" id="window-canvas">
-                <!-- Desktop Anime Quote Widget — Opt-in via Settings -> Desktop Extras -->
-                <div id="desktop-quote-widget" onclick="os.fetchAnimeQuote()" title="Click to refresh quote" style="position:absolute;top:16px;left:16px;max-width:320px;padding:16px 18px;border-radius:16px;background:rgba(8,8,12,0.72);border:1px solid rgba(255,255,255,0.07);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);display:none;z-index:0;pointer-events:auto;cursor:none;transition:border-color 0.2s,box-shadow 0.2s,top 0.4s,bottom 0.4s,left 0.4s,right 0.4s,transform 0.4s;user-select:text" onmouseenter="this.style.borderColor='rgba(255,255,255,0.14)';this.style.boxShadow='0 10px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.07)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06)'">
-                    <div class="quote-bg-layer" id="quote-bg-layer" style="display:none">
-                        <img id="quote-bg-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.55">
-                        <div class="quote-bg-overlay" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.65))"></div>
-                    </div>
-                    <div class="quote-text-layer" id="quote-text-layer" style="position:relative;z-index:1">
-                        <div style="font:400 12px/1.65 'Inter',sans-serif;color:rgba(255,255,255,0.78);letter-spacing:-0.01em;margin-bottom:10px;font-style:italic" id="desktop-quote-text">"Loading quote..."</div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-                            <span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,0.45);letter-spacing:-0.01em" id="desktop-quote-character">--</span>
-                            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,0.28);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right" id="desktop-quote-anime">--</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Windows Rendered Here -->
-            </main>
-
-            <!-- Right Utility Panel (Telemetry widgets) -->
-            <aside id="right-utility-panel" class="w-[22rem] h-full border-l border-white/[0.05] hidden lg:flex flex-col gap-3 z-40 overflow-y-auto min-h-0" style="background:rgba(5,5,8,0.96);padding:14px 12px 16px">
-                <div class="flex items-center gap-2 mb-1 px-0.5">
-                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style="box-shadow:0 0 6px rgba(52,211,153,0.6)"></div>
-                    <div style="font:500 9px 'JetBrains Mono',monospace;color:rgba(255,255,255,0.30);text-transform:uppercase;letter-spacing:0.18em">Telemetry</div>
-                    <div class="flex-1 h-px" style="background:linear-gradient(90deg,rgba(255,255,255,0.08),transparent)"></div>
-                </div>
-                
-                <!-- Network IO — Collapsible with real-time graphics -->
-                <div class="rounded-xl border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] overflow-hidden" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15))" id="net-io-card">
-                    <div class="flex justify-between items-center p-3.5 pb-2 cursor-pointer hover-target" id="net-io-header" onclick="os.toggleNetIO()">
-                        <span class="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
-                            <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>Network IO
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.6)]"></span>
-                                <span class="text-[9px] font-mono text-green-400 font-medium" id="net-io-live-lbl">LIVE</span>
-                            </div>
-                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 transition-transform duration-200" id="net-io-chevron"></i>
-                        </div>
-                    </div>
-                    <!-- Collapsed: summary bar -->
-                    <div class="px-3.5 pb-2 flex items-center gap-3 text-[9px] font-mono" id="net-io-summary">
-                        <span class="text-green-400 font-bold" id="net-io-dl-mini">-- Mbps</span>
-                        <span class="text-gray-600">|</span>
-                        <span class="text-white" id="net-io-rtt-mini">--ms</span>
-                        <span class="text-gray-600">|</span>
-                        <span class="text-blue-400" id="net-io-type-mini">--</span>
-                        <span class="text-gray-600">|</span>
-                        <span class="text-purple-400" id="net-io-transferred-mini">-- KB</span>
-                    </div>
-                    <!-- Expanded: full details -->
-                    <div class="px-3.5 pb-3.5 space-y-2 hidden" id="net-io-details">
-                        <div class="flex items-end gap-[2px] h-16 w-full overflow-hidden rounded-md bg-black/30 border border-white/[0.04] p-1.5" id="mini-chart"></div>
-                        <div class="grid grid-cols-2 gap-1.5 text-[9px] font-mono">
-                            <div class="flex flex-col gap-0.5 p-1.5 rounded-md bg-black/20 border border-white/[0.03]">
-                                <span class="text-gray-500 text-[8px] uppercase tracking-wider">Downlink</span>
-                                <span class="text-green-400 font-bold text-[10px]" id="net-io-dl">-- Mbps</span>
-                            </div>
-                            <div class="flex flex-col gap-0.5 p-1.5 rounded-md bg-black/20 border border-white/[0.03]">
-                                <span class="text-gray-500 text-[8px] uppercase tracking-wider">RTT</span>
-                                <span class="text-white font-bold text-[10px]" id="net-io-rtt">--ms</span>
-                            </div>
-                            <div class="flex flex-col gap-0.5 p-1.5 rounded-md bg-black/20 border border-white/[0.03]">
-                                <span class="text-gray-500 text-[8px] uppercase tracking-wider">Type</span>
-                                <span class="text-blue-400 font-bold text-[10px]" id="net-io-type">--</span>
-                            </div>
-                            <div class="flex flex-col gap-0.5 p-1.5 rounded-md bg-black/20 border border-white/[0.03]">
-                                <span class="text-gray-500 text-[8px] uppercase tracking-wider">Avg Latency</span>
-                                <span class="text-yellow-400 font-bold text-[10px]" id="net-io-avglatency">--ms</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 text-[8px] font-mono text-gray-500">
-                            <div class="flex-1 flex items-center gap-1 px-1.5 py-1 rounded bg-black/20 border border-white/[0.03]">
-                                <i data-lucide="arrow-up-right" class="w-2.5 h-2.5 text-purple-400/70"></i>
-                                <span id="net-io-reqs">--</span> reqs
-                            </div>
-                            <div class="flex-1 flex items-center gap-1 px-1.5 py-1 rounded bg-black/20 border border-white/[0.03]">
-                                <i data-lucide="hard-drive" class="w-2.5 h-2.5 text-purple-400/70"></i>
-                                <span id="net-io-transferred" class="text-purple-400">-- KB</span>
-                            </div>
-                        </div>
-                        <div class="pt-1.5 border-t border-white/[0.05] flex justify-between items-center text-[8px] font-mono">
-                            <span id="net-io-ul" class="text-gray-500">Upload: --</span>
-                            <span id="net-io-status" class="text-emerald-400 flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-emerald-400"></span>Connected</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Combined Media Widget (Music + World Radio) -->
-                <div class="rounded-xl border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] overflow-hidden" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15))">
-                    <div class="flex justify-between items-center px-3.5 pt-3 pb-1.5">
-                        <span class="text-[10.5px] font-medium text-white/80 flex items-center gap-1.5">
-                            <i data-lucide="headphones" class="w-3.5 h-3.5 text-amber-300/80"></i>Audio &amp; Radio
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" id="mini-stream-indicator"></span>
-                            <span class="w-2 h-2 rounded-full bg-gray-600" id="sidebar-radio-status"></span>
-                        </div>
-                    </div>
-                    <!-- Now Playing row -->
-                    <div class="px-3.5 py-1.5 cursor-none hover-target" onclick="os.openWindow('media')">
-                        <div class="flex gap-2.5 items-center">
-                            <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.06]">
-                                <img id="mini-cover-art" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Cover">
-                                <i id="mini-cover-fallback" data-lucide="music" class="w-4 h-4 text-white/25"></i>
-                            </div>
-                            <div class="overflow-hidden flex-1 min-w-0">
-                                <div class="text-[10px] text-gray-500">Music &amp; Podcasts</div>
-                                <div class="text-[11px] text-white font-semibold truncate" id="mini-track-title">Not Playing</div>
-                                <div class="text-[10px] text-gray-500 truncate" id="mini-artist-name">Click to open player</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mx-3.5 h-px bg-white/[0.04]"></div>
-                    <!-- Radio row -->
-                    <div class="px-3.5 py-1.5 cursor-none hover-target" onclick="os.openWindow('radiobrowser')">
-                        <div class="flex gap-2.5 items-center">
-                            <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.08]" id="sidebar-radio-icon-container">
-                                <img id="sidebar-radio-icon" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Station">
-                                <i id="sidebar-radio-fallback" data-lucide="radio-tower" class="w-4 h-4 text-white/25"></i>
-                            </div>
-                            <div class="overflow-hidden flex-1 min-w-0">
-                                <div class="text-[10px] text-gray-500">World Radio</div>
-                                <div class="text-[11px] text-white font-semibold truncate" id="sidebar-radio-name">Not Playing</div>
-                                <div class="text-[10px] text-gray-500 truncate" id="sidebar-radio-tags">Browse 30,000+ stations</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Discord Presence Sidebar Widget -->
-                <div id="sidebar-discord-card" class="rounded-xl p-3.5 border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] cursor-none hover-target transition-all duration-200 hover:border-white/[0.12] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.03)]" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15));display:none" onclick="os.openWindow('presence')">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10.5px] font-medium text-white/80 flex items-center gap-1.5">
-                            <i data-lucide="user" class="w-3 h-3 text-indigo-400/80"></i>Discord Presence
-                        </span>
-                        <span class="w-2 h-2 rounded-full bg-gray-600" id="sidebar-discord-status"></span>
-                    </div>
-                    <div class="flex gap-2.5 items-center">
-                        <div class="w-11 h-11 rounded-full bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.08]" id="sidebar-discord-avatar-container">
-                            <img id="sidebar-discord-avatar" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Avatar">
-                            <i id="sidebar-discord-fallback" data-lucide="user" class="w-5 h-5 text-white/25"></i>
-                        </div>
-                        <div class="overflow-hidden flex-1 min-w-0">
-                            <div class="text-[11px] text-white font-semibold truncate" id="sidebar-discord-name">Not Connected</div>
-                            <div class="text-[10px] text-gray-500 truncate" id="sidebar-discord-activity">Click to set Discord ID</div>
-                        </div>
-                    </div>
-                </div>
-
+    <!-- Dynamic Island–inspired live activity, connected to real local events. -->
+    <div id="island-satellites" aria-label="Live activity shortcuts"><button type="button" id="island-actions-satellite" aria-label="Open quick actions" title="Quick actions · Alt+."><svg class="island-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/></svg></button></div>
+    <section id="aether-island" aria-label="Aether companion and live activity" data-state="idle">
+      <button type="button" id="island-toggle" aria-expanded="false" aria-controls="island-panel"><span id="companion-face" class="island-face" aria-hidden="true">
+          <svg class="aether-avatar" viewBox="0 0 80 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="avatar-shell" x1="17" y1="5" x2="64" y2="70" gradientUnits="userSpaceOnUse"><stop stop-color="#F1FCFF"/><stop offset=".4" stop-color="#BCD4DE"/><stop offset="1" stop-color="#6D93A7"/></linearGradient>
+              <linearGradient id="avatar-visor" x1="30" y1="17" x2="50" y2="57" gradientUnits="userSpaceOnUse"><stop stop-color="#213E50"/><stop offset="1" stop-color="#091925"/></linearGradient>
+              <linearGradient id="avatar-eye" x1="0" y1="26" x2="0" y2="46" gradientUnits="userSpaceOnUse"><stop stop-color="#E4FFFA"/><stop offset="1" stop-color="#6BD9CD"/></linearGradient>
+            </defs>
+            <ellipse class="avatar-shadow" cx="40" cy="71" rx="22" ry="3" fill="#020D18" opacity=".22"/>
+            <g class="avatar-head">
+              <path class="avatar-shell" d="M40 6C17 6 7 17 7 36c0 21 11 31 33 31s33-10 33-31C73 17 63 6 40 6Z" fill="url(#avatar-shell)" stroke="#E5FAFF" stroke-opacity=".65"/>
+              <path d="M17 21C21 13 29 11 40 11c12 0 20 3 25 11" stroke="white" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round"/>
+              <path class="avatar-visor" d="M40 18c-17 0-26 5-26 18 0 15 8 22 26 22s26-7 26-22c0-13-9-18-26-18Z" fill="url(#avatar-visor)" stroke="#4A7183" stroke-width="1.2"/>
+              <path d="M21 27c7-6 27-8 38-1" stroke="#D4FFFF" stroke-opacity=".1" stroke-width="2" stroke-linecap="round"/>
+              <g class="avatar-gaze">
+                <g class="avatar-eye avatar-eye-left"><ellipse cx="29" cy="36" rx="6" ry="8" fill="url(#avatar-eye)"/><ellipse class="avatar-pupil" cx="30" cy="37" rx="2.4" ry="3.8" fill="#15454F"/><circle cx="27.5" cy="32.5" r="1.7" fill="white" opacity=".95"/></g>
+                <g class="avatar-eye avatar-eye-right"><ellipse cx="51" cy="36" rx="6" ry="8" fill="url(#avatar-eye)"/><ellipse class="avatar-pupil" cx="50" cy="37" rx="2.4" ry="3.8" fill="#15454F"/><circle cx="49.5" cy="32.5" r="1.7" fill="white" opacity=".95"/></g>
+                <path class="avatar-brow avatar-brow-left" d="m23 24 10-1" stroke="#9ED7DC" stroke-width="1.6" stroke-linecap="round"/>
+                <path class="avatar-brow avatar-brow-right" d="m47 23 10 1" stroke="#9ED7DC" stroke-width="1.6" stroke-linecap="round"/>
+                <path class="avatar-smile" d="M35 48q5 5 10 0" stroke="#A6E9DB" stroke-width="2" stroke-linecap="round"/>
+                <ellipse class="avatar-speaking-mouth" cx="40" cy="49" rx="4" ry="4" fill="#B9F9E9"/>
+              </g>
+              <path d="M31 63h18" stroke="#E1F7FF" stroke-opacity=".45" stroke-linecap="round"/>
+              <circle class="avatar-status-light" cx="40" cy="62" r="1.3" fill="#68BCA8"/>
+            </g>
+          </svg><span class="companion-emote"></span></span><span id="island-label">Ask Aether</span><span id="island-trailing" aria-hidden="true">✦</span></button>
+      <div id="island-announcer" class="island-sr" role="status" aria-live="polite" aria-atomic="true"></div>
+      <button type="button" id="island-alert-peek" hidden aria-label="Read latest live alert"><span id="island-alert-message"></span><span aria-hidden="true">↗</span></button>
+      <div id="island-panel" hidden>
+        <nav class="island-tabs" aria-label="Island views"><button type="button" data-island-tab="assistant" aria-pressed="true">Assistant</button><button type="button" data-island-tab="activity" aria-pressed="false">Live activity <span id="island-event-count">0</span></button><button type="button" id="island-model-toggle" aria-expanded="false" aria-controls="aether-chat-status-wrap">Model</button><button type="button" data-island-tab="actions" id="island-actions-tab" aria-pressed="false" title="Quick actions" aria-label="Quick actions"><svg class="island-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/></svg></button><button type="button" id="island-close" aria-label="Collapse island"><svg class="island-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></nav>
+        <div id="island-actions-view" hidden>
+          <section class="island-focus-deck" aria-label="Focus session controls">
+            <div class="island-focus-dial" id="island-focus-dial"><span aria-hidden="true">◷</span><strong id="island-deck-time">25:00</strong><small id="island-deck-state">Ready to focus</small></div>
+            <div class="island-focus-options"><span class="island-section-label">MAKE SOME SPACE</span><button type="button" id="island-start-focus">Start 25 min <span>↗</span></button><button type="button" id="island-start-break">Take 5 min <span>↗</span></button><button type="button" id="island-open-focus">Open Focus Studio</button></div>
+          </section>
+          <section id="island-audio-deck" hidden class="island-audio-deck"><div class="island-audio-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div><span class="island-section-label">AUDIO TRANSPORT</span><strong id="island-deck-track">Audio</strong></div><button type="button" id="island-audio-toggle">Pause</button><label>Volume <input id="island-volume" type="range" min="0" max="1" step="0.01" aria-label="Audio volume"></label></section>
+          <div class="island-launch-grid" aria-label="Quick actions"><button type="button" data-island-launch="filemanager"><span aria-hidden="true">↗</span>Files<small>Your archive</small></button><button type="button" data-island-launch="taskmanager"><span aria-hidden="true">▦</span>Windows<small>Manage workspace</small></button><button type="button" id="island-open-launcher"><span aria-hidden="true">⌕</span>Find an app<small>Module launcher</small></button><button type="button" id="island-new-chat"><span aria-hidden="true">↺</span>New chat<small>Clear conversation</small></button></div>
+          <section class="island-agents"><span class="island-section-label">WORKSPACE AGENTS · REVIEW BEFORE RUNNING</span><button type="button" data-island-agent="write">Writing desk <small>Notes + Focus · 2 steps</small></button><button type="button" data-island-agent="research">Research desk <small>Browser + WikiBoard + Notes · 3 steps</small></button><p id="island-agent-status" role="status">Bounded local workflows. No background browsing or file edits.</p></section><p class="island-shortcut-hint">Alt+A · assistant <span>Alt+. · actions</span></p>
+        </div>
+        <div id="island-assistant-view"><div class="companion-portrait"><span id="companion-face-slot"></span><div><strong>Aether<span class="companion-presence"> ON DEVICE</span></strong><p id="companion-mood" role="status">Curious · ready when you are</p></div><button type="button" id="companion-voice-toggle" aria-pressed="false" title="Enable spoken replies">Voice off</button></div>
+          <div class="companion-voice-tools"><button type="button" id="companion-replay">Read reply</button><button type="button" id="companion-stop">Stop</button><label>Voice <select id="companion-voice-select" aria-label="Companion speaking voice"><option value="">System default</option></select></label></div>
+          <div id="companion-speech-caption" hidden aria-label="Current spoken words"><span class="companion-speech-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><p id="companion-spoken-words"></p></div>
+          <p id="companion-voice-status" class="companion-caption" role="status">Spoken replies are off. Turn on Voice to hear Aether.</p>
+          <section id="companion-soundstage" hidden aria-label="Music and lyrics"><div class="soundstage-glow" aria-hidden="true"></div><div class="soundstage-heading"><img id="companion-track-art" hidden alt="" referrerpolicy="no-referrer"><span class="soundstage-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><div><small id="companion-music-kind">NOW PLAYING</small><strong id="companion-track"></strong></div><button type="button" id="companion-music-toggle" hidden aria-label="Pause music">Ⅱ</button><button type="button" id="companion-open-media" title="Open music player" aria-label="Open music player">↗</button></div><progress id="companion-music-progress" hidden aria-label="Song playback position"></progress><p id="companion-lyric" aria-live="off"></p><p id="companion-lyric-next" aria-hidden="true"></p><footer><span id="companion-lyrics-source"></span><span><button type="button" id="companion-lyric-prev" aria-label="Previous lyric">‹</button><button type="button" id="companion-lyric-forward" aria-label="Next lyric">›</button></span></footer></section>
+          <p id="companion-reaction" class="companion-reaction" role="status" hidden></p>
                 <!-- Aether Companion Chat Block — sits directly above CMD Palette -->
                 <div class="aether-chat-shell rounded-xl mt-auto overflow-hidden compact-ui" id="companion-chat-block">
                     <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between bg-black/20">
@@ -371,14 +163,14 @@
                             </select>
                             <span class="aether-chat-inline-status" id="aether-ai-voice-status"><i data-lucide="mic" class="w-3.5 h-3.5"></i><span id="aether-ai-voice-status-label">VOICE OFF</span></span>
                         </div>
-                        <div class="aether-chat-progress"><div id="aether-ai-progress-bar"></div></div>
+                        <p class="island-model-note">Optional on-device AI. Loading may download a large model; everyday commands need no download.</p><button type="button" id="island-load-model" onclick="os.aiAssistant?.loadModel()">Load local model</button><div class="aether-chat-progress"><div id="aether-ai-progress-bar"></div></div>
                         <div class="flex items-center justify-between gap-2 text-[9px] font-mono text-gray-500 min-w-0">
-                            <div id="aether-ai-status-text" class="truncate flex-1 min-w-0">Local model idle. First use will download and cache in your browser.</div>
+                            <div id="aether-ai-status-text" class="truncate flex-1 min-w-0">Commands are ready. Load a model only when you need free-form AI.</div>
                             <div class="aether-mic-meter" id="aether-ai-mic-meter"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                         </div>
                     </div>
                     <div id="companion-chat-log" class="aether-chat-log overflow-y-auto no-scrollbar p-3 space-y-2 text-[12px] font-mono">
-                        <div class="text-gray-500 leading-relaxed"><span class="text-os-accent font-bold">AETHER:</span> Local AI standby. Ask about AetherOS, open modules, switch themes, search local notes, or use voice / command mode.</div>
+                        <div class="text-gray-500 leading-relaxed"><span class="text-os-accent font-bold">AETHER:</span> What would you like to do? Try “open weather” or “help”.</div>
                     </div>
                     <div id="aether-chat-chip-row" class="px-3 py-1.5 border-t border-white/5 flex gap-1.5 overflow-x-auto no-scrollbar bg-black/20 text-[10px] font-mono">
                         <button onclick="os.companionChatQuick('open music')" class="aether-chat-chip hover-target">music</button>
@@ -399,6 +191,164 @@
                         <button onclick="os.companionChatSend()" class="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white hover-target cursor-none transition"><i data-lucide="send" class="w-4 h-4"></i></button>
                     </div>
                 </div>
+</div>
+        <div id="island-activity-view" hidden><div id="island-ongoing"><div id="island-focus-activity" hidden><span id="island-focus-time"></span><button type="button" id="island-focus-pause">Pause</button><button type="button" onclick="os.openWindow('focus');AetherIsland.close()">Open Focus ↗</button></div><div id="island-audio-activity" hidden><span id="island-audio-title"></span><button type="button" id="island-audio-pause">Pause audio</button></div></div><div class="island-activity-heading"><span>This tab’s events · not stored</span><button type="button" id="island-clear">Clear</button></div><ol id="island-events"><li class="island-empty">No events yet. Network changes, Focus notifications and app alerts will appear here.</li></ol><button type="button" id="island-dismiss">Dismiss current alert</button></div>
+      </div>
+    </section>
+
+    <!-- Dock Tooltip -->
+    <div id="dock-tooltip" class="dock-tooltip"></div>
+    <!-- Dock Window Preview -->
+    <div id="dock-preview" class="dock-preview"></div>
+
+    <!-- Main OS UI Layer -->
+    <div id="os-layer" class="w-full h-full flex flex-col">
+        
+        <!-- Top System Bar -->
+        <header class="w-full z-50 flex items-center justify-between px-2 select-none" style="height:36px" role="banner">
+            <div class="flex items-center h-full gap-0.5 min-w-0">
+                <button type="button" class="topbar-item" onclick="os.toggleAetherMenu(event)" aria-label="Apple System Menu" title="Apple Menu">
+                    <svg class="w-3.5 h-3.5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.35)]" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+                </button>
+                <button type="button" class="topbar-item font-semibold text-white text-[12px] truncate max-w-[140px] sm:max-w-none" id="active-app-name" style="letter-spacing:-0.02em" onclick="os.toggleFinder()" title="Open Module Launcher">AetherOS</button>
+                <div class="topbar-sep hidden sm:block"></div>
+                <div class="hidden md:flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07]" role="group" aria-label="Virtual Spaces">
+                    <button type="button" data-space-btn="1" onclick="os.switchSpace(1)" class="space-pill-btn active hover-target cursor-none" title="Space 01 (Ctrl+1)">1</button>
+                    <button type="button" data-space-btn="2" onclick="os.switchSpace(2)" class="space-pill-btn hover-target cursor-none" title="Space 02 (Ctrl+2)">2</button>
+                    <button type="button" data-space-btn="3" onclick="os.switchSpace(3)" class="space-pill-btn hover-target cursor-none" title="Space 03 (Ctrl+3)">3</button>
+                    <button type="button" onclick="os.toggleMissionControl()" class="space-pill-btn hover-target cursor-none ml-0.5" title="Mission Control (Ctrl+↑)" aria-label="Mission Control"><i data-lucide="layers" class="w-3 h-3"></i></button>
+                </div>
+                <div class="topbar-item text-[11px] hidden lg:flex" style="color:rgba(255,255,255,0.32)" id="window-count">0 Windows</div>
+                <button type="button" id="topbar-focus-pill" onclick="os.openWindow('focus')" style="display:none" class="topbar-item gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/25 text-emerald-200 text-[10.5px] font-mono hover-target cursor-none" title="Open Focus &amp; Soundscapes">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="topbar-focus-label">25:00</span>
+                </button>
+            </div>
+
+            <div class="flex items-center h-full gap-0.5" id="topbar-status-items">
+                <button type="button" id="top-performance" class="topbar-item" onclick="os.openWindow('sysmon')" aria-label="Open measured browser performance" title="Browser page measurements · click for diagnostics"><span aria-hidden="true">◴</span><span id="top-performance-summary">Measuring…</span></button>
+                <!-- Weather mini -->
+                <button type="button" class="topbar-item gap-1 hover-target cursor-none" id="top-weather-wrap" title="Weather Station" aria-label="Open Weather Station" onclick="os.openWindow('weather')">
+                    <span class="inline-flex items-center justify-center text-sky-300" id="topbar-weather-icon"><i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i></span>
+                    <span class="text-[11px]" style="font-weight:500;color:rgba(255,255,255,0.82)" id="topbar-weather-temp">--°C</span>
+                    <span class="text-[10px] hidden md:inline" style="color:rgba(255,255,255,0.38)" id="topbar-weather-desc">--</span>
+                </button>
+                <div class="topbar-sep hidden sm:block"></div>
+                <!-- WiFi -->
+                <button type="button" onclick="os.openWindow('sysmon')" aria-label="Open network diagnostics" class="topbar-item gap-1.5 hidden sm:flex" id="top-wifi" title="Network Status">
+                    <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400" id="top-wifi-icon"></i>
+                    <span class="text-[10px] hidden md:inline" style="color:rgba(52,211,153,0.8)" id="top-wifi-ssid">WiFi</span>
+                </button>
+                <!-- Battery -->
+                <div class="topbar-item gap-1.5 hidden sm:flex" id="top-battery" title="Battery">
+                    <i data-lucide="battery" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.45)" id="top-battery-icon"></i>
+                    <span class="text-[10px] hidden sm:inline" style="color:rgba(255,255,255,0.45)" id="top-battery-val">--%</span>
+                </div>
+                <!-- NoSleep -->
+                <button type="button" class="topbar-item gap-1 hover-target cursor-none hidden sm:flex" id="topbar-awake-widget" style="display:none" title="Screen Awake" aria-label="Toggle Screen Awake" onclick="os.toggleWakeLock()">
+                    <i data-lucide="sun" class="w-3 h-3" style="color:rgba(255,255,255,0.28)" id="top-awake-icon"></i>
+                    <span class="text-[9px] hidden md:inline" style="color:rgba(255,255,255,0.25);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em" id="top-awake-status">SLEEP</span>
+                </button>
+                <div class="topbar-sep hidden md:block" id="topbar-p2p-sep" style="display:none"></div>
+                <!-- Aether Bridge Indicator -->
+                <div id="ab-topbar-indicator" onclick="os.openWindow('aetherbridge')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Bridge">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400" style="animation:indicatorPulse 2s infinite"></div>
+                    <span id="ab-topbar-label">BRIDGE</span>
+                </div>
+                <!-- Aether Link Indicator -->
+                <div id="al-topbar-indicator" onclick="os.openWindow('aetherlink')" class="hover-target hidden md:inline-flex" style="display:none" title="Aether Link">
+                    <div class="w-1.5 h-1.5 rounded-full bg-violet-400" style="animation:indicatorPulse 2s infinite"></div>
+                    <span id="al-topbar-label">LINKED</span>
+                </div>
+                <div class="topbar-sep"></div>
+                <!-- Telemetry & Assistant Sidebar Toggle (Desktop & Mobile) -->
+                <button type="button" class="topbar-item" id="mobile-panel-toggle" onclick="os.toggleUtilityPanel()" aria-label="Toggle control shelf" title="Control shelf">
+                    <i data-lucide="panel-right" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.72)"></i>
+                </button>
+                <button type="button" class="topbar-item relative" id="topbar-notif-btn" onclick="os.toggleNotificationCenter(event)" aria-label="Notification Center" title="Notification Center">
+                    <i data-lucide="bell" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.65)"></i>
+                    <span id="notif-unread-dot" class="hidden w-1.5 h-1.5 rounded-full bg-cyan-400 absolute top-1 right-1"></span>
+                </button>
+                <button type="button" class="topbar-item gap-1.5" onclick="os.toggleControlCenter(event)" aria-label="Control Center" title="Control Center">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.65)"></i>
+                </button>
+                <div class="topbar-sep"></div>
+                <button type="button" class="topbar-item font-medium hover-target cursor-none" id="sys-clock" onclick="os.toggleCalendarPopover && os.toggleCalendarPopover()" title="Calendar, Agenda &amp; World Clocks" aria-label="Open Calendar and World Clocks" style="font-size:12px;letter-spacing:-0.01em;color:rgba(255,255,255,0.88);font-variant-numeric:tabular-nums">00:00:00</button>
+            </div>
+        </header>
+        <div id="mobile-panel-backdrop" onclick="os.toggleMobileUtilityPanel(false)"></div>
+
+
+        <!-- Main Workspace Area -->
+        <div class="flex-1 flex relative overflow-hidden" id="workspace">
+            <!-- Left Navigation Rail removed — modules accessed via Dock Finder -->
+
+            <!-- Window Canvas -->
+            <main class="flex-1 relative" id="window-canvas">
+                <!-- Desktop Anime Quote Widget — Opt-in via Settings -> Desktop Extras -->
+                <div id="desktop-quote-widget" onclick="os.fetchAnimeQuote()" title="Click to refresh quote" style="position:absolute;top:16px;left:16px;max-width:320px;padding:16px 18px;border-radius:16px;background:rgba(8,8,12,0.72);border:1px solid rgba(255,255,255,0.07);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);display:none;z-index:0;pointer-events:auto;cursor:none;transition:border-color 0.2s,box-shadow 0.2s,top 0.4s,bottom 0.4s,left 0.4s,right 0.4s,transform 0.4s;user-select:text" onmouseenter="this.style.borderColor='rgba(255,255,255,0.14)';this.style.boxShadow='0 10px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.07)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06)'">
+                    <div class="quote-bg-layer" id="quote-bg-layer" style="display:none">
+                        <img id="quote-bg-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.55">
+                        <div class="quote-bg-overlay" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.65))"></div>
+                    </div>
+                    <div class="quote-text-layer" id="quote-text-layer" style="position:relative;z-index:1">
+                        <div style="font:400 12px/1.65 'Inter',sans-serif;color:rgba(255,255,255,0.78);letter-spacing:-0.01em;margin-bottom:10px;font-style:italic" id="desktop-quote-text">"Loading quote..."</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+                            <span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,0.45);letter-spacing:-0.01em" id="desktop-quote-character">--</span>
+                            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,0.28);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right" id="desktop-quote-anime">--</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Windows Rendered Here -->
+            </main>
+
+            <!-- Right Utility Panel (Telemetry widgets) -->
+            <aside id="right-utility-panel" class="w-[22rem] h-full border-l border-white/[0.05] hidden lg:flex flex-col gap-3 z-40 overflow-y-auto min-h-0" style="background:rgba(5,5,8,0.96);padding:14px 12px 16px">
+                <header class="activity-sidebar-heading"><span>Control shelf</span><button type="button" onclick="os.toggleUtilityPanel()" aria-label="Close control shelf">×</button></header>
+                <section class="shelf-quick-actions" aria-label="Workspace shortcuts"><button type="button" onclick="os.openWindow('focus')">Focus timer</button><button type="button" onclick="os.openWindow('taskmanager')">Open windows</button><button type="button" onclick="os.openWindow('settings')">Settings</button><button type="button" onclick="AetherIsland.open('activity')">Live activity</button></section>
+                <p class="shelf-note">Aether Assistant now lives in the island above. Only app events appear in Live Activity.</p>
+                <!-- Combined Media Widget (Music + World Radio) -->
+                <div class="rounded-xl border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.4)] overflow-hidden" style="background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15))">
+                    <div class="flex justify-between items-center px-3.5 pt-3 pb-1.5">
+                        <span class="text-[10.5px] font-medium text-white/80 flex items-center gap-1.5">
+                            <i data-lucide="headphones" class="w-3.5 h-3.5 text-amber-300/80"></i>Audio &amp; Radio
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" id="mini-stream-indicator"></span>
+                            <span class="w-2 h-2 rounded-full bg-gray-600" id="sidebar-radio-status"></span>
+                        </div>
+                    </div>
+                    <!-- Now Playing row -->
+                    <div class="px-3.5 py-1.5 cursor-none hover-target" onclick="os.openWindow('media')">
+                        <div class="flex gap-2.5 items-center">
+                            <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.06]">
+                                <img id="mini-cover-art" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Cover">
+                                <i id="mini-cover-fallback" data-lucide="music" class="w-4 h-4 text-white/25"></i>
+                            </div>
+                            <div class="overflow-hidden flex-1 min-w-0">
+                                <div class="text-[10px] text-gray-500">Music &amp; Podcasts</div>
+                                <div class="text-[11px] text-white font-semibold truncate" id="mini-track-title">Not Playing</div>
+                                <div class="text-[10px] text-gray-500 truncate" id="mini-artist-name">Click to open player</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mx-3.5 h-px bg-white/[0.04]"></div>
+                    <!-- Radio row -->
+                    <div class="px-3.5 py-1.5 cursor-none hover-target" onclick="os.openWindow('radiobrowser')">
+                        <div class="flex gap-2.5 items-center">
+                            <div class="w-10 h-10 rounded-lg bg-os-700 flex-shrink-0 relative overflow-hidden flex items-center justify-center border border-white/[0.08]" id="sidebar-radio-icon-container">
+                                <img id="sidebar-radio-icon" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Station">
+                                <i id="sidebar-radio-fallback" data-lucide="radio-tower" class="w-4 h-4 text-white/25"></i>
+                            </div>
+                            <div class="overflow-hidden flex-1 min-w-0">
+                                <div class="text-[10px] text-gray-500">World Radio</div>
+                                <div class="text-[11px] text-white font-semibold truncate" id="sidebar-radio-name">Not Playing</div>
+                                <div class="text-[10px] text-gray-500 truncate" id="sidebar-radio-tags">Browse 30,000+ stations</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </aside>
         </div>
 
@@ -638,11 +588,11 @@
     </div>
 
     <!-- AetherOS Modular Runtime Scripts -->
-    <script src="src/core/primitives.js"></script>
+    <script src="src/core/primitives.js?v=island-1"></script>
     <script src="src/core/system-state.js?v=appearance-1"></script>
     <script src="src/ui/system-appearance.js?v=appearance-1"></script>
     <script src="src/services/vfs-and-backup.js?v=studios-2"></script>
-    <script src="src/ui/settings-tabs.js?v=appearance-1"></script>
+    <script src="src/ui/settings-tabs.js?v=island-2"></script>
     <script src="src/ui/templates/system-templates.js?v=tasks-2"></script>
     <script src="src/ui/templates/media-space-templates.js?v=fleet-1"></script>
     <script src="src/ui/templates/network-workspace-templates.js?v=news-2"></script>
@@ -652,12 +602,12 @@
     <script src="src/ui/remaining-app-workspaces.js?v=fleet-1"></script>
     <script src="src/ui/window-surfaces.js?v=glass-interiors-1"></script>
     <script src="src/ui/desktop-design.js?v=appearance-1"></script>
-    <script src="src/engines/window-manager.js?v=fleet-1"></script>
+    <script src="src/engines/window-manager.js?v=island-2"></script>
     <script src="src/engines/command-palette.js?v=audit-2"></script>
     <script src="src/engines/wikiboard-engine.js?v=fleet-1"></script>
     <script src="src/services/aether-bridge.js"></script>
     <script src="src/services/aether-link.js"></script>
-    <script src="src/modules/shell-and-theme.js?v=desktop-9"></script>
+    <script src="src/modules/shell-and-theme.js?v=island-1"></script>
     <script src="src/engines/window-snap-and-spaces.js?v=desktop-9"></script>
     <script src="src/modules/focus-and-devpad.js?v=studios-2"></script>
     <script src="src/modules/power-tools.js?v=studios-2"></script>
@@ -668,13 +618,13 @@
     <script src="src/modules/live-world-and-science-apis.js?v=fleet-1"></script>
     <script src="src/modules/iconic-web-universes.js?v=fleet-1"></script>
     <script src="src/ui/desktop-shell-extras.js"></script>
-    <script src="src/modules/voice-and-companion.js"></script>
+    <script src="src/modules/voice-and-companion.js?v=island-2"></script>
     <script src="src/modules/lastfm-analytics.js?v=audit-2"></script>
     <script src="src/modules/diagnostics-and-tasks.js?v=tasks-2"></script>
     <script src="src/modules/space-and-weather.js?v=fleet-1"></script>
-    <script src="src/modules/media-and-lyrics.js?v=audit-2"></script>
+    <script src="src/modules/media-and-lyrics.js?v=discovery-6"></script>
     <script type="module" src="src/modules/media-library.js?v=stickersapi-31"></script>
-    <script type="module" src="src/modules/music-theater.js?v=native-map-7"></script>
+    <script src="src/modules/music-entry.js?v=discovery-6"></script>
     <script src="src/modules/radio-and-youtube.js?v=fleet-1"></script>
     <script src="src/modules/anime-and-tv.js?v=fleet-1"></script>
     <script src="src/modules/web-and-feeds.js?v=news-2"></script>
@@ -682,9 +632,11 @@
     <script src="src/modules/workspace-apps.js?v=studios-2"></script>
     <script src="src/ui/about-system.js?v=portrait-4"></script>
     <script src="src/ui/app-details.js?v=audit-2"></script>
-    <script src="src/services/workspace-lock.js?v=audit-2"></script>
-    <script src="src/boot/main.js?v=audit-2"></script>
+    <script src="src/services/workspace-lock.js?v=island-1"></script>
+    <script src="src/boot/main.js?v=island-1"></script>
     <script src="src/ui/shell-interactions.js"></script>
-    <script src="src/services/ai-assistant.js?v=audit-2"></script>
+    <script src="src/services/ai-assistant.js?v=island-8"></script>
+    <script src="src/ui/dynamic-island.js?v=island-8"></script>
+    <script src="src/ui/companion-experience.js?v=companion-3"></script>
 </body>
 </html>
